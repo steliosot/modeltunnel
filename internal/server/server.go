@@ -744,10 +744,102 @@ func (s *Server) handleAdminModels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Enhance models with config status
+	enhancedModels := make([]openai.Model, len(models))
+	for i, model := range models {
+		enhancedModels[i] = model
+
+		// Check if model is in config
+		if s.config != nil && s.config.Policies != nil {
+			for _, policy := range s.config.Policies {
+				if policy.Models != nil {
+					// Check for exact model name match (with tag)
+					if modelPolicy, ok := policy.Models[model.ID]; ok {
+						enhancedModels[i].RateLimit = modelPolicy.RateLimit
+						enhancedModels[i].InConfig = true
+					}
+
+					// Also check for wildcard match (e.g., "mistral" matches "mistral:latest")
+					modelNameBase := extractModelBaseName(model.ID)
+					if modelPolicy, ok := policy.Models[modelNameBase]; ok && enhancedModels[i].RateLimit == "" {
+						enhancedModels[i].RateLimit = modelPolicy.RateLimit
+						enhancedModels[i].InConfig = true
+					}
+				}
+
+				// Check if model is in allowed_models list
+				for _, allowed := range policy.AllowedModels {
+					if isModelMatch(model.ID, allowed) {
+						enhancedModels[i].InConfig = true
+						enhancedModels[i].RateLimit = policy.RateLimit
+					}
+				}
+			}
+		}
+	}
+
 	s.writeJSON(w, http.StatusOK, openai.ModelList{
 		Object: "list",
-		Data:   models,
+		Data:   enhancedModels,
 	})
+}
+
+// extractModelBaseName extracts the base model name without tag
+// Also strips upstream prefix if present (e.g., "default/mistral:latest" -> "mistral")
+func extractModelBaseName(modelName string) string {
+	// Strip upstream prefix if present
+	// e.g., "default/mistral:latest" -> "mistral:latest"
+	slashIndex := strings.Index(modelName, "/")
+	if slashIndex >= 0 {
+		modelName = modelName[slashIndex+1:]
+	}
+
+	// Strip tag
+	// e.g., "mistral:latest" -> "mistral"
+	colonIndex := strings.Index(modelName, ":")
+	if colonIndex > 0 {
+		modelName = modelName[:colonIndex]
+	}
+	return modelName
+}
+
+// isModelMatch checks if a model name matches an allowed model selector
+// Supports exact match, tag wildcards (e.g., "mistral:*", "tinyllama:*"), and glob patterns
+// Handles upstream prefix (e.g., "default/mistral" matches "mistral")
+func isModelMatch(model, selector string) bool {
+	// Strip upstream prefixes for comparison
+	strippedModel := model
+	if slashIndex := strings.Index(model, "/"); slashIndex >= 0 {
+		strippedModel = model[slashIndex+1:]
+	}
+	strippedSelector := selector
+	if slashIndex := strings.Index(selector, "/"); slashIndex >= 0 {
+		strippedSelector = selector[slashIndex+1:]
+	}
+
+	// Check both with and without upstream prefix
+	if strippedModel == strippedSelector || model == selector {
+		return true
+	}
+
+	// Handle wildcards like "mistral:*" or "tinyllama:*"
+	// The wildcard is "NAME:*" where * matches any tag
+	if strings.Contains(strippedSelector, ":*") {
+		// Split selector into base and check if model starts with base
+		parts := strings.SplitN(strippedSelector, ":*", 2)
+		if len(parts) == 2 {
+			prefix := parts[0]
+			return strings.HasPrefix(strippedModel, prefix+":")
+		}
+	}
+	
+	// Also check for just "*" wildcard
+	if strings.HasSuffix(strippedSelector, "*") {
+		prefix := strings.TrimSuffix(strippedSelector, "*")
+		return strings.HasPrefix(strippedModel, prefix)
+	}
+
+	return false
 }
 
 // handleAdminModelsPull handles POST /admin/api/models/pull

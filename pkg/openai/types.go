@@ -8,6 +8,8 @@ type Model struct {
 	OwnedBy    string `json:"owned_by"`
 	Size       int64  `json:"size,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
+	InConfig   bool   `json:"in_config,omitempty"`  // Whether model is defined in config
+	RateLimit  string `json:"rate_limit,omitempty"` // Rate limit from config (e.g., "60/min")
 }
 
 // ModelList represents a list of models

@@ -3168,6 +3168,16 @@ model: ${model}`;
                 let description = '';
                 const recommended = findRecommendedModel(modelId);
                 
+                // Build badges
+                let badges = [];
+                if (model.in_config) {
+                    badges.push('<span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-right: 4px;">In Config</span>');
+                }
+                if (model.rate_limit) {
+                    badges.push('<span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 10px;">' + model.rate_limit + '</span>');
+                }
+                const badgesHtml = badges.length > 0 ? '<div style="margin-top: 4px;">' + badges.join('') + '</div>' : '';
+                
                 return `
                     <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
@@ -3178,6 +3188,7 @@ model: ${model}`;
                                     ${recommended ? recommended.context + ' │ ' + recommended.description : ''}
                                     Status: Ready
                                 </div>
+                                ${badgesHtml}
                             </div>
                             <div style="flex-shrink: 0;">
                                 <button class="btn btn-sm btn-secondary" onclick="deleteModel('${modelId}')" style="font-size: 11px; padding: 4px 12px; margin-left: 8px;">
