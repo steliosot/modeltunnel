@@ -105,6 +105,49 @@ Multi-step content creation using different intents.
 
 ---
 
+## Docker Deployment Examples
+
+Location: Installation guide and [docs/DOCKER_IMAGE_PUSH.md](docs/DOCKER_IMAGE_PUSH.md)
+
+### Quick Docker Start
+```bash
+# Pull pre-built image
+docker pull ghcr.io/steliosot/modeltunnel:latest
+
+# Run with Ollama
+docker run -d -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral
+
+# Health check
+curl http://localhost:8080/health
+```
+
+### Custom Configuration
+```bash
+# Mount config file
+docker run -d -p 8080:8080 \
+  -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
+  ghcr.io/steliosot/modeltunnel:latest up
+```
+
+### Multi-Container Setup
+```bash
+# Primary service
+docker run -d --name modeltunnel \
+  -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral
+
+# Secondary service with tunnel
+docker run -d --name modeltunnel-tunnel \
+  -p 8081:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  ghcr.io/steliosot/modeltunnel:latest up --ollama --model phi --tunnel
+```
+
+---
+
 ## API Usage Examples
 
 Location: [docs/api.md](docs/api.md)
@@ -217,11 +260,8 @@ print(response.choices[0].message.content)
 - **461 lines** - Configuration guide with examples
 - **288 lines** - Installation guide
 
-**Total: 3,578 lines of documentation with comprehensive examples!**
-
----
-
-## Finding Examples
+**Total: 3,578+ lines of documentation with comprehensive examples!**
+(+ Docker deployment instructions)
 
 ### By Use Case
 - **Background tasks** → [ASYNC_JOBS.md](docs/ASYNC_JOBS.md)
