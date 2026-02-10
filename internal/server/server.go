@@ -746,8 +746,17 @@ func (s *Server) handleAdminModels(w http.ResponseWriter, r *http.Request) {
 
 	// Enhance models with config status
 	enhancedModels := make([]openai.Model, len(models))
+	modelNameToOriginal := make(map[string]string) // Map to track original model names without upstream prefix
+
 	for i, model := range models {
 		enhancedModels[i] = model
+
+		// Store mapping for intent checking (e.g., "default/mistral" -> "mistral")
+		if slashIndex := strings.Index(model.ID, "/"); slashIndex >= 0 {
+			modelNameToOriginal[model.ID[slashIndex+1:]] = model.ID
+		} else {
+			modelNameToOriginal[model.ID] = model.ID
+		}
 
 		// Check if model is in config
 		if s.config != nil && s.config.Policies != nil {
@@ -756,14 +765,28 @@ func (s *Server) handleAdminModels(w http.ResponseWriter, r *http.Request) {
 					// Check for exact model name match (with tag)
 					if modelPolicy, ok := policy.Models[model.ID]; ok {
 						enhancedModels[i].RateLimit = modelPolicy.RateLimit
+						enhancedModels[i].MaxTokens = modelPolicy.MaxTokens
 						enhancedModels[i].InConfig = true
 					}
 
 					// Also check for wildcard match (e.g., "mistral" matches "mistral:latest")
+					// And model-specific configs like "tinyllama:*"
 					modelNameBase := extractModelBaseName(model.ID)
-					if modelPolicy, ok := policy.Models[modelNameBase]; ok && enhancedModels[i].RateLimit == "" {
+					if modelPolicy, ok := policy.Models[modelNameBase]; ok && !enhancedModels[i].InConfig {
 						enhancedModels[i].RateLimit = modelPolicy.RateLimit
+						enhancedModels[i].MaxTokens = modelPolicy.MaxTokens
 						enhancedModels[i].InConfig = true
+					}
+
+					// Check for wildcard patterns in models (e.g., "mistral:*", "tinyllama:*")
+					for pattern := range policy.Models {
+						if isModelMatch(model.ID, pattern) && !enhancedModels[i].InConfig {
+							if modelPolicy, ok := policy.Models[pattern]; ok {
+								enhancedModels[i].RateLimit = modelPolicy.RateLimit
+								enhancedModels[i].MaxTokens = modelPolicy.MaxTokens
+								enhancedModels[i].InConfig = true
+							}
+						}
 					}
 				}
 
@@ -772,9 +795,33 @@ func (s *Server) handleAdminModels(w http.ResponseWriter, r *http.Request) {
 					if isModelMatch(model.ID, allowed) {
 						enhancedModels[i].InConfig = true
 						enhancedModels[i].RateLimit = policy.RateLimit
+						enhancedModels[i].MaxTokens = policy.MaxTokens
 					}
 				}
 			}
+		}
+
+		// Check intent priorities
+		if s.config != nil && s.config.Policies != nil {
+			// Get model name without upstream for intent matching
+			modelName := model.ID
+			if slashIndex := strings.Index(model.ID, "/"); slashIndex >= 0 {
+				modelName = model.ID[slashIndex+1:]
+			}
+
+			var intents []string
+			for intentName, intent := range s.config.Intents {
+				if intent.Priority != nil {
+					for _, priorityModel := range intent.Priority {
+						// Check exact match or wildcard
+						if isModelMatch(modelName, priorityModel) {
+							intents = append(intents, intentName)
+							break // Only add each intent once
+						}
+					}
+				}
+			}
+			enhancedModels[i].Intents = intents
 		}
 	}
 
@@ -832,7 +879,7 @@ func isModelMatch(model, selector string) bool {
 			return strings.HasPrefix(strippedModel, prefix+":")
 		}
 	}
-	
+
 	// Also check for just "*" wildcard
 	if strings.HasSuffix(strippedSelector, "*") {
 		prefix := strings.TrimSuffix(strippedSelector, "*")

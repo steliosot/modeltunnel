@@ -2,14 +2,16 @@ package openai
 
 // Model represents an OpenAI-compatible model
 type Model struct {
-	ID         string `json:"id"`
-	Object     string `json:"object"`
-	Created    int64  `json:"created"`
-	OwnedBy    string `json:"owned_by"`
-	Size       int64  `json:"size,omitempty"`
-	ModifiedAt string `json:"modified_at,omitempty"`
-	InConfig   bool   `json:"in_config,omitempty"`  // Whether model is defined in config
-	RateLimit  string `json:"rate_limit,omitempty"` // Rate limit from config (e.g., "60/min")
+	ID         string   `json:"id"`
+	Object     string   `json:"object"`
+	Created    int64    `json:"created"`
+	OwnedBy    string   `json:"owned_by"`
+	Size       int64    `json:"size,omitempty"`
+	ModifiedAt string   `json:"modified_at,omitempty"`
+	InConfig   bool     `json:"in_config,omitempty"`  // Whether model is defined in config
+	RateLimit  string   `json:"rate_limit,omitempty"` // Rate limit from config (e.g., "60/min")
+	MaxTokens  int      `json:"max_tokens,omitempty"` // Max tokens from config
+	Intents    []string `json:"intents,omitempty"`    // Intents that prioritize this model
 }
 
 // ModelList represents a list of models

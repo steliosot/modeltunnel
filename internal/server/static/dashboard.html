@@ -3165,18 +3165,40 @@ model: ${model}`;
                 }
                 
                 // Check if this is a recommended model to show its description
-                let description = '';
+                let configMetadata = '';
                 const recommended = findRecommendedModel(modelId);
+                const modelDetails = [];
                 
-                // Build badges
+                // Add context and description from recommended models
+                if (recommended) {
+                    modelDetails.push(recommended.context + ' │ ' + recommended.description);
+                }
+                modelDetails.push('Status: Ready');
+                
+                // Build badges (chips)
                 let badges = [];
+                
+                // Intent badges
+                if (model.intents && model.intents.length > 0) {
+                    model.intents.forEach(intent => {
+                        badges.push(`<span style="background: #fef3c7; color: #854d0e; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">${intent}</span>`);
+                    });
+                }
+                
+                // Config badges
                 if (model.in_config) {
-                    badges.push('<span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-right: 4px;">In Config</span>');
+                    if (model.rate_limit && model.max_tokens) {
+                        badges.push(`<span style="background: #dbeafe; color: #075985; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">${model.rate_limit} • ${model.max_tokens} tokens</span>`);
+                    } else if (model.rate_limit) {
+                        badges.push(`<span style="background: #dbeafe; color: #075985; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">${model.rate_limit}</span>`);
+                    } else if (model.max_tokens) {
+                        badges.push(`<span style="background: #dbeafe; color: #075985; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">${model.max_tokens} tokens</span>`);
+                    } else {
+                        badges.push(`<span style="background: #ecfdf5; color: #047857; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">Configured</span>`);
+                    }
                 }
-                if (model.rate_limit) {
-                    badges.push('<span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 10px;">' + model.rate_limit + '</span>');
-                }
-                const badgesHtml = badges.length > 0 ? '<div style="margin-top: 4px;">' + badges.join('') + '</div>' : '';
+                
+                const badgesHtml = badges.length > 0 ? '<div style="margin-top: 4px; display: flex; flex-wrap: wrap;">' + badges.join('') + '</div>' : '';
                 
                 return `
                     <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
