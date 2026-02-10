@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Non-root user in Docker for security
 - config.docker.yaml for containerized deployments
 - Docker deployment documentation in installation.md
+- Docker documentation in dashboard web UI
 - **Intent Routing YAML Configuration** - Configure intent priorities in `config.yaml` with hot-reload support
 - Custom intent definitions - Add your own intents beyond plan/code/chat
 - Intent priority lists - Define model fallback order

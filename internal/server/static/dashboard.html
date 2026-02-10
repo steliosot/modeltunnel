@@ -1367,6 +1367,7 @@ main();</pre>
                     <div class="docs-nav">
                         <div class="docs-nav-title">Getting Started</div>
                         <a href="#docs-installation" class="docs-nav-link active">Installation</a>
+                        <a href="#docs-docker" class="docs-nav-link">Docker</a>
                         <a href="#docs-quickstart" class="docs-nav-link">Quick Start</a>
                         <a href="#docs-configuration" class="docs-nav-link">Configuration</a>
                         
@@ -1413,6 +1414,100 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                             <li>Ollama installed and running (or other supported upstream)</li>
                             <li>Go 1.21+ (if building from source)</li>
                             <li>Optional: ngrok or localtunnel for public URLs</li>
+                        </ul>
+                    </section>
+                    
+                    <section id="docs-docker" class="docs-section">
+                        <h2 class="docs-section-title">Docker</h2>
+                        <p class="docs-text">Run modeltunnel in a container for easy deployment and isolation.</p>
+                        
+                        <h3 class="docs-subsection-title">Build the Image</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code" id="docker-build">docker build -t modeltunnel:latest .</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Run with Ollama (Local Only)</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code" id="docker-basic">docker run -d -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  modeltunnel:latest up --ollama --model mistral</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Run with Public Tunnel</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code" id="docker-tunnel">docker run -d -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  modeltunnel:latest up --ollama --model mistral --tunnel</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Custom Configuration</h3>
+                        <p class="docs-text">Mount your custom config file to use custom settings:</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code" id="docker-config">docker run -d -p 8080:8080 \
+  -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
+  modeltunnel:latest up</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Environment Variables</h3>
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Variable</th>
+                                    <th>Description</th>
+                                    <th>Default</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="docs-inline-code">OLLAMA_BASE_URL</code></td>
+                                    <td>Ollama server URL</td>
+                                    <td><code class="docs-inline-code">http://127.0.0.1:11434</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <h3 class="docs-subsection-title">Volumes</h3>
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Path</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="docs-inline-code">/home/appuser/.config/modeltunnel/config.yaml</code></td>
+                                    <td>Custom configuration file</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">/home/appuser/.config/modeltunnel/keys.db</code></td>
+                                    <td>SQLite database for API keys</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <h3 class="docs-subsection-title">Image Details</h3>
+                        <ul class="docs-list">
+                            <li>Base image: Alpine 3.19</li>
+                            <li>Image size: ~45MB</li>
+                            <li>User: Non-root (appuser:appgroup)</li>
+                            <li>Port: 8080</li>
                         </ul>
                     </section>
                     
