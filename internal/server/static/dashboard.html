@@ -1421,7 +1421,17 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                         <h2 class="docs-section-title">Docker</h2>
                         <p class="docs-text">Run modeltunnel in a container for easy deployment and isolation.</p>
                         
-                        <h3 class="docs-subsection-title">Build the Image</h3>
+                        <h3 class="docs-subsection-title">Pull Pre-Built Image (Recommended)</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code" id="docker-pull">docker pull ghcr.io/steliosot/modeltunnel:latest</pre>
+                        </div>
+                        <p class="docs-text">Image available on GitHub Container Registry: <code class="docs-inline-code">ghcr.io/steliosot/modeltunnel</code></p>
+                        
+                        <h3 class="docs-subsection-title">Build from Source</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
@@ -1438,7 +1448,7 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                             </div>
                             <pre class="docs-code" id="docker-basic">docker run -d -p 8080:8080 \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  modeltunnel:latest up --ollama --model mistral</pre>
+  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral</pre>
                         </div>
                         
                         <h3 class="docs-subsection-title">Run with Public Tunnel</h3>
@@ -1449,7 +1459,7 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                             </div>
                             <pre class="docs-code" id="docker-tunnel">docker run -d -p 8080:8080 \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  modeltunnel:latest up --ollama --model mistral --tunnel</pre>
+  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral --tunnel</pre>
                         </div>
                         
                         <h3 class="docs-subsection-title">Custom Configuration</h3>
@@ -1461,7 +1471,7 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                             </div>
                             <pre class="docs-code" id="docker-config">docker run -d -p 8080:8080 \
   -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
-  modeltunnel:latest up</pre>
+  ghcr.io/steliosot/modeltunnel:latest up</pre>
                         </div>
                         
                         <h3 class="docs-subsection-title">Environment Variables</h3>

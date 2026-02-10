@@ -104,24 +104,40 @@ modeltunnel version
 
 ## Docker
 
+### Using Pre-Built Image
+
 ```bash
-# Build image
-docker build -t modeltunnel:latest .
+# Pull latest image from GitHub Container Registry
+docker pull ghcr.io/steliosot/modeltunnel:latest
 
 # Run with Ollama (local only)
 docker run -d -p 8080:8080 \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  modeltunnel:latest up --ollama --model mistral
+  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral
 
 # Run with public tunnel
 docker run -d -p 8080:8080 \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  modeltunnel:latest up --ollama --model mistral --tunnel
+  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral --tunnel
 
 # Custom config (mount your config.yaml)
 docker run -d -p 8080:8080 \
   -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
-  modeltunnel:latest up
+  ghcr.io/steliosot/modeltunnel:latest up
+```
+
+### Building from Source
+
+```bash
+# Clone and build
+git clone https://github.com/steliosot/modeltunnel.git
+cd modeltunnel
+docker build -t modeltunnel:latest .
+
+# Run
+docker run -d -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  modeltunnel:latest up --ollama --model mistral
 ```
 
 Docker image size: ~45MB
