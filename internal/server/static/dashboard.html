@@ -860,6 +860,20 @@
                 white-space: nowrap;
             }
         }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
     </style>
 </head>
 <body>
@@ -1116,32 +1130,54 @@
 
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Available Models</div>
+                    <div class="card-title">📦 Models</div>
                     <button class="btn btn-secondary btn-sm" onclick="refreshModels()">Refresh</button>
                 </div>
                 <div class="card-body">
-                    <p class="text-secondary" style="margin-bottom: 16px; font-size: 13px;">
-                        Models currently available from your Ollama instance.
-                    </p>
-                    <div class="table-container">
-                        <table id="models-table">
-                            <thead>
-                                <tr>
-                                    <th>Model Name</th>
-                                    <th>Size</th>
-                                    <th>Modified</th>
-                                    <th style="text-align: right;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="models-tbody">
-                                <tr>
-                                    <td colspan="4" class="empty-state">
-                                        <div>Loading models...</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    
+                    <!-- Pull New Model -->
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+                            + Pull a new model...
+                        </label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="pull-model-input" 
+                                   placeholder="e.g., mistral, llama3.2:3b" 
+                                   style="flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 4px; font-family: var(--mono-font); font-size: 13px;">
+                            <button class="btn btn-primary btn-sm" onclick="pullModelFromInput()">Pull</button>
+                        </div>
+                        <p class="text-secondary" style="margin-top: 8px; font-size: 12px;">
+                            💡 Try: mistral, llama3.2, phi, codellama
+                        </p>
                     </div>
+
+                    <!-- Recommended Models -->
+                    <div style="margin-bottom: 24px;">
+                        <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Recommended Models (click to install)</h3>
+                        
+                        <!-- General Purpose -->
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">⚡ General Purpose</h4>
+                        <div id="recommended-general" style="margin-bottom: 16px;"></div>
+                        
+                        <!-- Coding -->
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">💻 Coding</h4>
+                        <div id="recommended-coding" style="margin-bottom: 16px;"></div>
+                        
+                        <!-- Vision -->
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">👁 Vision</h4>
+                        <div id="recommended-vision" style="margin-bottom: 16px;"></div>
+                        
+                        <!-- Reasoning -->
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">🧠 Reasoning</h4>
+                        <div id="recommended-reasoning" style="margin-bottom: 16px;"></div>
+                    </div>
+
+                    <!-- Installed Models -->
+                    <div>
+                        <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Installed Models</h3>
+                        <div id="installed-models-list"></div>
+                    </div>
+
                 </div>
             </div>
         </section>
@@ -3076,47 +3112,41 @@ model: ${model}`;
                 }
                 
                 const data = await response.json();
-                updateModelsTable(data.data || []);
+                updateInstalledModels(data.data || []);
             } catch (error) {
                 console.error('Failed to load models:', error);
-                document.getElementById('models-tbody').innerHTML = `
-                    <tr>
-                        <td colspan="4" class="empty-state">
-                            <div>Failed to load models. Is Ollama running?</div>
-                        </td>
-                    </tr>
+                document.getElementById('installed-models-list').innerHTML = `
+                    <p style="color: var(--text-secondary); font-size: 13px;">
+                        Failed to load models. Is Ollama running?
+                    </p>
                 `;
             }
         }
 
         // Refresh models list
         function refreshModels() {
-            document.getElementById('models-tbody').innerHTML = `
-                <tr>
-                    <td colspan="4" class="empty-state">
-                        <div>Loading models...</div>
-                    </td>
-                </tr>
+            document.getElementById('installed-models-list').innerHTML = `
+                <p style="color: var(--text-secondary); font-size: 13px;">
+                    Loading models...
+                </p>
             `;
             loadModels();
         }
 
-        // Update models table
-        function updateModelsTable(models) {
-            const tbody = document.getElementById('models-tbody');
+        // Update installed models list
+        function updateInstalledModels(models) {
+            const container = document.getElementById('installed-models-list');
             
             if (models.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="empty-state">
-                            <div>No models found. Run <code>ollama pull mistral</code> to download a model.</div>
-                        </td>
-                    </tr>
+                container.innerHTML = `
+                    <p style="color: var(--text-secondary); font-size: 13px;">
+                        No models found. Use the pull button above to download a model.
+                    </p>
                 `;
                 return;
             }
             
-            tbody.innerHTML = models.map(model => {
+            container.innerHTML = models.map(model => {
                 const modelId = model.id || model.name || 'unknown';
                 // Format size to human readable
                 let size = '-';
@@ -3132,24 +3162,222 @@ model: ${model}`;
                         size = bytes + ' B';
                     }
                 }
-                // Format modified date
-                let modified = '-';
-                if (model.modified_at) {
-                    const date = new Date(model.modified_at);
-                    modified = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                }
+                
+                // Check if this is a recommended model to show its description
+                let description = '';
+                const recommended = findRecommendedModel(modelId);
                 
                 return `
-                    <tr>
-                        <td class="mono">${modelId}</td>
-                        <td>${size}</td>
-                        <td>${modified}</td>
-                        <td style="text-align: right;">
-                            <button class="btn btn-sm btn-secondary" onclick="copyText('${modelId}')" style="font-size: 11px; padding: 4px 10px;">Copy Name</button>
-                        </td>
-                    </tr>
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                            <div>
+                                <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500;">${modelId}</div>
+                                <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">
+                                    ${size} │ 
+                                    ${recommended ? recommended.context + ' │ ' + recommended.description : ''}
+                                    Status: Ready
+                                </div>
+                            </div>
+                            <div style="flex-shrink: 0;">
+                                <button class="btn btn-sm btn-secondary" onclick="deleteModel('${modelId}')" style="font-size: 11px; padding: 4px 12px; margin-left: 8px;">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 `;
             }).join('');
+        }
+        
+        // Find recommended model metadata
+        function findRecommendedModel(modelName) {
+            for (const models of Object.values(recommendedModels)) {
+                for (const model of models) {
+                    if (model.name === modelName) {
+                        return model;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        // Delete model
+        async function deleteModel(modelName) {
+            if (!confirm(`Are you sure you want to delete model "${modelName}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/api/models/${encodeURIComponent(modelName)}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to delete model');
+                }
+                
+                alert(`Model "${modelName}" deleted successfully`);
+                refreshModels();
+            } catch (error) {
+                console.error('Failed to delete model:', error);
+                alert('Failed to delete model: ' + error.message);
+            }
+        }
+
+        // Recommended models data
+        const recommendedModels = {
+            general: [
+                {name: 'llama3.2:3b', size: '2.3GB', context: '8K', description: 'Well-rounded, balanced performance'},
+                {name: 'mistral:7b', size: '4.1GB', context: '32K', description: 'Fast, intelligent, versatile'},
+                {name: 'phi4', size: '2.7GB', context: '32K', description: 'Small but powerful, reasoning'}
+            ],
+            coding: [
+                {name: 'codellama:7b', size: '4.2GB', context: '32K', description: 'Code generation and completion'},
+                {name: 'deepseek-coder:6.7b', size: '4.5GB', context: '32K', description: 'Competitive programming, coding'}
+            ],
+            vision: [
+                {name: 'llava:7b', size: '4.5GB', context: '32K', description: 'Image understanding, vision-language'}
+            ],
+            reasoning: [
+                {name: 'deepseek-r1:8b', size: '4.8GB', context: '32K', description: 'Math, logic, reasoning tasks'}
+            ]
+        };
+
+        // Display recommended models
+        function displayRecommendedModels() {
+            for (const [category, models] of Object.entries(recommendedModels)) {
+                const container = document.getElementById(`recommended-${category}`);
+                if (!container) continue;
+
+                container.innerHTML = models.map(model => `
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                            <div>
+                                <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500;">${model.name}</div>
+                                <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">
+                                    ${model.size} │ ${model.context} context │ ${model.description}
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="pullModel('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
+                                Pull
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Pull model
+        async function pullModel(modelName) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Pulling...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/admin/api/models/pull', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({model_name: modelName})
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to pull model');
+                }
+
+                const job = await response.json();
+                
+                // Poll for progress
+                pollPullProgress(job.job_id, btn);
+            } catch (error) {
+                console.error('Failed to pull model:', error);
+                btn.textContent = originalText;
+                btn.disabled = false;
+                alert('Failed to pull model: ' + error.message);
+            }
+        }
+
+        // Pull from input field
+        async function pullModelFromInput() {
+            const input = document.getElementById('pull-model-input');
+            const modelName = input.value.trim();
+            
+            if (!modelName) {
+                alert('Please enter a model name');
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Pulling...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/admin/api/models/pull', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({model_name: modelName})
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to pull model');
+                }
+
+                const job = await response.json();
+                
+                // Poll for progress
+                pollPullProgress(job.job_id, btn);
+                input.value = '';
+            } catch (error) {
+                console.error('Failed to pull model:', error);
+                btn.textContent = originalText;
+                btn.disabled = false;
+                alert('Failed to pull model: ' + error.message);
+            }
+        }
+
+        // Poll pull progress
+        function pollPullProgress(jobId, btn) {
+            let firstPoll = true;
+            
+            const poll = async () => {
+                try {
+                    const response = await fetch(`/admin/api/models/pull/${jobId}`);
+                    if (!response.ok) {
+                        clearInterval(interval);
+                        return;
+                    }
+
+                    const progress = await response.json();
+                    
+                    if (progress.status === 'pulling') {
+                        const percent = progress.progress || 0;
+                        if (firstPoll) {
+                            firstPoll = false;
+                            btn.innerHTML = `<span class="spinner"></span> ${percent}%`;
+                        } else {
+                            btn.innerHTML = `${percent}%`;
+                        }
+                    } else if (progress.status === 'completed') {
+                        btn.innerHTML = '✓';
+                        btn.disabled = false;
+                        clearInterval(interval);
+                        // Refresh models list after a short delay
+                        setTimeout(refreshModels, 1000);
+                    } else if (progress.status === 'failed') {
+                        btn.textContent = 'Failed';
+                        btn.disabled = false;
+                        clearInterval(interval);
+                        alert('Failed to pull model: ' + (progress.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error polling progress:', error);
+                    clearInterval(interval);
+                }
+            };
+
+            poll();
+            const interval = setInterval(poll, 1000);
         }
 
         // Copy text to clipboard
@@ -3354,6 +3582,7 @@ main();`;
             loadTunnelStatus();
             loadConfig();
             loadModels();
+            displayRecommendedModels();
             connectWebSocket();
             
             // Start uptime counter

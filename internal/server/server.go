@@ -18,6 +18,7 @@ import (
 	"github.com/modeltunnel/modeltunnel/internal/gateway"
 	"github.com/modeltunnel/modeltunnel/internal/jobs"
 	"github.com/modeltunnel/modeltunnel/internal/keys"
+	"github.com/modeltunnel/modeltunnel/internal/models"
 	"github.com/modeltunnel/modeltunnel/internal/router"
 	"github.com/modeltunnel/modeltunnel/internal/upstream"
 	"github.com/modeltunnel/modeltunnel/pkg/openai"
@@ -142,6 +143,7 @@ type Server struct {
 	configPath    string
 	mu            sync.RWMutex
 	tunnelStatus  *TunnelStatus
+	modelManager  *models.Manager
 }
 
 // TunnelStatus holds the current tunnel connection status
@@ -169,6 +171,7 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 		jobWorkers:   jobWorkers,
 		logHub:       newLogHub(),
 		configPath:   configPath,
+		modelManager: models.NewManager(""),
 	}
 
 	// Setup routes
@@ -186,6 +189,9 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 	s.mux.HandleFunc("/admin/api/tunnel", s.handleAdminTunnel)
 	s.mux.HandleFunc("/admin/api/config", s.handleAdminConfig)
 	s.mux.HandleFunc("/admin/api/models", s.handleAdminModels)
+	s.mux.HandleFunc("/admin/api/models/pull", s.handleAdminModelsPull)
+	s.mux.HandleFunc("/admin/api/models/pull/", s.handleAdminModelsPullProgress)
+	s.mux.HandleFunc("/admin/api/models/", s.handleAdminModelsDelete)
 
 	// Setup rate limiter
 	if policy, ok := cfg.Policies["default"]; ok {
@@ -742,6 +748,81 @@ func (s *Server) handleAdminModels(w http.ResponseWriter, r *http.Request) {
 		Object: "list",
 		Data:   models,
 	})
+}
+
+// handleAdminModelsPull handles POST /admin/api/models/pull
+func (s *Server) handleAdminModelsPull(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	var req struct {
+		ModelName string `json:"model_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.ModelName == "" {
+		s.writeError(w, http.StatusBadRequest, "model_name is required")
+		return
+	}
+
+	ctx := r.Context()
+	progress, err := s.modelManager.PullModel(ctx, req.ModelName)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.writeJSON(w, http.StatusOK, progress)
+}
+
+// handleAdminModelsPullProgress handles GET /admin/api/models/pull/{job_id}
+func (s *Server) handleAdminModelsPullProgress(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	jobID := strings.TrimPrefix(r.URL.Path, "/admin/api/models/pull/")
+	if jobID == "" {
+		s.writeError(w, http.StatusBadRequest, "job_id is required")
+		return
+	}
+
+	progress := s.modelManager.GetPullProgress(jobID)
+	if progress == nil {
+		s.writeError(w, http.StatusNotFound, "job not found")
+		return
+	}
+
+	s.writeJSON(w, http.StatusOK, progress)
+}
+
+// handleAdminModelsDelete handles DELETE /admin/api/models/{name}
+func (s *Server) handleAdminModelsDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	// Extract model name from URL: /admin/api/models/{name}
+	modelName := strings.TrimPrefix(r.URL.Path, "/admin/api/models/")
+	if modelName == "" {
+		s.writeError(w, http.StatusBadRequest, "model name is required")
+		return
+	}
+
+	ctx := r.Context()
+	if err := s.modelManager.RemoveModel(ctx, modelName); err != nil {
+		s.writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	s.writeJSON(w, http.StatusOK, map[string]string{"status": "deleted", "model": modelName})
 }
 
 func (s *Server) authMiddleware(next http.Handler) http.Handler {
