@@ -770,8 +770,17 @@ func (s *Server) handleAdminModelsPull(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
+	// Use background context for pull operation (can take a long time)
+	// The pull runs asynchronously and progress is checked via polling
+	ctx := context.Background()
 	progress, err := s.modelManager.PullModel(ctx, req.ModelName)
+	if err != nil {
+		// Don't send error - the pull might still start
+		// Progress will be available via job ID
+	}
+
+	// Always return progress, job ID is enough for frontend to poll
+	s.writeJSON(w, http.StatusOK, progress)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err.Error())
 		return

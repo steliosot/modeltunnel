@@ -80,7 +80,10 @@ func (m *Manager) executePull(ctx context.Context, jobID, modelName string) {
 	url := fmt.Sprintf("%s/api/pull", m.baseURL)
 	payload := fmt.Sprintf(`{"name":"%s","stream":true}`, modelName)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(payload))
+	// Don't use request context for the pull itself - it can take a long time
+	// Use background context so pull continues even if original request completes
+	pullCtx := context.Background()
+	req, err := http.NewRequestWithContext(pullCtx, "POST", url, strings.NewReader(payload))
 	if err != nil {
 		m.updatePullStatus(jobID, PullStatusFailed, 0, "", err.Error())
 		return
@@ -96,16 +99,11 @@ func (m *Manager) executePull(ctx context.Context, jobID, modelName string) {
 	defer resp.Body.Close()
 
 	// Stream and parse progress
+	// Don't check for ctx cancellation - we want pull to continue
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
-		select {
-		case <-ctx.Done():
-			m.updatePullStatus(jobID, PullStatusFailed, 0, "", ctx.Err().Error())
-			return
-		default:
-			line := scanner.Text()
-			m.parsePullProgress(jobID, line)
-		}
+		line := scanner.Text()
+		m.parsePullProgress(jobID, line)
 	}
 
 	// Check for completion
