@@ -1,0 +1,40 @@
+# Dependencies
+vendor/
+
+# Build artifacts
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+tests/
+coverage.out
+coverage.html
+
+# Documentation (not needed in image)
+docs/
+*.md
+
+# Git
+.git/
+.gitignore
+
+# Temp files
+*.log
+tmp/
+temp/
+
+# Local config (should be mounted)
+~/.config/modeltunnel/

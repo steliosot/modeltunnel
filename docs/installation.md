@@ -102,17 +102,36 @@ modeltunnel version
 
 ---
 
-## Docker (Coming Soon)
+## Docker
 
 ```bash
-# Pull image
-docker pull steliosot/modeltunnel:latest
+# Build image
+docker build -t modeltunnel:latest .
 
-# Run
-docker run -p 8080:8080 \
-  -v ~/.config/modeltunnel:/config \
-  steliosot/modeltunnel:latest
+# Run with Ollama (local only)
+docker run -d -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  modeltunnel:latest up --ollama --model mistral
+
+# Run with public tunnel
+docker run -d -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  modeltunnel:latest up --ollama --model mistral --tunnel
+
+# Custom config (mount your config.yaml)
+docker run -d -p 8080:8080 \
+  -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
+  modeltunnel:latest up
 ```
+
+Docker image size: ~45MB
+
+**Environment Variables:**
+- `OLLAMA_BASE_URL` - Ollama server URL (default: `http://127.0.0.1:11434`)
+
+**Volumes:**
+- `/home/appuser/.config/modeltunnel/config.yaml` - Custom configuration
+- `/home/appuser/.config/modeltunnel/keys.db` - SQLite database for keys
 
 ---
 

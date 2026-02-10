@@ -56,6 +56,31 @@ sudo make install
 
 Download from [Releases](https://github.com/steliosot/modeltunnel/releases)
 
+### Docker
+
+```bash
+# Build the image
+docker build -t modeltunnel:latest .
+
+# Run with Ollama (local only)
+docker run -d -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  modeltunnel:latest up --ollama --model mistral
+
+# Run with public tunnel
+docker run -d -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  modeltunnel:latest up --ollama --model mistral --tunnel
+
+# Custom config (mount your config.yaml)
+docker run -d -p 8080:8080 \
+  -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
+  modeltunnel:latest up
+```
+
+Docker image size: ~45MB
+```
+
 ## Quick Start
 
 ### 1. Start the Server

@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **OpenAI Content Array Support** - Handles both simple text and structured content arrays
-- **External App Connection Guide** - Complete docs for connecting OpenCode, Cursor, etc.
+- **Docker Support** - Multi-stage Dockerfile for easy containerized deployment
+- Alpine-based minimal runtime image (~45MB)
+- Non-root user in Docker for security
+- config.docker.yaml for containerized deployments
+- Docker deployment documentation in installation.md
 - **Intent Routing YAML Configuration** - Configure intent priorities in `config.yaml` with hot-reload support
 - Custom intent definitions - Add your own intents beyond plan/code/chat
 - Intent priority lists - Define model fallback order

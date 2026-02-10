@@ -1,0 +1,14 @@
+# Docker configuration for Modeltunnel
+# This is the default config used inside Docker containers
+# To use custom config, mount your config.yaml to /home/appuser/.config/modeltunnel/config.yaml
+
+server:
+  host: 0.0.0.0
+  port: 8080
+
+upstreams: {}
+
+policies:
+  default:
+    rate_limit: 60/min
+    max_tokens: 4096
