@@ -1,0 +1,3608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>modeltunnel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #fafafa;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f5f5f5;
+            --text-primary: #171717;
+            --text-secondary: #525252;
+            --text-tertiary: #737373;
+            --border-color: #e5e5e5;
+            --accent-primary: #171717;
+            --accent-secondary: #404040;
+            --success: #16a34a;
+            --warning: #ca8a04;
+            --error: #dc2626;
+            --mono-font: 'Space Mono', monospace;
+            --sans-font: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--sans-font);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: var(--mono-font);
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: -0.5px;
+        }
+
+        .logo span {
+            color: var(--text-tertiary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .status-badge {
+            font-family: var(--mono-font);
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+        }
+
+        .status-badge.online {
+            background-color: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+
+        /* Navigation */
+        .nav {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 24px;
+            display: flex;
+            gap: 0;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: var(--sans-font);
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* Main Content */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-item {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: var(--mono-font);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-meta {
+            font-family: var(--mono-font);
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+
+        /* Buttons */
+        .btn {
+            font-family: var(--sans-font);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-secondary);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .btn-danger {
+            background-color: transparent;
+            color: var(--error);
+            border-color: var(--error);
+        }
+
+        .btn-danger:hover {
+            background-color: #fef2f2;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background-color: var(--bg-tertiary);
+        }
+
+        th {
+            font-family: var(--mono-font);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-family: var(--mono-font);
+            font-size: 13px;
+        }
+
+        tr:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .mono {
+            font-family: var(--mono-font);
+        }
+
+        .text-secondary {
+            color: var(--text-secondary);
+        }
+
+        .text-tertiary {
+            color: var(--text-tertiary);
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: var(--mono-font);
+            font-size: 11px;
+            font-weight: 500;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+        }
+
+        .tag-success {
+            background-color: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+
+        .tag-warning {
+            background-color: #fef9c3;
+            border-color: #fde047;
+            color: #854d0e;
+        }
+
+        /* Logs */
+        .logs-container {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: var(--mono-font);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 12px;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: var(--text-tertiary);
+            white-space: nowrap;
+            min-width: 70px;
+        }
+
+        .log-method {
+            color: var(--text-secondary);
+            font-weight: 700;
+            min-width: 50px;
+        }
+
+        .log-path {
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .log-status {
+            font-weight: 700;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .log-status.success {
+            color: var(--success);
+        }
+
+        .log-status.error {
+            color: var(--error);
+        }
+
+        .log-duration {
+            color: var(--text-tertiary);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* YAML Editor */
+        .yaml-editor {
+            font-family: var(--mono-font);
+            font-size: 13px;
+            line-height: 1.6;
+            width: 100%;
+            min-height: 500px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            resize: vertical;
+            tab-size: 2;
+        }
+
+        .yaml-editor:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 13px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-family: var(--sans-font);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 13px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-family: var(--sans-font);
+            cursor: pointer;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background-color: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+        }
+
+        .alert-error {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        /* Key Display */
+        .key-display {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: var(--mono-font);
+            font-size: 12px;
+            word-break: break-all;
+            position: relative;
+        }
+
+        .key-display code {
+            color: var(--text-primary);
+        }
+
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            font-size: 11px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .copy-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* Documentation Styles */
+        .docs-container {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 32px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .docs-sidebar {
+            position: sticky;
+            top: 84px;
+            height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .docs-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .docs-nav-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            padding: 16px 12px 8px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 4px;
+        }
+
+        .docs-nav-link {
+            display: block;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .docs-nav-link:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .docs-nav-link.active {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .docs-content {
+            min-width: 0;
+        }
+
+        .docs-heading {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .docs-lead {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            line-height: 1.6;
+        }
+
+        .docs-section {
+            margin-bottom: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .docs-section:first-of-type {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .docs-section-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            letter-spacing: -0.3px;
+        }
+
+        .docs-subsection-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 32px;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .docs-text {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .docs-list {
+            list-style: none;
+            padding: 0;
+            margin: 16px 0;
+        }
+
+        .docs-list li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .docs-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--text-tertiary);
+        }
+
+        .docs-code-block {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+
+        .docs-code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            font-family: var(--mono-font);
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .docs-code {
+            padding: 16px;
+            margin: 0;
+            font-family: var(--mono-font);
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: var(--text-primary);
+        }
+
+        .docs-inline-code {
+            font-family: var(--mono-font);
+            font-size: 13px;
+            background-color: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-primary);
+        }
+
+        .docs-copy-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-family: var(--sans-font);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .docs-copy-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .docs-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .docs-step {
+            display: flex;
+            gap: 16px;
+        }
+
+        .docs-step-number {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--accent-primary);
+            color: white;
+            font-family: var(--mono-font);
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .docs-step-content {
+            flex: 1;
+        }
+
+        .docs-step-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .docs-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid var(--border-color);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .docs-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .docs-link {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .docs-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 16px;
+            }
+
+            .main {
+                padding: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav {
+                padding: 0 16px;
+                overflow-x: auto;
+            }
+
+            .nav-item {
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">modeltunnel<span>.dev</span></div>
+        <div class="header-actions">
+            <span class="status-badge online" id="server-status">● online</span>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <button class="nav-item active" data-section="overview">Overview</button>
+        <button class="nav-item" data-section="keys">API Keys</button>
+        <button class="nav-item" data-section="config">Configuration</button>
+        <button class="nav-item" data-section="code">Code Samples</button>
+        <button class="nav-item" data-section="logs">Request Logs</button>
+        <button class="nav-item" data-section="api-tester">API Tester</button>
+        <button class="nav-item" data-section="docs">Documentation</button>
+    </nav>
+
+    <main class="main">
+        <!-- Overview Section -->
+        <section id="overview" class="section active">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Active Keys</div>
+                    <div class="stat-value" id="stat-keys">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total Requests</div>
+                    <div class="stat-value" id="stat-requests">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Upstreams</div>
+                    <div class="stat-value" id="stat-upstreams">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Tunnel Status</div>
+                    <div class="stat-value" id="stat-tunnel">—</div>
+                    <div class="stat-meta" id="tunnel-url"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Connection URLs</div>
+                    <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('local-url')">Copy Local</button>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; gap: 12px;">
+                        <div style="background-color: var(--bg-tertiary); padding: 16px; border-radius: 6px; border: 1px solid var(--border-color);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Local URL</div>
+                                <span class="tag" style="font-size: 10px;">Private</span>
+                            </div>
+                            <div style="font-family: var(--mono-font); font-size: 14px; color: var(--text-primary); word-break: break-all;">
+                                <span id="local-url">http://127.0.0.1:8080/v1</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
+                                Accessible only from this machine
+                            </div>
+                        </div>
+                        <div id="public-url-active" style="background-color: #dcfce7; padding: 16px; border-radius: 6px; border: 1px solid #86efac; display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div style="font-size: 12px; font-weight: 600; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Public URL</div>
+                                <span class="tag tag-success" style="font-size: 10px;">Online</span>
+                            </div>
+                            <div style="font-family: var(--mono-font); font-size: 14px; color: #166534; word-break: break-all;">
+                                <span id="public-url">Not available</span>
+                            </div>
+                            <div style="font-size: 12px; color: #166534; margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; background-color: #16a34a; border-radius: 50%;"></span>
+                                Accessible from anywhere
+                            </div>
+                            <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('public-url')" style="margin-top: 12px; font-size: 11px;">Copy Public URL</button>
+                        </div>
+                        <div id="public-url-inactive" style="background-color: var(--bg-tertiary); padding: 16px; border-radius: 6px; border: 1px solid var(--border-color);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Public URL</div>
+                                <span class="tag" style="font-size: 10px; background-color: #fee2e2; border-color: #fecaca; color: #991b1b;">Offline</span>
+                            </div>
+                            <div style="font-family: var(--mono-font); font-size: 14px; color: var(--text-tertiary);">
+                                Not configured
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
+                                Start with --tunnel flag to enable public access
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Quick Start</div>
+                    <button class="btn btn-sm btn-secondary" onclick="copyConnectionBlock()">Copy All</button>
+                </div>
+                <div class="card-body">
+                    <p class="text-secondary" style="margin-bottom: 16px; font-size: 14px;">
+                        Use these settings to connect your OpenAI-compatible client:
+                    </p>
+                    <div id="connection-block" style="background-color: var(--bg-tertiary); padding: 16px; border-radius: 6px; font-family: var(--mono-font); font-size: 13px; line-height: 1.8;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <span class="text-tertiary">base_url:</span> 
+                            <span id="quickstart-url">http://127.0.0.1:8080/v1</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <span class="text-tertiary">api_key:</span> 
+                            <span id="admin-key-masked" class="text-secondary">••••••••••••••••••</span>
+                            <span id="admin-key-full" style="display: none;"></span>
+                            <button class="btn btn-sm btn-secondary" onclick="toggleKeyVisibility()" style="margin-left: 8px; font-size: 11px; padding: 2px 8px;">
+                                <span id="key-toggle-text">Show</span>
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="copyAdminKey()" style="font-size: 11px; padding: 2px 8px;">Copy</button>
+                        </div>
+                        <div><span class="text-tertiary">model:</span> <span id="default-model">default/model-name</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Server Information</div>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; font-size: 13px;">
+                        <div>
+                            <div class="text-tertiary" style="margin-bottom: 4px;">Version</div>
+                            <div class="mono">v1.0.0</div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary" style="margin-bottom: 4px;">Uptime</div>
+                            <div class="mono" id="server-uptime">—</div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary" style="margin-bottom: 4px;">Dashboard URL</div>
+                            <div class="mono" id="dashboard-url">http://127.0.0.1:8080/admin</div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary" style="margin-bottom: 4px;">Config Path</div>
+                            <div class="mono" style="font-size: 11px;">~/.config/modeltunnel/config.yaml</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Keys Section -->
+        <section id="keys" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">API Keys</div>
+                    <button class="btn btn-primary btn-sm" onclick="openModal()">
+                        <span>+</span> Create Key
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" id="show-all-keys" onchange="toggleAllKeysVisibility()">
+                            <span>Show all keys</span>
+                        </label>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Key</th>
+                                    <th>Policy</th>
+                                    <th>Requests</th>
+                                    <th>Last Used</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="keys-tbody">
+                                <tr>
+                                    <td colspan="7" class="empty-state">
+                                        <div class="empty-state-icon">🔑</div>
+                                        <div>No API keys found</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Config Section -->
+        <section id="config" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Configuration Editor</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary btn-sm" onclick="reloadConfig()">Reload</button>
+                        <button class="btn btn-primary btn-sm" onclick="saveConfig()">Save Changes</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="config-alert" class="alert" style="display: none;"></div>
+                    <p class="text-secondary" style="margin-bottom: 16px; font-size: 13px;">
+                        Edit your modeltunnel configuration YAML directly. Changes are saved to <code class="mono">~/.config/modeltunnel/config.yaml</code>
+                    </p>
+                    <textarea id="yaml-editor" class="yaml-editor" spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Configuration Reference</div>
+                </div>
+                <div class="card-body">
+                    <div style="font-size: 13px; line-height: 1.8;">
+                        <p class="text-secondary" style="margin-bottom: 12px;">Available configuration options:</p>
+                        <table style="font-size: 12px;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%;">Option</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="mono">server.host</code></td>
+                                    <td>Server bind address (default: 127.0.0.1)</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="mono">server.port</code></td>
+                                    <td>Server port (default: 8080)</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="mono">upstreams.*.type</code></td>
+                                    <td>Upstream type: ollama</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="mono">upstreams.*.base_url</code></td>
+                                    <td>Ollama API URL (default: http://127.0.0.1:11434)</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="mono">policies.*.rate_limit</code></td>
+                                    <td>Rate limit: 60/min, 1000/hour, etc.</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="mono">keys.*.allowed_upstreams</code></td>
+                                    <td>List of upstreams this key can access</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Available Models</div>
+                    <button class="btn btn-secondary btn-sm" onclick="refreshModels()">Refresh</button>
+                </div>
+                <div class="card-body">
+                    <p class="text-secondary" style="margin-bottom: 16px; font-size: 13px;">
+                        Models currently available from your Ollama instance.
+                    </p>
+                    <div class="table-container">
+                        <table id="models-table">
+                            <thead>
+                                <tr>
+                                    <th>Model Name</th>
+                                    <th>Size</th>
+                                    <th>Modified</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="models-tbody">
+                                <tr>
+                                    <td colspan="4" class="empty-state">
+                                        <div>Loading models...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Samples Section -->
+        <section id="code" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Python Client</div>
+                    <button class="btn btn-primary btn-sm" onclick="copyPythonCode()">Copy Code</button>
+                </div>
+                <div class="card-body">
+                    <p class="text-secondary" style="margin-bottom: 16px; font-size: 14px;">
+                        Ready-to-use Python code to connect to your modeltunnel instance.
+                    </p>
+                    <div class="docs-code-block">
+                        <div class="docs-code-header">
+                            <span>Python</span>
+                            <span class="text-secondary" style="font-size: 11px;">OpenAI SDK</span>
+                        </div>
+                        <pre class="docs-code" id="python-sample-code">from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://127.0.0.1:8080/v1",
+    api_key="your-api-key-here"
+)
+
+# List available models
+models = client.models.list()
+print(models)
+
+# Chat completion
+response = client.chat.completions.create(
+    model="ollama/mistral:latest",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+
+# Streaming response
+for chunk in client.chat.completions.create(
+    model="ollama/mistral:latest",
+    messages=[{"role": "user", "content": "Tell me a story"}],
+    stream=True
+):
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">cURL Example</div>
+                    <button class="btn btn-primary btn-sm" onclick="copyCurlCode()">Copy Code</button>
+                </div>
+                <div class="card-body">
+                    <div class="docs-code-block">
+                        <div class="docs-code-header">
+                            <span>Terminal</span>
+                        </div>
+                        <pre class="docs-code" id="curl-sample-code">curl http://127.0.0.1:8080/v1/chat/completions \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "ollama/mistral:latest",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">JavaScript / Node.js</div>
+                    <button class="btn btn-primary btn-sm" onclick="copyJsCode()">Copy Code</button>
+                </div>
+                <div class="card-body">
+                    <div class="docs-code-block">
+                        <div class="docs-code-header">
+                            <span>JavaScript</span>
+                            <span class="text-secondary" style="font-size: 11px;">OpenAI SDK</span>
+                        </div>
+                        <pre class="docs-code" id="js-sample-code">import OpenAI from 'openai';
+
+const client = new OpenAI({
+  baseURL: 'http://127.0.0.1:8080/v1',
+  apiKey: 'your-api-key-here'
+});
+
+async function main() {
+  const response = await client.chat.completions.create({
+    model: 'ollama/mistral:latest',
+    messages: [{ role: 'user', content: 'Hello!' }]
+  });
+  
+  console.log(response.choices[0].message.content);
+}
+
+main();</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Logs Section -->
+        <section id="logs" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Request Logs</div>
+                    <button class="btn btn-secondary btn-sm" onclick="clearLogs()">Clear</button>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="logs-container" id="logs-container">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <div>Waiting for requests...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- API Tester Section -->
+        <section id="api-tester" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">API Tester</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span class="text-sm" style="color: var(--text-tertiary);">Test your API endpoints interactively</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- API Key Section -->
+                    <div class="form-group" style="margin-bottom: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: 6px;">
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">API Key</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="api-tester-key-select" style="flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: var(--mono-font); font-size: 13px;">
+                                <option value="">Select an API key...</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="loadApiKeys()">🔄 Refresh</button>
+                        </div>
+                        <div id="api-tester-key-display" style="margin-top: 8px; font-family: var(--mono-font); font-size: 12px; color: var(--text-tertiary); display: none;"></div>
+                    </div>
+
+                    <!-- Endpoint Selection -->
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">Endpoint</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <select id="api-tester-method" style="width: 120px; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-weight: 600;">
+                                <option value="GET">GET</option>
+                                <option value="POST" selected>POST</option>
+                            </select>
+                            <select id="api-tester-endpoint" style="flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px;" onchange="updateEndpointParams()">
+                                <option value="/v1/models">/v1/models - List available models</option>
+                                <option value="/v1/chat/completions" selected>/v1/chat/completions - Create chat completion</option>
+                                <option value="/health">/health - Health check</option>
+                            </select>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-tertiary); margin-top: 5px;">
+                            Base URL: <code id="api-tester-base-url">http://localhost:8080</code>
+                        </div>
+                    </div>
+
+                    <!-- Request Body -->
+                    <div class="form-group" id="api-tester-body-section" style="margin-bottom: 24px;">
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">Request Body (JSON)</label>
+                        <textarea id="api-tester-body" rows="12" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: var(--mono-font); font-size: 13px; resize: vertical;">{
+  "model": "ollama/mistral:latest",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello! How are you?"
+    }
+  ],
+  "stream": false,
+  "temperature": 0.7,
+  "max_tokens": 500
+}</textarea>
+                        <div style="display: flex; gap: 10px; margin-top: 8px;">
+                            <button class="btn btn-secondary btn-sm" onclick="formatJson()">✨ Format JSON</button>
+                            <button class="btn btn-secondary btn-sm" onclick="toggleStream()">🔄 Toggle Stream</button>
+                            <span id="stream-status" style="font-size: 12px; color: var(--text-tertiary); align-self: center;">Stream: OFF</span>
+                        </div>
+                    </div>
+
+                    <!-- Execute Button -->
+                    <div style="margin-bottom: 24px;">
+                        <button class="btn btn-primary" onclick="executeApiRequest()" style="width: 100%; padding: 14px; font-size: 16px; font-weight: 600;">
+                            ▶️ Send Request
+                        </button>
+                    </div>
+
+                    <!-- cURL Example -->
+                    <div style="margin-bottom: 24px; padding: 16px; background: #f8f9fa; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label style="font-weight: 600; font-size: 13px;">cURL Command</label>
+                            <button class="btn btn-secondary btn-sm" onclick="copyCurl()">📋 Copy</button>
+                        </div>
+                        <pre id="api-tester-curl" style="margin: 0; padding: 12px; background: #1a1a1a; color: #4ade80; border-radius: 4px; font-family: var(--mono-font); font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;"></pre>
+                    </div>
+
+                    <!-- Response Section -->
+                    <div id="api-tester-response-section" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <label style="font-weight: 600;">Response</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span id="api-tester-status" style="font-family: var(--mono-font); font-size: 13px; padding: 4px 8px; border-radius: 4px; background: var(--bg-tertiary);"></span>
+                                <span id="api-tester-duration" style="font-size: 13px; color: var(--text-tertiary);"></span>
+                                <button class="btn btn-secondary btn-sm" onclick="clearResponse()">🗑️ Clear</button>
+                            </div>
+                        </div>
+                        <pre id="api-tester-response" style="margin: 0; padding: 16px; background: #1a1a1a; color: #e5e5e5; border-radius: 6px; font-family: var(--mono-font); font-size: 13px; overflow-x: auto; max-height: 500px; overflow-y: auto;"></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+<!-- Documentation Section -->
+        <section id="docs" class="section">
+            <div class="docs-container">
+                <div class="docs-sidebar">
+                    <div class="docs-nav">
+                        <div class="docs-nav-title">Getting Started</div>
+                        <a href="#docs-installation" class="docs-nav-link active">Installation</a>
+                        <a href="#docs-quickstart" class="docs-nav-link">Quick Start</a>
+                        <a href="#docs-configuration" class="docs-nav-link">Configuration</a>
+                        
+                        <div class="docs-nav-title">Platforms</div>
+                        <a href="#docs-macos" class="docs-nav-link">macOS</a>
+                        <a href="#docs-windows" class="docs-nav-link">Windows</a>
+                        <a href="#docs-linux" class="docs-nav-link">Linux</a>
+                        
+                        <div class="docs-nav-title">Usage</div>
+                        <a href="#docs-cli" class="docs-nav-link">CLI Reference</a>
+                        <a href="#docs-dashboard" class="docs-nav-link">Dashboard</a>
+                        <a href="#docs-api" class="docs-nav-link">API Integration</a>
+                        <a href="#docs-connect" class="docs-nav-link">Connect Apps</a>
+                        
+                        <div class="docs-nav-title">Advanced</div>
+                        <a href="#docs-async" class="docs-nav-link">Async Jobs</a>
+                        <a href="#docs-intent" class="docs-nav-link">Intent Routing</a>
+                        <a href="#docs-tunnel" class="docs-nav-link">Public Tunnel</a>
+                        <a href="#docs-security" class="docs-nav-link">Security</a>
+                    </div>
+                </div>
+                
+                <div class="docs-content">
+                    <h1 class="docs-heading">Documentation</h1>
+                    <p class="docs-lead">Complete guide to installing, configuring, and using modeltunnel to expose your local models with an OpenAI-compatible API.</p>
+                    
+                    <section id="docs-installation" class="docs-section">
+                        <h2 class="docs-section-title">Installation</h2>
+                        <p class="docs-text">modeltunnel is distributed as a single binary. Download the latest release for your platform from the releases page, or build from source.</p>
+                        
+                        <h3 class="docs-subsection-title">From Source</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">git clone https://github.com/modeltunnel/modeltunnel.git
+cd modeltunnel
+go build -o modeltunnel ./cmd/modeltunnel</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Prerequisites</h3>
+                        <ul class="docs-list">
+                            <li>Ollama installed and running (or other supported upstream)</li>
+                            <li>Go 1.21+ (if building from source)</li>
+                            <li>Optional: ngrok or localtunnel for public URLs</li>
+                        </ul>
+                    </section>
+                    
+                    <section id="docs-quickstart" class="docs-section">
+                        <h2 class="docs-section-title">Quick Start</h2>
+                        <p class="docs-text">Get up and running in minutes with these simple steps:</p>
+                        
+                        <div class="docs-steps">
+                            <div class="docs-step">
+                                <div class="docs-step-number">1</div>
+                                <div class="docs-step-content">
+                                    <h4>Initialize Configuration</h4>
+                                    <p>Create the default configuration file:</p>
+                                    <div class="docs-code-block">
+                                        <pre class="docs-code">./modeltunnel init</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="docs-step">
+                                <div class="docs-step-number">2</div>
+                                <div class="docs-step-content">
+                                    <h4>Start the Server</h4>
+                                    <p>Launch with Ollama support:</p>
+                                    <div class="docs-code-block">
+                                        <pre class="docs-code">./modeltunnel up --ollama --model mistral</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="docs-step">
+                                <div class="docs-step-number">3</div>
+                                <div class="docs-step-content">
+                                    <h4>Create API Keys</h4>
+                                    <p>Generate keys for your team members:</p>
+                                    <div class="docs-code-block">
+                                        <pre class="docs-code">./modeltunnel key create alice --rate 60/min</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="docs-step">
+                                <div class="docs-step-number">4</div>
+                                <div class="docs-step-content">
+                                    <h4>Connect Your Client</h4>
+                                    <p>Use the dashboard to get connection details, or configure your OpenAI-compatible client with:</p>
+                                    <ul class="docs-list">
+                                        <li>Base URL: <code class="docs-inline-code">http://localhost:8080/v1</code></li>
+                                        <li>API Key: Copy from dashboard or CLI output</li>
+                                        <li>Model: <code class="docs-inline-code">default/model-name</code></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section id="docs-macos" class="docs-section">
+                        <h2 class="docs-section-title">macOS Installation</h2>
+                        
+                        <h3 class="docs-subsection-title">Step 1: Install Ollama</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">brew install ollama
+ollama serve</pre>
+                        </div>
+                        <p class="docs-text">Download a model (e.g., mistral):</p>
+                        <div class="docs-code-block">
+                            <pre class="docs-code">ollama pull llama3</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Step 2: Install modeltunnel</h3>
+                        <div class="docs-code-block">
+                            <pre class="docs-code"># Download latest release
+curl -L https://github.com/modeltunnel/modeltunnel/releases/latest/download/modeltunnel-darwin-amd64 -o modeltunnel
+chmod +x modeltunnel
+
+# Or build from source
+go install github.com/modeltunnel/modeltunnel/cmd/modeltunnel@latest</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Step 3: Configure and Run</h3>
+                        <div class="docs-code-block">
+                            <pre class="docs-code">./modeltunnel init
+./modeltunnel up --ollama --model mistral</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Optional: Public Tunnel with ngrok</h3>
+                        <div class="docs-code-block">
+                            <pre class="docs-code">brew install ngrok
+ngrok http 8080</pre>
+                        </div>
+                    </section>
+                    
+                    <section id="docs-windows" class="docs-section">
+                        <h2 class="docs-section-title">Windows Installation</h2>
+                        
+                        <h3 class="docs-subsection-title">Step 1: Install Ollama</h3>
+                        <p class="docs-text">Download and install Ollama from <a href="https://ollama.com/download/windows" target="_blank" class="docs-link">ollama.com/download/windows</a></p>
+                        <p class="docs-text">Open PowerShell as Administrator and start Ollama:</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>PowerShell</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">ollama serve</pre>
+                        </div>
+                        <p class="docs-text">In a new PowerShell window, download a model:</p>
+                        <div class="docs-code-block">
+                            <pre class="docs-code">ollama pull llama3</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Step 2: Install modeltunnel</h3>
+                        <p class="docs-text">Download the Windows binary from the releases page, or use PowerShell:</p>
+                        <div class="docs-code-block">
+                            <pre class="docs-code"># Download (requires PowerShell 5.0+)
+Invoke-WebRequest -Uri "https://github.com/modeltunnel/modeltunnel/releases/latest/download/modeltunnel-windows-amd64.exe" -OutFile "modeltunnel.exe"
+
+# Or build from source (requires Go)
+go install github.com/modeltunnel/modeltunnel/cmd/modeltunnel@latest</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Step 3: Configure and Run</h3>
+                        <div class="docs-code-block">
+                            <pre class="docs-code"># Initialize config
+.\modeltunnel.exe init
+
+# Start server
+.\modeltunnel.exe up --ollama --model mistral</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Optional: Public Tunnel</h3>
+                        <p class="docs-text">Download ngrok from <a href="https://ngrok.com/download" target="_blank" class="docs-link">ngrok.com</a> and run:</p>
+                        <div class="docs-code-block">
+                            <pre class="docs-code">ngrok.exe http 8080</pre>
+                        </div>
+                    </section>
+                    
+                    <section id="docs-linux" class="docs-section">
+                        <h2 class="docs-section-title">Linux Installation</h2>
+                        
+                        <h3 class="docs-subsection-title">Step 1: Install Ollama</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">curl -fsSL https://ollama.com/install.sh | sh
+ollama serve</pre>
+                        </div>
+                        <div class="docs-code-block">
+                            <pre class="docs-code">ollama pull llama3</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Step 2: Install modeltunnel</h3>
+                        <div class="docs-code-block">
+                            <pre class="docs-code"># Download binary
+curl -L https://github.com/modeltunnel/modeltunnel/releases/latest/download/modeltunnel-linux-amd64 -o modeltunnel
+chmod +x modeltunnel
+sudo mv modeltunnel /usr/local/bin/
+
+# Or build from source
+go install github.com/modeltunnel/modeltunnel/cmd/modeltunnel@latest</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Step 3: Configure and Run</h3>
+                        <div class="docs-code-block">
+                            <pre class="docs-code">modeltunnel init
+modeltunnel up --ollama --model mistral</pre>
+                        </div>
+                    </section>
+                    
+                    <section id="docs-configuration" class="docs-section">
+                        <h2 class="docs-section-title">Configuration</h2>
+                        <p class="docs-text">modeltunnel uses a YAML configuration file located at <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code></p>
+                        
+                        <h3 class="docs-subsection-title">Example Configuration</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>YAML</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">server:
+  host: 127.0.0.1
+  port: 8080
+
+upstreams:
+  default:
+    type: ollama
+    base_url: http://127.0.0.1:11434
+    model: mistral
+
+policies:
+  default:
+    rate_limit: 60/min
+    max_tokens: 4096
+  student-policy:
+    rate_limit: 60/min        # default for all models
+    max_tokens: 4096
+    models:                   # model-specific overrides
+      mistral:
+        rate_limit: 5/min     # stricter limit for expensive model
+        max_tokens: 2048
+      phi:
+        rate_limit: 100/min   # generous limit for fast model
+        max_tokens: 1024
+      tinyllama:*:            # wildcard matching
+        rate_limit: 200/min
+
+keys:
+  - name: alice
+    key: mt_sk_alice_xxx...
+    allowed_upstreams: ["default"]
+    policy: student-policy</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Per-Model Rate Limiting</h3>
+                        <p class="docs-text">You can configure different rate limits and token limits for each model. This is useful when you want to restrict access to expensive models while allowing more usage of smaller, faster models.</p>
+                        
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Model-Specific Configuration</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">policies:
+  student-policy:
+    rate_limit: 60/min        # default for all models
+    max_tokens: 4096
+    models:
+      # Exact model name match
+      mistral:
+        rate_limit: 5/min
+        max_tokens: 2048
+      
+      # Base name match (matches mistral:latest, mistral:7b, etc.)
+      phi:
+        rate_limit: 100/min
+        max_tokens: 1024
+      
+      # Wildcard match (matches tinyllama:latest, tinyllama:1.1b, etc.)
+      tinyllama:*:
+        rate_limit: 200/min</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Configuration Options</h3>
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Option</th>
+                                    <th>Description</th>
+                                    <th>Default</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="docs-inline-code">server.host</code></td>
+                                    <td>Server bind address</td>
+                                    <td>127.0.0.1</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">server.port</code></td>
+                                    <td>Server port</td>
+                                    <td>8080</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">upstreams.*.type</code></td>
+                                    <td>Upstream type (ollama)</td>
+                                    <td>required</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">policies.*.rate_limit</code></td>
+                                    <td>Default rate limit (requests/time)</td>
+                                    <td>60/min</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">policies.*.models.*.rate_limit</code></td>
+                                    <td>Per-model rate limit</td>
+                                    <td>inherits from parent</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">policies.*.models.*.max_tokens</code></td>
+                                    <td>Per-model max tokens</td>
+                                    <td>inherits from parent</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">keys.*.allowed_upstreams</code></td>
+                                    <td>Upstreams this key can access</td>
+                                    <td>[] (all)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+                    
+                    <section id="docs-cli" class="docs-section">
+                        <h2 class="docs-section-title">CLI Reference</h2>
+                        
+                        <h3 class="docs-subsection-title">Commands</h3>
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Command</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="docs-inline-code">init</code></td>
+                                    <td>Initialize configuration file</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">up</code></td>
+                                    <td>Start the server</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">key create [name]</code></td>
+                                    <td>Create a new API key</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">key list</code></td>
+                                    <td>List all API keys</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">key revoke [name]</code></td>
+                                    <td>Revoke an API key</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <h3 class="docs-subsection-title">Key Management Examples</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>CLI Examples</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># Create a key with default settings
+modeltunnel key create alice
+
+# Create a key with custom rate limit
+modeltunnel key create bob --rate 100/min
+
+# Create a key with specific model access
+modeltunnel key create student --models mistral,phi,tinyllama
+
+# List all keys
+modeltunnel key list
+
+# Revoke a key
+modeltunnel key revoke alice</pre>
+                        </div>
+                        
+                        <div class="docs-info-box">
+                            <strong>💾 Key Persistence:</strong> All keys are automatically persisted to a SQLite database at <code class="docs-inline-code">~/.config/modeltunnel/keys.db</code>. Keys survive server restarts and are immediately available when the server starts.
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Flags</h3>
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Flag</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="docs-inline-code">--ollama</code></td>
+                                    <td>Use Ollama upstream</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">--model [name]</code></td>
+                                    <td>Specify model name</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">--port [number]</code></td>
+                                    <td>Server port</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">--tunnel</code></td>
+                                    <td>Create public tunnel</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">--subdomain [name]</code></td>
+                                    <td>Custom subdomain for tunnel</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">--rate [limit]</code></td>
+                                    <td>Rate limit for key (e.g., 60/min, 100/hour)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div class="docs-info-box">
+                            <strong>📝 Note:</strong> When creating keys with <code class="docs-inline-code">--rate</code>, a custom policy is automatically created for that key. For more granular control (per-model limits), edit the configuration file directly.
+                        </div>
+                    </section>
+                    
+                    <section id="docs-dashboard" class="docs-section">
+                        <h2 class="docs-section-title">Dashboard</h2>
+                        <p class="docs-text">The web dashboard provides a visual interface for managing your modeltunnel instance. Access it at <code class="docs-inline-code">http://localhost:8080/admin</code> (or your configured host:port).</p>
+                        
+                        <h3 class="docs-subsection-title">Features</h3>
+                        <ul class="docs-list">
+                            <li><strong>Overview:</strong> View connection URLs, server status, and quick start guide</li>
+                            <li><strong>API Keys:</strong> Create, view, and revoke API keys with visibility controls</li>
+                            <li><strong>Configuration:</strong> Edit YAML configuration directly in the browser with validation</li>
+                            <li><strong>Request Logs:</strong> Monitor API requests in real-time via WebSocket</li>
+                            <li><strong>Documentation:</strong> Access this documentation page</li>
+                        </ul>
+                        
+                        <h3 class="docs-subsection-title">Hot Reload</h3>
+                        <p class="docs-text">The dashboard supports hot-reloading configuration changes. When you edit the YAML configuration and save, changes are applied immediately without restarting the server.</p>
+                    </section>
+                    
+                    <section id="docs-api" class="docs-section">
+                        <h2 class="docs-section-title">API Integration</h2>
+                        <p class="docs-text">modeltunnel provides an OpenAI-compatible API, making it compatible with any client that supports the OpenAI API format.</p>
+                        
+                        <h3 class="docs-subsection-title">Model Naming Convention</h3>
+                        <p class="docs-text">Models are referenced using the format <code class="docs-inline-code">upstream/model:tag</code>. For example:</p>
+                        
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Model Names</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># Full format with upstream, model, and tag
+ollama/mistral:latest
+ollama/phi:latest
+ollama/tinyllama:latest
+ollama/qwen2.5:latest
+ollama/deepseek-r1:latest
+
+# Without tag (uses latest)
+ollama/mistral
+ollama/phi
+
+# With specific version
+ollama/mistral:7b
+ollama/phi:2.7b</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Python Example</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Python</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:8080/v1",
+    api_key="your-api-key-here"
+)
+
+# Using mistral (expensive model - may have strict rate limits)
+response = client.chat.completions.create(
+    model="ollama/mistral:latest",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)
+
+# Using phi (faster model - may have generous rate limits)
+response = client.chat.completions.create(
+    model="ollama/phi:latest",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">cURL Example</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>cURL</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># Chat with mistral
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "ollama/mistral:latest",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+
+# Chat with phi
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "ollama/phi:latest",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Per-Model Rate Limiting</h3>
+                        <p class="docs-text">When per-model rate limits are configured, you'll receive different rate limit headers depending on which model you use. If you exceed the limit for a specific model, you'll get a 429 error.</p>
+                        
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Rate Limit Headers</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># Example response headers for mistral (5/min limit)
+X-RateLimit-Limit: 5
+X-RateLimit-Remaining: 3
+X-RateLimit-Reset: 1770655818
+
+# Example response headers for phi (100/min limit)
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1770655818</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Endpoints</h3>
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Endpoint</th>
+                                    <th>Method</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="docs-inline-code">/v1/models</code></td>
+                                    <td>GET</td>
+                                    <td>List available models</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">/v1/chat/completions</code></td>
+                                    <td>POST</td>
+                                    <td>Chat completions (streaming supported)</td>
+                                </tr>
+                                    <td><code class="docs-inline-code">/health</code></td>
+                                    <td>GET</td>
+                                    <td>Health check</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+                    
+                    <section id="docs-tunnel" class="docs-section">
+                        <h2 class="docs-section-title">Public Tunnel</h2>
+                        <p class="docs-text">To expose your modeltunnel instance publicly, you need a tunnel service like ngrok or localtunnel.</p>
+                        
+                        <h3 class="docs-subsection-title">Using ngrok</h3>
+                        <div class="docs-code-block">
+                            <pre class="docs-code"># Install ngrok
+brew install ngrok  # macOS
+# or download from ngrok.com for Windows
+
+# Run tunnel
+ngrok http 8080</pre>
+                        </div>
+                        <p class="docs-text">ngrok will provide a public URL (e.g., <code class="docs-inline-code">https://abc123.ngrok.io</code>). Use this as your base URL in client configurations.</p>
+                        
+                        <h3 class="docs-subsection-title">Using localtunnel</h3>
+                        <div class="docs-code-block">
+                            <pre class="docs-code"># Install
+npm install -g localtunnel
+
+# Run tunnel
+lt --port 8080</pre>
+                        </div>
+                    </section>
+                    
+                    <section id="docs-security" class="docs-section">
+                        <h2 class="docs-section-title">Security</h2>
+                        
+                        <h3 class="docs-subsection-title">API Key Management</h3>
+                        <ul class="docs-list">
+                            <li>Keys are stored in the configuration file with restricted permissions (0600)</li>
+                            <li>Each key can be limited to specific upstreams</li>
+                            <li>Rate limiting prevents abuse</li>
+                            <li>Usage tracking shows request counts and last used timestamps</li>
+                        </ul>
+                        
+                        <h3 class="docs-subsection-title">Best Practices</h3>
+                        <ul class="docs-list">
+                            <li>Use strong, unique key names</li>
+                            <li>Set appropriate rate limits per key</li>
+                            <li>Regularly review and revoke unused keys</li>
+                            <li>Keep the configuration file secure</li>
+                            <li>Use tunnels with HTTPS for public access</li>
+                        </ul>
+                        
+                        <h3 class="docs-subsection-title">Dashboard Access</h3>
+                        <p class="docs-text">The dashboard is accessible without authentication for convenience in local development. For production deployments, consider adding authentication or restricting access to localhost only.</p>
+                    </section>
+                    
+                    <section id="docs-async" class="docs-section">
+                        <h2 class="docs-section-title">Async Jobs</h2>
+                        <p class="docs-text">Modeltunnel supports asynchronous model requests. Submit a job and get a <code class="docs-inline-code">job_id</code> immediately, then poll for results later. Perfect for long-running requests, batch processing, or when you don't want to block the client.</p>
+                        
+                        <h3 class="docs-subsection-title">When to Use Async</h3>
+                        <ul class="docs-list">
+                            <li><strong>Long-Running Requests:</strong> Tasks that take more than 10 seconds</li>
+                            <li><strong>Batch Processing:</strong> Process multiple items without blocking</li>
+                            <li><strong>Unreliable Networks:</strong> Client may disconnect, job continues</li>
+                            <li><strong>Background Tasks:</strong> Generate reports, summaries, analysis</li>
+                            <li><strong>High Latency Tolerance:</strong> User doesn't need immediate response</li>
+                        </ul>
+                        
+                        <h3 class="docs-subsection-title">Submit Async Job</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>cURL</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">curl -X POST http://localhost:8080/v1/async \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "ollama/phi:latest",
+    "messages": [{"role": "user", "content": "Write a story"}],
+    "max_tokens": 500
+  }'</pre>
+                        </div>
+                        
+                        <p class="docs-text"><strong>Response:</strong></p>
+                        <div class="docs-code-block">
+                            <pre class="docs-code">{
+  "job_id": "job_1770736516577382000",
+  "status": "queued"
+}</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Check Job Status</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>cURL</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">curl http://localhost:8080/v1/jobs/job_1770736516577382000 \
+  -H "Authorization: Bearer YOUR_API_KEY"</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Python Example with Polling</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Python</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">import requests
+import time
+
+API_KEY = "mt_sk_user_abc123"
+BASE_URL = "http://localhost:8080"
+
+# Submit async job
+response = requests.post(
+    f"{BASE_URL}/v1/async",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    json={
+        "model": "ollama/phi:latest",
+        "messages": [{"role": "user", "content": "Hello"}]
+    }
+)
+job_id = response.json()["job_id"]
+
+# Poll for completion
+while True:
+    status = requests.get(
+        f"{BASE_URL}/v1/jobs/{job_id}",
+        headers={"Authorization": f"Bearer {API_KEY}"}
+    ).json()
+    
+    if status["status"] == "completed":
+        print("Result:", status["result"]["choices"][0]["message"]["content"])
+        break
+    elif status["status"] == "failed":
+        print("Error:", status["error"])
+        break
+    
+    time.sleep(1)</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Job Status Values</h3>
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="docs-inline-code">queued</code></td>
+                                    <td>Job is waiting in queue</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">running</code></td>
+                                    <td>Job is being processed</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">completed</code></td>
+                                    <td>Job finished successfully (result available)</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">failed</code></td>
+                                    <td>Job failed (error message available)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div class="docs-info-box">
+                            <strong>⚡ Implementation Details:</strong>
+                            <ul class="docs-list" style="margin-top: 8px;">
+                                <li>In-memory queue (1000 jobs max)</li>
+                                <li>3 concurrent workers</li>
+                                <li>120 second timeout per job</li>
+                                <li>Jobs lost on server restart</li>
+                            </ul>
+                        </div>
+                    </section>
+                    
+                    <section id="docs-intent" class="docs-section">
+                        <h2 class="docs-section-title">Intent-Based Model Routing</h2>
+                        <p class="docs-text">Modeltunnel's intent-based routing automatically selects the best model for your task. Instead of manually choosing models, send an <code class="docs-inline-code">X-Model-Intent</code> header and let the system optimize for your use case.</p>
+                        
+                        <h3 class="docs-subsection-title">Configure Intents (Optional)</h3>
+                        <p class="docs-text">Customize intent routing by editing your <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code> file:</p>
+                        
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>YAML</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">intents:
+  plan:
+    priority:
+      - deepseek-r1:latest
+      - qwen2.5:latest
+      - mistral:latest
+    temperature: 0.3
+    max_tokens: 4000
+    description: "Planning, strategy, reasoning"
+  
+  code:
+    priority:
+      - qwen2.5:latest
+      - mistral:latest
+      - phi:latest
+    temperature: 0.2
+    max_tokens: 2000
+    description: "Programming, debugging, technical"
+  
+  chat:
+    priority:
+      - phi:latest
+      - tinyllama:latest
+      - mistral:latest
+    temperature: 0.7
+    max_tokens: 1000
+    description: "General chat, Q&A, support"</pre>
+                        </div>
+                        
+                        <p class="docs-text"><strong>Note:</strong> If no <code class="docs-inline-code">intents</code> section is defined in your config, default intents are used automatically.</p>
+                        
+                        <h3 class="docs-subsection-title">Available Intents</h3>
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Intent</th>
+                                    <th>Best For</th>
+                                    <th>Routes To</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="docs-inline-code">plan</code></td>
+                                    <td>Strategy, architecture, reasoning</td>
+                                    <td>deepseek-r1 → qwen2.5 → mistral</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">code</code></td>
+                                    <td>Programming, debugging, technical</td>
+                                    <td>qwen2.5 → mistral → phi</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">chat</code></td>
+                                    <td>Conversation, Q&A, support</td>
+                                    <td>phi → tinyllama → mistral</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <h3 class="docs-subsection-title">Basic Usage</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>cURL</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># Planning/Reasoning → routes to deepseek-r1
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "X-Model-Intent: plan" \
+  -d '{
+    "model": "auto",
+    "messages": [{"role": "user", "content": "Design a microservices architecture"}]
+  }'
+
+# Coding → routes to qwen2.5
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "X-Model-Intent: code" \
+  -d '{
+    "model": "auto",
+    "messages": [{"role": "user", "content": "Write a Python function"}]
+  }'
+
+# Chat → routes to phi (fast)
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "X-Model-Intent: chat" \
+  -d '{
+    "model": "auto",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Python Example</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Python</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:8080/v1",
+    api_key="mt_sk_user_abc123"
+)
+
+# Planning task - routes to deepseek-r1
+response = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "Create a project roadmap"}],
+    extra_headers={"X-Model-Intent": "plan"}
+)
+
+# Coding task - routes to qwen2.5
+response = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "Debug this function"}],
+    extra_headers={"X-Model-Intent": "code"}
+)
+
+# Chat task - routes to phi (fast)
+response = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "Hello!"}],
+    extra_headers={"X-Model-Intent": "chat"}
+)</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Response Headers</h3>
+                        <p class="docs-text">The response includes headers showing which model was selected:</p>
+                        <div class="docs-code-block">
+                            <pre class="docs-code">X-Routed-Model: deepseek-r1:latest
+X-Model-Intent: plan</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Intent Parameters</h3>
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Intent</th>
+                                    <th>Temperature</th>
+                                    <th>Max Tokens</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="docs-inline-code">plan</code></td>
+                                    <td>0.3 (focused)</td>
+                                    <td>4000</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">code</code></td>
+                                    <td>0.2 (precise)</td>
+                                    <td>2000</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">chat</code></td>
+                                    <td>0.7 (creative)</td>
+                                    <td>1000</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div class="docs-info-box">
+                            <strong>💡 How It Works:</strong>
+                            <ol class="docs-list" style="margin-top: 8px;">
+                                <li>System reads the <code class="docs-inline-code">X-Model-Intent</code> header</li>
+                                <li>Chooses best available model for that intent from priority list</li>
+                                <li>Applies intent-specific temperature and max_tokens</li>
+                                <li>If preferred model unavailable, falls back to next best option</li>
+                            </ol>
+                        </div>
+                    </section>
+
+                    <section id="docs-connect" class="docs-section">
+                        <h2 class="docs-section-title">Connect External Apps</h2>
+                        <p class="docs-text">Connect OpenCode, Cursor, Continue.dev, and other OpenAI-compatible apps to your local Ollama models.</p>
+                        
+                        <h3 class="docs-subsection-title">Quick Setup (5 Minutes)</h3>
+                        
+                        <div class="docs-steps">
+                            <div class="docs-step">
+                                <div class="docs-step-number">1</div>
+                                <div class="docs-step-content">
+                                    <h4>Start Modeltunnel with Public Tunnel</h4>
+                                    <div class="docs-code-block">
+                                        <pre class="docs-code">./build/modeltunnel up --ollama --model mistral --tunnel</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="docs-step">
+                                <div class="docs-step-number">2</div>
+                                <div class="docs-step-content">
+                                    <h4>Create API Key for OpenCode</h4>
+                                    <div class="docs-code-block">
+                                        <pre class="docs-code">./build/modeltunnel key create opencode --models mistral --rate 100/min</pre>
+                                    </div>
+                                    <p style="margin-top: 8px; font-size: 13px; color: var(--text-tertiary);">Copy the key - you'll need it for OpenCode</p>
+                                </div>
+                            </div>
+                            
+                            <div class="docs-step">
+                                <div class="docs-step-number">3</div>
+                                <div class="docs-step-content">
+                                    <h4>Configure OpenCode</h4>
+                                    <p><strong>Find Settings:</strong></p>
+                                    <ul class="docs-list" style="font-size: 13px;">
+                                        <li>OpenCode Settings → <strong>Providers</strong> → <strong>Add Custom Provider</strong></li>
+                                        <li>Or: <strong>Model Settings</strong> → <strong>Custom Providers</strong></li>
+                                    </ul>
+                                    <p style="margin-top: 12px;"><strong>Fill In These Fields:</strong></p>
+                                    <table class="docs-table" style="font-size: 13px;">
+                                        <thead>
+                                            <tr>
+                                                <th>Field</th>
+                                                <th>Value to Enter</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><code class="docs-inline-code">Provider ID</code></td>
+                                                <td><code class="docs-inline-code">modeltunnel</code></td>
+                                            </tr>
+                                            <tr>
+                                                <td><code class="docs-inline-code">Display name</code></td>
+                                                <td><code class="docs-inline-code">Local Mistral</code></td>
+                                            </tr>
+                                            <tr>
+                                                <td><code class="docs-inline-code">Base URL</code></td>
+                                                <td><code class="docs-inline-code">https://your-url.loca.lt/v1</code></td>
+                                            </tr>
+                                            <tr>
+                                                <td><code class="docs-inline-code">API key</code></td>
+                                                <td><code class="docs-inline-code">mt_sk_opencode_xxxxxxxxxxxxx</code></td>
+                                            </tr>
+                                            <tr>
+                                                <td><code class="docs-inline-code">Models → ID</code></td>
+                                                <td><code class="docs-inline-code">ollama/mistral:latest</code></td>
+                                            </tr>
+                                            <tr>
+                                                <td><code class="docs-inline-code">Models → Name</code></td>
+                                                <td><code class="docs-inline-code">Mistral (Local)</code></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Test the Connection</h3>
+                        <p class="docs-text">In OpenCode, type a simple message like "Hi from OpenCode!" or "Are you working?" - you should get a response from your local Mistral model!</p>
+                        
+                        <h3 class="docs-subsection-title">Local Only (Same Machine)</h3>
+                        <p class="docs-text">If OpenCode is on the same machine, you don't need the tunnel:</p>
+                        <div class="docs-code-block">
+                            <pre class="docs-code"># Start without tunnel
+./build/modeltunnel up --ollama --model mistral
+
+# Use this Base URL in OpenCode:
+http://localhost:8080/v1</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Troubleshooting</h3>
+                        <table class="docs-table" style="font-size: 13px;">
+                            <thead>
+                                <tr>
+                                    <th>Error</th>
+                                    <th>Solution</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="docs-inline-code">Invalid request body</code></td>
+                                    <td>Check message format, try simple text first</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">Unauthorized</code></td>
+                                    <td>Verify API key is correct</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">Rate limit exceeded</code></td>
+                                    <td>Wait a few seconds, or create key with higher limit</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">Tunnel not accessible</code></td>
+                                    <td>Restart tunnel, check if URL changed</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <h3 class="docs-subsection-title">Other Apps</h3>
+                        <p class="docs-text">The same setup works for:</p>
+                        <ul class="docs-list">
+                            <li><strong>Cursor:</strong> Settings → AI → Add Custom Provider</li>
+                            <li><strong>Continue.dev:</strong> Settings → Models → Add Custom</li>
+                            <li><strong>Claude Desktop:</strong> Settings → API Keys → Custom Provider</li>
+                            <li><strong>Aider:</strong> Add to <code>.env</code> file</li>
+                        </ul>
+                        
+                        <h3 class="docs-subsection-title">Optional: Intent Routing via Headers</h3>
+                        <p class="docs-text">Add this header in OpenCode for smart model selection:</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Header</span>
+                            </div>
+                            <pre class="docs-code">X-Model-Intent: plan  (or 'code' or 'chat')</pre>
+                        </div>
+                        
+                        <div class="docs-info-box">
+                            <strong>ℹ️ Security Note:</strong>
+                            <ul class="docs-list" style="margin-top: 8px; font-size: 13px;">
+                                <li>Create separate keys for each app</li>
+                                <li>Use rate limits to protect your machine</li>
+                                <li>Revoke unused keys: <code class="docs-inline-code">./build/modeltunnel key revoke opencode</code></li>
+                                <li>Local access is more secure than public tunnel</li>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Create Key Modal -->
+    <div class="modal-overlay" id="create-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Create New API Key</div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="create-form">
+                    <div class="form-group">
+                        <label class="form-label">Key Name</label>
+                        <input type="text" id="key-name" class="form-input" placeholder="e.g., alice" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rate Limit</label>
+                        <select id="key-rate" class="form-select">
+                            <option value="60/min">60/min</option>
+                            <option value="120/min">120/min</option>
+                            <option value="1000/hour">1000/hour</option>
+                            <option value="unlimited">Unlimited</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Allowed Upstreams (comma-separated, empty = all)</label>
+                        <input type="text" id="key-upstreams" class="form-input" placeholder="e.g., default, production">
+                    </div>
+                </form>
+                <div id="new-key-result" style="display: none; margin-top: 16px;">
+                    <div class="alert alert-success">
+                        <span>✓</span> Key created successfully!
+                    </div>
+                    <div class="key-display" style="margin-top: 12px;">
+                        <code id="new-key-value"></code>
+                        <button class="copy-btn" onclick="copyKey()">Copy</button>
+                    </div>
+                    <p class="text-tertiary" style="font-size: 12px; margin-top: 8px;">
+                        Copy this key now — you won't see it again!
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer" id="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createKey()">Create Key</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let ws = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                
+                item.classList.add('active');
+                document.getElementById(item.dataset.section).classList.add('active');
+            });
+        });
+
+        // Load data
+        async function loadData() {
+            try {
+                const response = await fetch('/admin/api/keys');
+                const data = await response.json();
+                
+                updateStats(data.stats);
+                updateKeysTable(data.keys);
+                
+                // Update admin key in overview
+                if (data.keys && data.keys.length > 0) {
+                    const firstKey = data.keys[0].key;
+                    document.getElementById('admin-key-full').textContent = firstKey;
+                    // Also update code samples with the new key
+                    updateCodeSamples();
+                }
+            } catch (error) {
+                console.error('Failed to load data:', error);
+            }
+        }
+
+        // Load tunnel status
+        async function loadTunnelStatus() {
+            try {
+                const response = await fetch('/admin/api/tunnel');
+                const data = await response.json();
+                
+                const tunnelStat = document.getElementById('stat-tunnel');
+                const tunnelUrl = document.getElementById('tunnel-url');
+                
+                if (data.connected) {
+                    tunnelStat.textContent = '●';
+                    tunnelStat.style.color = 'var(--success)';
+                    tunnelUrl.textContent = data.url;
+                    // Update quickstart URL to use public URL
+                    updateQuickstartUrl(data.url);
+                } else {
+                    tunnelStat.textContent = '—';
+                    tunnelStat.style.color = 'var(--text-tertiary)';
+                    tunnelUrl.textContent = 'Not configured';
+                    // Reset to local URL
+                    updateQuickstartUrl(null);
+                }
+            } catch (error) {
+                console.error('Failed to load tunnel status:', error);
+            }
+        }
+
+        // Update stats
+        function updateStats(stats) {
+            document.getElementById('stat-keys').textContent = stats.active_keys;
+            document.getElementById('stat-requests').textContent = stats.total_requests.toLocaleString();
+            document.getElementById('stat-upstreams').textContent = stats.upstreams;
+        }
+
+        // Key visibility state
+        let keyVisibilityState = {};
+        let adminKeyVisible = false;
+
+        // Toggle admin key visibility
+        function toggleKeyVisibility() {
+            adminKeyVisible = !adminKeyVisible;
+            const masked = document.getElementById('admin-key-masked');
+            const full = document.getElementById('admin-key-full');
+            const btn = document.getElementById('key-toggle-text');
+            
+            if (adminKeyVisible) {
+                masked.style.display = 'none';
+                full.style.display = 'inline';
+                btn.textContent = 'Hide';
+            } else {
+                masked.style.display = 'inline';
+                full.style.display = 'none';
+                btn.textContent = 'Show';
+            }
+        }
+
+        // Toggle individual key visibility
+        function toggleKeyVisibilityFor(keyId) {
+            keyVisibilityState[keyId] = !keyVisibilityState[keyId];
+            const masked = document.getElementById(`key-masked-${keyId}`);
+            const full = document.getElementById(`key-full-${keyId}`);
+            const btn = document.getElementById(`key-btn-${keyId}`);
+            
+            if (keyVisibilityState[keyId]) {
+                masked.style.display = 'none';
+                full.style.display = 'inline';
+                btn.textContent = 'Hide';
+            } else {
+                masked.style.display = 'inline';
+                full.style.display = 'none';
+                btn.textContent = 'Show';
+            }
+        }
+
+        // Toggle all keys visibility
+        function toggleAllKeysVisibility() {
+            const showAll = document.getElementById('show-all-keys').checked;
+            // Update all individual toggles
+            document.querySelectorAll('[id^="key-btn-"]').forEach(btn => {
+                const keyId = btn.id.replace('key-btn-', '');
+                keyVisibilityState[keyId] = showAll;
+                const masked = document.getElementById(`key-masked-${keyId}`);
+                const full = document.getElementById(`key-full-${keyId}`);
+                
+                if (masked && full) {
+                    if (showAll) {
+                        masked.style.display = 'none';
+                        full.style.display = 'inline';
+                        btn.textContent = 'Hide';
+                    } else {
+                        masked.style.display = 'inline';
+                        full.style.display = 'none';
+                        btn.textContent = 'Show';
+                    }
+                }
+            });
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent || element.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                // Show temporary feedback
+                const originalText = event.target.textContent;
+                event.target.textContent = 'Copied!';
+                setTimeout(() => {
+                    event.target.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Copy key by ID (for table rows)
+        function copyKeyById(keyId) {
+            const fullKeyElement = document.getElementById(`key-full-${keyId}`);
+            const text = fullKeyElement.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // Find the button that triggered this
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Copy admin key specifically
+        function copyAdminKey() {
+            const fullKey = document.getElementById('admin-key-full').textContent;
+            if (!fullKey) return;
+            
+            navigator.clipboard.writeText(fullKey).then(() => {
+                // Find the button and show feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Copy entire connection block
+        function copyConnectionBlock() {
+            const baseUrl = document.getElementById('quickstart-url').textContent;
+            const apiKey = document.getElementById('admin-key-full').textContent || 'your-api-key';
+            const model = document.getElementById('default-model').textContent;
+            
+            const block = `base_url: ${baseUrl}
+api_key: ${apiKey}
+model: ${model}`;
+            
+            navigator.clipboard.writeText(block).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Update quickstart URL based on tunnel status
+        function updateQuickstartUrl(tunnelUrl) {
+            const quickstartUrl = document.getElementById('quickstart-url');
+            const publicUrlActive = document.getElementById('public-url-active');
+            const publicUrlInactive = document.getElementById('public-url-inactive');
+            const publicUrl = document.getElementById('public-url');
+            const localUrl = document.getElementById('local-url');
+            
+            if (tunnelUrl && tunnelUrl !== 'Not available') {
+                // Has public tunnel - show active state
+                quickstartUrl.textContent = tunnelUrl + '/v1';
+                publicUrl.textContent = tunnelUrl + '/v1';
+                publicUrlActive.style.display = 'block';
+                publicUrlInactive.style.display = 'none';
+            } else {
+                // No tunnel - use local URL and show inactive state
+                const localUrlText = localUrl.textContent;
+                quickstartUrl.textContent = localUrlText;
+                publicUrlActive.style.display = 'none';
+                publicUrlInactive.style.display = 'block';
+            }
+        }
+
+        // Calculate server uptime
+        let serverStartTime = Date.now();
+        function updateUptime() {
+            const now = Date.now();
+            const diff = now - serverStartTime;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            
+            let uptimeText;
+            if (hours > 0) {
+                uptimeText = `${hours}h ${minutes % 60}m`;
+            } else if (minutes > 0) {
+                uptimeText = `${minutes}m ${seconds % 60}s`;
+            } else {
+                uptimeText = `${seconds}s`;
+            }
+            
+            const uptimeEl = document.getElementById('server-uptime');
+            if (uptimeEl) {
+                uptimeEl.textContent = uptimeText;
+            }
+        }
+
+        // Update keys table
+        function updateKeysTable(keys) {
+            const tbody = document.getElementById('keys-tbody');
+            
+            if (keys.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <div class="empty-state-icon">🔑</div>
+                            <div>No API keys found</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = keys.map((key, index) => {
+                const lastUsed = key.last_used_at 
+                    ? new Date(key.last_used_at).toLocaleDateString()
+                    : 'Never';
+                const lastUsedTime = key.last_used_at
+                    ? new Date(key.last_used_at).toLocaleTimeString()
+                    : '';
+                const keyId = `key-${index}`;
+                
+                // Format allowed upstreams
+                const upstreams = key.allowed_upstreams && key.allowed_upstreams.length > 0
+                    ? key.allowed_upstreams.join(', ')
+                    : 'All';
+                
+                return `
+                    <tr>
+                        <td>
+                            <strong>${key.name}</strong>
+                            <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 2px;">
+                                ${upstreams !== 'All' ? `<span class="tag" style="font-size: 10px; padding: 1px 4px;">${upstreams}</span>` : 'All upstreams'}
+                            </div>
+                        </td>
+                        <td class="mono">
+                            <span id="key-masked-${keyId}" style="font-family: var(--mono-font);">••••••••••••••••••••••••••</span>
+                            <span id="key-full-${keyId}" style="display: none; font-family: var(--mono-font); word-break: break-all; font-size: 11px;">${key.key}</span>
+                        </td>
+                        <td><span class="tag">${key.policy}</span></td>
+                        <td>${key.request_count.toLocaleString()}</td>
+                        <td class="text-secondary" title="${lastUsedTime}">${lastUsed}</td>
+                        <td><span class="tag tag-success">active</span></td>
+                        <td style="text-align: right;">
+                            <button id="key-btn-${keyId}" class="btn btn-sm btn-secondary" onclick="toggleKeyVisibilityFor('${keyId}')" style="margin-right: 6px; font-size: 11px; padding: 4px 10px;">Show</button>
+                            <button class="btn btn-sm btn-secondary" onclick="copyKeyById('${keyId}')" style="margin-right: 6px; font-size: 11px; padding: 4px 10px;">Copy</button>
+                            <button class="btn btn-danger btn-sm" onclick="revokeKey('${key.name}')" style="font-size: 11px; padding: 4px 10px;">Revoke</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Load configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch('/admin/api/config');
+                const data = await response.json();
+                document.getElementById('yaml-editor').value = data.config;
+                
+                // Update local URL in overview
+                if (data.server_port) {
+                    document.getElementById('local-url').textContent = 
+                        `http://${data.server_host || '127.0.0.1'}:${data.server_port}/v1`;
+                }
+            } catch (error) {
+                console.error('Failed to load config:', error);
+                showAlert('Failed to load configuration', 'error');
+            }
+        }
+
+        // Save configuration
+        async function saveConfig() {
+            const config = document.getElementById('yaml-editor').value;
+            
+            try {
+                const response = await fetch('/admin/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
+                });
+                
+                if (response.ok) {
+                    showAlert('Configuration saved successfully. Changes will be applied automatically.', 'success');
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'Failed to save configuration', 'error');
+                }
+            } catch (error) {
+                showAlert('Failed to save configuration: ' + error.message, 'error');
+            }
+        }
+
+        // Reload configuration
+        async function reloadConfig() {
+            await loadConfig();
+            showAlert('Configuration reloaded from file', 'success');
+        }
+
+        // Show alert
+        function showAlert(message, type) {
+            const alert = document.getElementById('config-alert');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `<span>${type === 'success' ? '✓' : '✗'}</span> ${message}`;
+            alert.style.display = 'flex';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Modal functions
+        function openModal() {
+            document.getElementById('create-modal').classList.add('active');
+            document.getElementById('new-key-result').style.display = 'none';
+            document.getElementById('modal-footer').style.display = 'flex';
+            document.getElementById('create-form').reset();
+        }
+
+        function closeModal() {
+            document.getElementById('create-modal').classList.remove('active');
+        }
+
+        // Create key
+        async function createKey() {
+            const name = document.getElementById('key-name').value;
+            if (!name) {
+                alert('Please enter a key name');
+                return;
+            }
+            
+            const rateLimit = document.getElementById('key-rate').value;
+            const upstreams = document.getElementById('key-upstreams').value
+                .split(',')
+                .map(u => u.trim())
+                .filter(u => u);
+            
+            try {
+                const response = await fetch('/admin/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name,
+                        rate_limit: rateLimit,
+                        allowed_upstreams: upstreams
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('new-key-value').textContent = data.key;
+                    document.getElementById('new-key-result').style.display = 'block';
+                    document.getElementById('modal-footer').style.display = 'none';
+                    loadData();
+                } else {
+                    alert(data.error || 'Failed to create key');
+                }
+            } catch (error) {
+                alert('Failed to create key: ' + error.message);
+            }
+        }
+
+        // Revoke key
+        async function revokeKey(name) {
+            if (!confirm(`Are you sure you want to revoke the key "${name}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/api/keys/${name}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadData();
+                } else {
+                    alert('Failed to revoke key');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Copy key
+        function copyKey() {
+            const key = document.getElementById('new-key-value').textContent;
+            navigator.clipboard.writeText(key).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+
+        // Load available models from Ollama
+        async function loadModels() {
+            try {
+                const response = await fetch('/admin/api/models');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch models');
+                }
+                
+                const data = await response.json();
+                updateModelsTable(data.data || []);
+            } catch (error) {
+                console.error('Failed to load models:', error);
+                document.getElementById('models-tbody').innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <div>Failed to load models. Is Ollama running?</div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Refresh models list
+        function refreshModels() {
+            document.getElementById('models-tbody').innerHTML = `
+                <tr>
+                    <td colspan="4" class="empty-state">
+                        <div>Loading models...</div>
+                    </td>
+                </tr>
+            `;
+            loadModels();
+        }
+
+        // Update models table
+        function updateModelsTable(models) {
+            const tbody = document.getElementById('models-tbody');
+            
+            if (models.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <div>No models found. Run <code>ollama pull mistral</code> to download a model.</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = models.map(model => {
+                const modelId = model.id || model.name || 'unknown';
+                // Format size to human readable
+                let size = '-';
+                if (model.size && model.size > 0) {
+                    const bytes = model.size;
+                    if (bytes >= 1073741824) {
+                        size = (bytes / 1073741824).toFixed(1) + ' GB';
+                    } else if (bytes >= 1048576) {
+                        size = (bytes / 1048576).toFixed(1) + ' MB';
+                    } else if (bytes >= 1024) {
+                        size = (bytes / 1024).toFixed(1) + ' KB';
+                    } else {
+                        size = bytes + ' B';
+                    }
+                }
+                // Format modified date
+                let modified = '-';
+                if (model.modified_at) {
+                    const date = new Date(model.modified_at);
+                    modified = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+                
+                return `
+                    <tr>
+                        <td class="mono">${modelId}</td>
+                        <td>${size}</td>
+                        <td>${modified}</td>
+                        <td style="text-align: right;">
+                            <button class="btn btn-sm btn-secondary" onclick="copyText('${modelId}')" style="font-size: 11px; padding: 4px 10px;">Copy Name</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Copy text to clipboard
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Copy Python code sample
+        function copyPythonCode() {
+            const code = document.getElementById('python-sample-code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Copy cURL code sample
+        function copyCurlCode() {
+            const code = document.getElementById('curl-sample-code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Copy JavaScript code sample
+        function copyJsCode() {
+            const code = document.getElementById('js-sample-code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Update code samples with current connection info
+        function updateCodeSamples() {
+            const baseUrl = document.getElementById('quickstart-url').textContent || 'http://127.0.0.1:8080/v1';
+            const apiKey = document.getElementById('admin-key-full').textContent || 'your-api-key';
+            const model = 'ollama/mistral:latest';
+            
+            // Update Python sample
+            const pythonCode = `from openai import OpenAI
+
+client = OpenAI(
+    base_url="${baseUrl}",
+    api_key="${apiKey}"
+)
+
+# List available models
+models = client.models.list()
+print(models)
+
+# Chat completion
+response = client.chat.completions.create(
+    model="${model}",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+
+# Streaming response
+for chunk in client.chat.completions.create(
+    model="${model}",
+    messages=[{"role": "user", "content": "Tell me a story"}],
+    stream=True
+):
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")`;
+            
+            document.getElementById('python-sample-code').textContent = pythonCode;
+            
+            // Update cURL sample
+            const curlCode = `curl ${baseUrl}/chat/completions \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "${model}",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'`;
+            
+            document.getElementById('curl-sample-code').textContent = curlCode;
+            
+            // Update JavaScript sample
+            const jsCode = `import OpenAI from 'openai';
+
+const client = new OpenAI({
+  baseURL: '${baseUrl}',
+  apiKey: '${apiKey}'
+});
+
+async function main() {
+  const response = await client.chat.completions.create({
+    model: '${model}',
+    messages: [{ role: 'user', content: 'Hello!' }]
+  });
+  
+  console.log(response.choices[0].message.content);
+}
+
+main();`;
+            
+            document.getElementById('js-sample-code').textContent = jsCode;
+        }
+
+        // WebSocket for logs
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = protocol + '//' + window.location.host + '/admin/api/logs';
+            
+            console.log('Connecting to WebSocket:', wsUrl);
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('WebSocket connected successfully');
+                reconnectAttempts = 0;
+            };
+            
+            ws.onmessage = (event) => {
+                console.log('WebSocket message received:', event.data);
+                try {
+                    const log = JSON.parse(event.data);
+                    addLogEntry(log);
+                } catch (e) {
+                    console.error('Failed to parse log entry:', e);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+            
+            ws.onclose = (event) => {
+                console.log('WebSocket closed:', event.code, event.reason);
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    console.log(`Reconnecting in 3s... (attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                    setTimeout(connectWebSocket, 3000);
+                }
+            };
+        }
+
+        // Add log entry
+        function addLogEntry(log) {
+            const container = document.getElementById('logs-container');
+            
+            // Remove empty state if present
+            if (container.querySelector('.empty-state')) {
+                container.innerHTML = '';
+            }
+            
+            const statusClass = log.status >= 200 && log.status < 300 ? 'success' : 'error';
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <span class="log-time">${log.time}</span>
+                <span class="log-method">${log.method}</span>
+                <span class="log-path">${log.path}</span>
+                <span class="log-status ${statusClass}">${log.status}</span>
+                <span class="log-duration">${log.duration}</span>
+            `;
+            
+            container.insertBefore(entry, container.firstChild);
+            
+            while (container.children.length > 100) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // Clear logs
+        function clearLogs() {
+            document.getElementById('logs-container').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <div>Waiting for requests...</div>
+                </div>
+            `;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            loadTunnelStatus();
+            loadConfig();
+            loadModels();
+            connectWebSocket();
+            
+            // Start uptime counter
+            updateUptime();
+            setInterval(updateUptime, 1000);
+            
+            setInterval(loadData, 10000);
+            setInterval(loadTunnelStatus, 10000);
+            
+            // Update code samples after data loads
+            setTimeout(updateCodeSamples, 1000);
+        });
+
+        // Close modal on overlay click
+        document.getElementById('create-modal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeModal();
+            }
+        });
+
+        // Documentation copy function
+        function copyCode(button) {
+            const codeBlock = button.closest('.docs-code-block').querySelector('.docs-code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Documentation smooth scrolling and active link highlighting
+        document.querySelectorAll('.docs-nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                
+                if (targetSection) {
+                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Update active link
+                    document.querySelectorAll('.docs-nav-link').forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Intersection Observer for docs sections
+        const observerOptions = {
+            root: null,
+            rootMargin: '-20% 0px -80% 0px',
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    document.querySelectorAll('.docs-nav-link').forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+
+        // Observe all documentation sections
+        document.querySelectorAll('.docs-section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Mobile responsive styles for docs
+        const mobileStyles = `
+            @media (max-width: 768px) {
+                .docs-container {
+                    grid-template-columns: 1fr;
+                }
+                .docs-sidebar {
+                    display: none;
+                }
+            }
+        `;
+        
+        // API Tester Functions
+        let apiTesterStreamEnabled = false;
+        let apiTesterAbortController = null;
+
+        async function loadApiKeys() {
+            try {
+                const response = await fetch('/admin/api/keys');
+                const data = await response.json();
+                const select = document.getElementById('api-tester-key-select');
+                
+                // Save current selection
+                const currentValue = select.value;
+                
+                select.innerHTML = '<option value="">Select an API key...</option>';
+                
+                // Handle different response formats
+                const keys = data.keys || data;
+                
+                keys.forEach(key => {
+                    const option = document.createElement('option');
+                    option.value = key.key;
+                    option.textContent = `${key.name} (${key.key.substring(0, 20)}...)`;
+                    select.appendChild(option);
+                });
+                
+                // Restore selection if still valid
+                if (currentValue && Array.from(select.options).some(o => o.value === currentValue)) {
+                    select.value = currentValue;
+                    showKeyDisplay(currentValue);
+                }
+            } catch (error) {
+                console.error('Failed to load API keys:', error);
+            }
+        }
+
+        function showKeyDisplay(key) {
+            const display = document.getElementById('api-tester-key-display');
+            display.textContent = `Using: ${key.substring(0, 30)}...`;
+            display.style.display = 'block';
+            updateCurlCommand();
+        }
+
+        document.getElementById('api-tester-key-select').addEventListener('change', function() {
+            if (this.value) {
+                showKeyDisplay(this.value);
+            } else {
+                document.getElementById('api-tester-key-display').style.display = 'none';
+            }
+        });
+
+        function updateEndpointParams() {
+            const endpoint = document.getElementById('api-tester-endpoint').value;
+            const bodySection = document.getElementById('api-tester-body-section');
+            const methodSelect = document.getElementById('api-tester-method');
+            const bodyTextarea = document.getElementById('api-tester-body');
+            
+            if (endpoint === '/v1/models' || endpoint === '/health') {
+                methodSelect.value = 'GET';
+                bodySection.style.display = 'none';
+            } else if (endpoint === '/v1/chat/completions') {
+                methodSelect.value = 'POST';
+                bodySection.style.display = 'block';
+                bodyTextarea.value = JSON.stringify({
+                    model: "ollama/mistral:latest",
+                    messages: [{role: "user", content: "Hello! How are you?"}],
+                    stream: apiTesterStreamEnabled,
+                    temperature: 0.7,
+                    max_tokens: 500
+                }, null, 2);
+            }
+            updateCurlCommand();
+        }
+
+        function formatJson() {
+            const textarea = document.getElementById('api-tester-body');
+            try {
+                const parsed = JSON.parse(textarea.value);
+                textarea.value = JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                alert('Invalid JSON: ' + e.message);
+            }
+        }
+
+        function toggleStream() {
+            apiTesterStreamEnabled = !apiTesterStreamEnabled;
+            document.getElementById('stream-status').textContent = 'Stream: ' + (apiTesterStreamEnabled ? 'ON' : 'OFF');
+            
+            // Update body if chat completions
+            const endpoint = document.getElementById('api-tester-endpoint').value;
+            if (endpoint === '/v1/chat/completions') {
+                const bodyTextarea = document.getElementById('api-tester-body');
+                try {
+                    const body = JSON.parse(bodyTextarea.value);
+                    body.stream = apiTesterStreamEnabled;
+                    bodyTextarea.value = JSON.stringify(body, null, 2);
+                } catch (e) {}
+            }
+            updateCurlCommand();
+        }
+
+        function updateCurlCommand() {
+            const method = document.getElementById('api-tester-method').value;
+            const endpoint = document.getElementById('api-tester-endpoint').value;
+            const key = document.getElementById('api-tester-key-select').value;
+            const body = document.getElementById('api-tester-body').value;
+            const baseUrl = window.location.origin;
+            
+            let curl = `curl -X ${method} "${baseUrl}${endpoint}"`;
+            
+            if (key) {
+                curl += ` \\\n  -H "Authorization: Bearer ${key}"`;
+            }
+            
+            if (method === 'POST' && body) {
+                curl += ` \\\n  -H "Content-Type: application/json" \\\n  -d '${body.replace(/'/g, "'\\''")}'`;
+            }
+            
+            document.getElementById('api-tester-curl').textContent = curl;
+        }
+
+        function copyCurl() {
+            const curl = document.getElementById('api-tester-curl').textContent;
+            navigator.clipboard.writeText(curl).then(() => {
+                const btn = event.target;
+                const original = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => btn.textContent = original, 2000);
+            });
+        }
+
+        async function executeApiRequest() {
+            const method = document.getElementById('api-tester-method').value;
+            const endpoint = document.getElementById('api-tester-endpoint').value;
+            const key = document.getElementById('api-tester-key-select').value;
+            const body = document.getElementById('api-tester-body').value;
+            const responseSection = document.getElementById('api-tester-response-section');
+            const responseEl = document.getElementById('api-tester-response');
+            const statusEl = document.getElementById('api-tester-status');
+            const durationEl = document.getElementById('api-tester-duration');
+            
+            if (!key) {
+                alert('Please select an API key first');
+                return;
+            }
+            
+            // Cancel any ongoing request
+            if (apiTesterAbortController) {
+                apiTesterAbortController.abort();
+            }
+            apiTesterAbortController = new AbortController();
+            
+            const startTime = performance.now();
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${key}`
+                    },
+                    signal: apiTesterAbortController.signal
+                };
+                
+                if (method === 'POST' && body) {
+                    options.headers['Content-Type'] = 'application/json';
+                    options.body = body;
+                }
+                
+                responseSection.style.display = 'block';
+                responseEl.textContent = apiTesterStreamEnabled ? 'Streaming response...\n\n' : 'Loading...';
+                statusEl.textContent = '⏳ Sending...';
+                statusEl.style.background = '#fef3c7';
+                statusEl.style.color = '#92400e';
+                
+                const response = await fetch(endpoint, options);
+                const duration = (performance.now() - startTime).toFixed(0);
+                
+                statusEl.textContent = `${response.status} ${response.statusText}`;
+                if (response.ok) {
+                    statusEl.style.background = '#dcfce7';
+                    statusEl.style.color = '#166534';
+                } else {
+                    statusEl.style.background = '#fee2e2';
+                    statusEl.style.color = '#991b1b';
+                }
+                durationEl.textContent = `${duration}ms`;
+                
+                if (apiTesterStreamEnabled && endpoint === '/v1/chat/completions') {
+                    // Handle streaming response
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let fullText = '';
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value, { stream: true });
+                        fullText += chunk;
+                        
+                        // Parse SSE format
+                        const lines = fullText.split('\n');
+                        let displayText = '';
+                        lines.forEach(line => {
+                            if (line.startsWith('data: ')) {
+                                const data = line.substring(6);
+                                if (data === '[DONE]') {
+                                    displayText += '\n[DONE]';
+                                } else {
+                                    try {
+                                        const parsed = JSON.parse(data);
+                                        if (parsed.choices && parsed.choices[0].delta && parsed.choices[0].delta.content) {
+                                            displayText += parsed.choices[0].delta.content;
+                                        }
+                                    } catch (e) {
+                                        displayText += data + '\n';
+                                    }
+                                }
+                            }
+                        });
+                        
+                        responseEl.textContent = `Response time: ${duration}ms\n\n${displayText}`;
+                    }
+                } else {
+                    const data = await response.text();
+                    try {
+                        const jsonData = JSON.parse(data);
+                        responseEl.textContent = JSON.stringify(jsonData, null, 2);
+                    } catch {
+                        responseEl.textContent = data;
+                    }
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    responseEl.textContent = 'Request cancelled';
+                } else {
+                    statusEl.textContent = '❌ Error';
+                    statusEl.style.background = '#fee2e2';
+                    statusEl.style.color = '#991b1b';
+                    responseEl.textContent = `Error: ${error.message}`;
+                }
+            }
+        }
+
+        function clearResponse() {
+            document.getElementById('api-tester-response-section').style.display = 'none';
+            document.getElementById('api-tester-response').textContent = '';
+            if (apiTesterAbortController) {
+                apiTesterAbortController.abort();
+            }
+        }
+
+        // Initialize API tester
+        document.addEventListener('DOMContentLoaded', () => {
+            loadApiKeys();
+            updateCurlCommand();
+            
+            // Update cURL when inputs change
+            document.getElementById('api-tester-method').addEventListener('change', updateCurlCommand);
+            document.getElementById('api-tester-endpoint').addEventListener('change', updateCurlCommand);
+            document.getElementById('api-tester-body').addEventListener('input', updateCurlCommand);
+        });
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = mobileStyles;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>

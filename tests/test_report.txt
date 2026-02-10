@@ -1,0 +1,11 @@
+Modeltunnel Test Report
+Generated: Tue Feb 10 14:15:04 GMT 2026
+===============================================
+
+
+=== Main Integration Tests ===
+Traceback (most recent call last):
+  File "/Users/stelios/Desktop/share-model/tests/run_all_tests.py", line 15, in <module>
+    import requests
+ModuleNotFoundError: No module named 'requests'
+Status: FAILED
