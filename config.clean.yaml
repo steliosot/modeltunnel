@@ -1,0 +1,62 @@
+server:
+  host: 127.0.0.1
+  port: 8080
+
+upstreams:
+  default:
+    type: ollama
+    base_url: http://127.0.0.1:11434
+    model: mistral
+
+policies:
+  default:
+    rate_limit: 60/min
+    max_tokens: 4096
+  
+  student-policy:
+    rate_limit: 60/min
+    max_tokens: 4096
+    models:
+      mistral:
+        rate_limit: 5/min
+        max_tokens: 2048
+      phi:
+        rate_limit: 100/min
+        max_tokens: 4096
+      tinyllama:*:
+        rate_limit: 200/min
+
+intents:
+  plan:
+    priority:
+      - deepseek-r1:latest
+      - qwen2.5:latest
+      - mistral
+    temperature: 0.3
+    max_tokens: 4000
+    description: "Planning, strategy, reasoning"
+  
+  code:
+    priority:
+      - deepseek-coder:6.7b
+      - qwen2.5
+      - codellama:7b
+      - mistral
+    temperature: 0.2
+    max_tokens: 2000
+    description: "Programming, debugging, technical"
+  
+  chat:
+    priority:
+      - phi
+      - mistral
+    temperature: 0.7
+    max_tokens: 1000
+    description: "General chat, Q&A, support"
+
+keys:
+  - name: opencode-key
+    key: mt_sk_opencode-key_72fa412fdad6893e3d48e8013e63b9d0caf559f74f84a1cbb8153e8613d8b99f
+    allowed_upstreams:
+      - default
+    policy: default

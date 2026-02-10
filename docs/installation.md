@@ -251,6 +251,61 @@ curl http://localhost:8080/v1/chat/completions \
 
 ---
 
+## Web Dashboard Model Management
+
+After installation, Modeltunnel provides a web dashboard for pulling models directly from Ollama without using the command line.
+
+### Pulling Models from Dashboard
+
+1. **Access Dashboard**
+   ```
+   http://localhost:8080/admin
+   ```
+
+2. **Navigate to Models Section**
+   Click on the "Models" tab in the navigation menu
+
+3. **Pull New Models**
+   
+   **Option 1: Pull from Input Field**
+   - Fill in the pull input field with the model name (e.g., `llama3.2:3b`)
+   - Click the "Pull" button
+   - Watch the progress indicator
+   - Model appears in "Installed Models" list when complete
+
+   **Option 2: Pull from Recommended Models**
+   - Browse the "Recommended Models" section with categories:
+     - **General Purpose** - `llama3.2:3b`, `mistral:7b`, `phi4`
+     - **Coding** - `codellama:7b`, `deepseek-coder:6.7b`
+     - **Vision** - `llava:7b`, `bakllava:7b`
+     - **Reasoning** - `deepseek-r1:8b`
+   - Click "Pull" to download
+
+4. **View Model Badges**
+   After installation, each model displays configuration badges:
+   - **Intents** - Yellow badges showing which intents use the model (e.g., "plan", "code", "chat")
+   - **Rate Limits** - Blue badges with custom limits (e.g., "5/min", "100/min")
+   - **Max Tokens** - Token limits (e.g., "2048 tokens", "4096 tokens")
+
+### Remove Models from Dashboard
+
+In the "Installed Models" list:
+- Click the "Remove" button next to any model
+- Confirm the deletion when prompted
+- Model is permanently removed from your Ollama instance
+
+### Pull Progress Feedback
+
+While pulling models:
+- Button shows real-time progress: `45%`, `85%`, etc.
+- Visual spinner animation during download
+- Checkmark ✓ appears when complete
+- Error messages display if pull fails
+
+Note: Pull progress tracks download of model files; larger models take longer to download.
+
+---
+
 ## Troubleshooting
 
 ### Command not found

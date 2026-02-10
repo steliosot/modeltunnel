@@ -142,6 +142,48 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
+---
+
+### Pull Models from Dashboard
+
+Simplify model management by using the web dashboard instead of command line.
+
+1. **Access the Dashboard**
+   ```
+   http://localhost:8080/admin
+   ```
+
+2. Navigate to the **Models** section in the navigation menu
+
+3. **Pull New Models**
+   
+   **Option A: Pull from Input Field**
+   ```
+   Enter model name: llama3.2:3b, mistral, phi
+   Click the Pull button
+   Watch progress indicator: 45%, 65%, ...
+   ```
+   
+   **Option B: Pull from Recommended Models**
+   Choose from curated categories:
+   - **General Purpose:** `llama3.2:3b`, `mistral:7b`, `phi4`
+   - **Coding:** `codellama:7b`, `deepseek-coder:6.7b`
+   - **Vision:** `llava:7b`, `bakllava:7b`
+   - **Reasoning:** `deepseek-r1:8b`
+   
+   Click **Pull** on any model to download
+
+4. **View Configuration Badges**
+   Models display their role in the config:
+   - **Intent Badges (Yellow)** - Which intents use the model (plan, code, chat)
+   - **Rate Limits (Blue)** - Custom limits per model (e.g., `5/min`, `100/min`)
+   - **Max Tokens** - Token limits (e.g., `2048 tokens`, `4096`)
+
+5. **Remove Models**
+   Click **Remove** next to any installed model to delete it from Ollama
+
+---
+
 ## Advanced Features
 
 ### Async Jobs
