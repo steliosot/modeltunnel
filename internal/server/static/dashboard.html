@@ -1458,7 +1458,100 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                         <h2 class="docs-section-title">Docker</h2>
                         <p class="docs-text">Run modeltunnel in a container for easy deployment and isolation.</p>
                         
-                        <h3 class="docs-subsection-title">Pull Pre-Built Image (Recommended)</h3>
+                        <h3 class="docs-subsection-title">Using Docker Compose (Recommended)</h3>
+                        <p class="docs-text">Docker Compose provides Modeltunnel with an integrated Ollama backend and persistent model storage. This is the easiest way to get started.</p>
+                        
+                        <h4 class="docs-subsection-title">Quick Start</h4>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">git clone https://github.com/steliosot/modeltunnel.git
+cd modeltunnel
+docker-compose up -d</pre>
+                        </div>
+                        
+                        <p class="docs-text">This starts:</p>
+                        <ul class="docs-list">
+                            <li><strong>Ollama</strong> on port 11434 (for model storage and execution)</li>
+                            <li><strong>Modeltunnel</strong> on port 8080 (API and dashboard)</li>
+                        </ul>
+                        
+                        <h4 class="docs-subsection-title">Access Dashboard and Pull Models</h4>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># Open dashboard
+open http://localhost:8080/admin
+
+# Pull models via web UI
+# Dashboard shows:
+# - Pull input field for custom models
+# - Recommended models by category
+# - Real-time pull progress</pre>
+                        </div>
+                        
+                        <h4 class="docs-subsection-title">Pull Models from Command Line</h4>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># Pull phi model
+docker exec modeltunnel-ollama ollama pull phi
+
+# Pull deepseek models
+docker exec modeltunnel-ollama ollama pull deepseek-r1
+docker exec modeltunnel-ollama ollama pull deepseek-coder:6.7b
+
+# Test with pulled model
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_KEY" \
+  -d '{"model": "ollama/phi:latest", "messages": [{"role": "user", "content": "Hello!"}]}'</pre>
+                        </div>
+                        
+                        <h4 class="docs-subsection-title">Model Persistence</h4>
+                        <p class="docs-text">Models persist in the <code class="docs-inline-code">ollama_data</code> volume across container restarts. No need to re-download models after restarting.</p>
+                        
+                        <h4 class="docs-subsection-title">Common Commands</h4>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># View logs
+docker-compose logs -f modeltunnel
+docker-compose logs -f ollama
+
+# Stop containers
+docker-compose down
+
+# Stop and remove volumes (deletes models)
+docker-compose down -v
+
+# Restart services
+docker-compose restart modeltunnel</pre>
+                        </div>
+                        
+                        <h4 class="docs-subsection-title">Test API</h4>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># Get key from container
+KEY=$(docker exec modeltunnel-app ./modeltunnel key list | grep "API Key:" | cut -d: -f2 | xargs)
+
+# Test with pulled model
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer $KEY" \
+  -d '{"model": "ollama/phi:latest", "messages": [{"role": "user", "content": "Hello!"}]}'</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Pull Pre-Built Image (Standalone)</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
