@@ -188,10 +188,10 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 	s.mux.HandleFunc("/admin/api/logs", s.handleAdminLogs)
 	s.mux.HandleFunc("/admin/api/tunnel", s.handleAdminTunnel)
 	s.mux.HandleFunc("/admin/api/config", s.handleAdminConfig)
-	s.mux.HandleFunc("/admin/api/models", s.handleAdminModels)
 	s.mux.HandleFunc("/admin/api/models/pull", s.handleAdminModelsPull)
 	s.mux.HandleFunc("/admin/api/models/pull/", s.handleAdminModelsPullProgress)
 	s.mux.HandleFunc("/admin/api/models/", s.handleAdminModelsDelete)
+	s.mux.HandleFunc("/admin/api/models", s.handleAdminModels)
 
 	// Setup rate limiter
 	if policy, ok := cfg.Policies["default"]; ok {
