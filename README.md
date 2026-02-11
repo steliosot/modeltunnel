@@ -203,6 +203,31 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
+### 5. Use Intent-Based Routing (Smart Model Selection)
+
+Instead of manually choosing models, let Modeltunnel pick the best one for your task:
+
+```python
+# Automatically routes to the best model for coding
+response = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "Write a Python function to sort a list"}],
+    extra_headers={"X-Model-Intent": "code"}
+)
+
+# Routes to reasoning model for planning
+response = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "Design a microservices architecture"}],
+    extra_headers={"X-Model-Intent": "plan"}
+)
+```
+
+**Available Intents:**
+- `plan` → deepseek-r1 (reasoning, strategy, architecture)
+- `code` → qwen2.5 (programming, debugging, technical tasks)
+- `chat` → phi (fast conversation, Q&A)
+
 ---
 
 ### Pull Models from Dashboard

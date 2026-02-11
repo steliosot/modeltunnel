@@ -1225,7 +1225,20 @@ for chunk in client.chat.completions.create(
     stream=True
 ):
     if chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end="")</pre>
+        print(chunk.choices[0].delta.content, end="")
+
+# Intent-based routing (automatically selects best model)
+# Use "auto" model with X-Model-Intent header
+response = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "Write a Python function to sort a list"}],
+    extra_headers={"X-Model-Intent": "code"}  # Routes to code-optimized model
+)
+
+# Available intents: plan, code, chat
+# plan → deepseek-r1 (reasoning, strategy)
+# code → qwen2.5 (programming, debugging)  
+# chat → phi (fast conversation)</pre>
                     </div>
                 </div>
             </div>
@@ -1246,7 +1259,20 @@ for chunk in client.chat.completions.create(
   -d '{
     "model": "ollama/mistral:latest",
     "messages": [{"role": "user", "content": "Hello!"}]
-  }'</pre>
+  }'
+
+# Intent-based routing (auto-selects best model for your task)
+# Use "auto" model with X-Model-Intent header
+curl http://127.0.0.1:8080/v1/chat/completions \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -H "X-Model-Intent: code" \
+  -d '{
+    "model": "auto",
+    "messages": [{"role": "user", "content": "Write a Python function"}]
+  }'
+
+# Available intents: plan (reasoning), code (programming), chat (conversation)</pre>
                     </div>
                 </div>
             </div>
@@ -1277,6 +1303,23 @@ async function main() {
   
   console.log(response.choices[0].message.content);
 }
+
+// Intent-based routing (automatically selects best model)
+// Use "auto" model with X-Model-Intent header
+async function codeTask() {
+  const response = await client.chat.completions.create({
+    model: 'auto',
+    messages: [{ role: 'user', content: 'Write a Python function' }],
+    headers: { 'X-Model-Intent': 'code' }  // Routes to code-optimized model
+  });
+  
+  console.log(response.choices[0].message.content);
+}
+
+// Available intents: plan, code, chat
+// plan → deepseek-r1 (reasoning, strategy)
+// code → qwen2.5 (programming, debugging)
+// chat → phi (fast conversation)
 
 main();</pre>
                     </div>
@@ -2506,6 +2549,41 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": "Hello!"}],
     extra_headers={"X-Model-Intent": "chat"}
 )</pre>
+                        </div>
+
+                        <h3 class="docs-subsection-title">JavaScript/Node.js Example</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>JavaScript</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">import OpenAI from 'openai';
+
+const client = new OpenAI({
+    baseURL: 'http://localhost:8080/v1',
+    api_key: 'mt_sk_user_abc123'
+});
+
+// Planning task - routes to deepseek-r1
+const planResponse = await client.chat.completions.create({
+    model: 'auto',
+    messages: [{ role: 'user', content: 'Design a system architecture' }],
+    headers: { 'X-Model-Intent': 'plan' }
+});
+
+// Coding task - routes to qwen2.5
+const codeResponse = await client.chat.completions.create({
+    model: 'auto',
+    messages: [{ role: 'user', content: 'Write a function' }],
+    headers: { 'X-Model-Intent': 'code' }
+});
+
+// Chat task - routes to phi
+const chatResponse = await client.chat.completions.create({
+    model: 'auto',
+    messages: [{ role: 'user', content: 'Hello!' }],
+    headers: { 'X-Model-Intent': 'chat' }
+});</pre>
                         </div>
                         
                         <h3 class="docs-subsection-title">Response Headers</h3>
