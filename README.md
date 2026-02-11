@@ -80,6 +80,68 @@ docker run -d -p 8080:8080 \
   ghcr.io/steliosot/modeltunnel:latest up
 ```
 
+#### Using Docker Compose (Recommended with Ollama)
+
+Docker Compose provides Modeltunnel with integrated Ollama backend and persistent model storage.
+
+```bash
+# Clone repository
+git clone https://github.com/steliosot/modeltunnel.git
+cd modeltunnel
+
+# Start both services (Ollama + Modeltunnel)
+docker-compose up -d
+
+# Access dashboard
+open http://localhost:8080/admin
+
+# Pull models via web UI
+# Dashboard shows:
+# - Pull input field
+# - Recommended models by category  
+# - Real-time progress
+# - Model badges (intents, rate limits, tokens)
+```
+
+**Pull Models:**
+
+```bash
+# Via dashboard (web UI) - recommended
+# Pull deepseek-r1, deepseek-coder, etc.
+
+# Via command line
+docker exec -it modeltunnel-ollama ollama pull deepseek-r1
+docker exec -it modeltunnel-ollama ollama pull phi
+```
+
+**Test API:**
+
+```bash
+# Get key from container
+KEY=$(docker exec modeltunnel-app ./modeltunnel key list --format json | jq -r '.[0].key')
+
+# Test with deepseek-r1
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer $KEY" \
+  -d '{"model": "ollama/deepseek-r1:latest", "messages": [{"role": "user", "content": "Hello!"}]}'
+```
+
+**Persistence & Logs:**
+
+```bash
+# View logs
+docker-compose logs -f modeltunnel
+docker-compose logs -f ollama
+
+# Stop containers
+docker-compose down
+
+# Stop and remove volumes (deletes models)
+docker-compose down -v
+```
+
+Models persist in `ollama_data` volume across restarts.
+
 #### Building from Source
 
 ```bash
@@ -100,7 +162,6 @@ Docker image size: ~45MB
 **Volumes:**
 - `/home/appuser/.config/modeltunnel/config.yaml` - Custom configuration
 - `/home/appuser/.config/modeltunnel/keys.db` - SQLite database for keys
-```
 
 ## Quick Start
 

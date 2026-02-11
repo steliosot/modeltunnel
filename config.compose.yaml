@@ -1,0 +1,15 @@
+# Docker Compose configuration for Modeltunnel
+# This is the default config used when running with docker-compose
+server:
+  host: 0.0.0.0
+  port: 8080
+
+upstreams:
+  default:
+    type: ollama
+    base_url: http://ollama:11434
+
+policies:
+  default:
+    rate_limit: 60/min
+    max_tokens: 4096

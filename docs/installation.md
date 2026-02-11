@@ -149,6 +149,90 @@ Docker image size: ~45MB
 - `/home/appuser/.config/modeltunnel/config.yaml` - Custom configuration
 - `/home/appuser/.config/modeltunnel/keys.db` - SQLite database for keys
 
+### Using Docker Compose (Recommended)
+
+Docker Compose provides Modeltunnel with an integrated Ollama backend and persistent model storage.
+
+**Quick Start:**
+
+```bash
+# Clone repository
+git clone https://github.com/steliosot/modeltunnel.git
+cd modeltunnel
+
+# Start both services
+docker-compose up -d
+```
+
+This starts:
+- **Ollama** on port 11434 (for model storage and execution)
+- **Modeltunnel** on port 8080 (API and dashboard)
+
+**Access Dashboard and Pull Models:**
+
+```bash
+# Open dashboard
+open http://localhost:8080/admin
+
+# Pull models via web UI or API
+# Dashboard shows:
+# - Pull input field for custom models
+# - Recommended models by category
+# - Real-time pull progress
+# - Model badges (intents, rate limits, tokens)
+
+# Example: Pull deepseek-r1 from dashboard
+# Then test API:
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer $(docker exec modeltunnel-app ./modeltunnel key list --format json | jq -r '.[0].key')" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "ollama/deepseek-r1:latest", "messages": [{"role": "user", "content": "Hello!"}]}'
+```
+
+**Pull Models from Command Line:**
+
+```bash
+# Pull models via Ollama container
+docker exec -it modeltunnel-ollama ollama pull deepseek-r1
+docker exec -it modeltunnel-ollama ollama pull deepseek-coder:6.7b
+docker exec -it modeltunnel-ollama ollama pull phi
+```
+
+**Volumes and Persistence:**
+
+```yaml
+# docker-compose.yml includes:
+volumes:
+  ollama_data:    # Model storage (persists models)
+  config_data:    # Config and keys database
+```
+
+Models persist across container restarts - no re-download needed.
+
+**Stop and Clean Up:**
+
+```bash
+# Stop containers
+docker-compose down
+
+# Stop and remove volumes (deletes models)
+docker-compose down -v
+
+# View logs
+docker-compose logs -f modeltunnel
+docker-compose logs -f ollama
+```
+
+**Custom Configuration:**
+
+```bash
+# Mount custom config
+docker-compose -f docker-compose.yml \
+  -f custom-compose.override.yml up -d
+
+# Or edit docker-compose.yml directly
+```
+
 ---
 
 ## Verify Installation
