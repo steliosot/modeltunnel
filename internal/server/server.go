@@ -160,6 +160,12 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 	jobWorkers := jobs.NewWorkerPool(3, jobQueue, jobStore, upstreams)
 	jobWorkers.Start()
 
+	// Get Ollama base URL from config for model manager
+	ollamaBaseURL := ""
+	if def, ok := cfg.Upstreams["default"]; ok && def.Type == "ollama" && def.BaseURL != "" {
+		ollamaBaseURL = def.BaseURL
+	}
+
 	s := &Server{
 		mux:          http.NewServeMux(),
 		upstreams:    upstreams,
@@ -171,7 +177,7 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 		jobWorkers:   jobWorkers,
 		logHub:       newLogHub(),
 		configPath:   configPath,
-		modelManager: models.NewManager(""),
+		modelManager: models.NewManager(ollamaBaseURL),
 	}
 
 	// Setup routes

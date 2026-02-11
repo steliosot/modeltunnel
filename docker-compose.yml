@@ -11,7 +11,7 @@ services:
       - OLLAMA_HOST=0.0.0.0
 
   modeltunnel:
-    image: ghcr.io/steliosot/modeltunnel:latest
+    image: modeltunnel:ollama-fixed
     container_name: modeltunnel-app
     ports:
       - "8080:8080"
@@ -20,8 +20,9 @@ services:
     depends_on:
       - ollama
     volumes:
+      - config_data:/home/appuser/.config/modeltunnel
       - ./config.compose.yaml:/home/appuser/.config/modeltunnel/config.yaml:ro
-    command: ["up"]
+    command: ["up", "--ollama"]
 
 volumes:
   ollama_data:

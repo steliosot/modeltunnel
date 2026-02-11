@@ -79,3 +79,4 @@ func (m *Manager) AllModels(ctx context.Context) ([]openai.Model, error) {
 
 	return allModels, nil
 }
+

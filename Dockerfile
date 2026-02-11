@@ -31,6 +31,7 @@ RUN addgroup -g 1000 appgroup && \
     adduser -u 1000 -G appgroup -s /bin/sh -D appuser
 
 # Copy binary and default config from builder
+# REBUILD
 COPY --from=builder /app/modeltunnel ./
 
 # Create directories and default config
@@ -48,4 +49,4 @@ EXPOSE 8080
 
 # Set entrypoint to make it easy to run subcommands
 ENTRYPOINT ["./modeltunnel"]
-CMD ["--help"]
+CMD ["--help"]# REBUILD
