@@ -28,5 +28,8 @@ Thumbs.db
 # Config (don't commit personal configs)
 config.yaml
 modeltunnel.yaml
+# Build artifacts
+build/
+
 # Docker test
 docker_test.sh
