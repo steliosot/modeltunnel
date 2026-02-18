@@ -59,6 +59,11 @@ func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
+// Conn returns the underlying sql.DB connection
+func (db *DB) Conn() *sql.DB {
+	return db.conn
+}
+
 // initSchema creates the necessary tables
 func (db *DB) initSchema() error {
 	query := `

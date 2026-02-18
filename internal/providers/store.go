@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// Provider represents an external API provider (OpenAI, Anthropic, etc.)
-type Provider struct {
+// ProviderConfig represents an external API provider configuration (OpenAI, Anthropic, etc.)
+type ProviderConfig struct {
 	ID            string    `json:"id"`
 	Name          string    `json:"name"`           // Display name (e.g., "My OpenAI Key")
 	Type          string    `json:"type"`           // Provider type: "openai", "anthropic"
@@ -67,7 +67,7 @@ func (s *ProviderStore) createTable() error {
 }
 
 // Create adds a new provider
-func (s *ProviderStore) Create(provider *Provider) error {
+func (s *ProviderStore) Create(provider *ProviderConfig) error {
 	// Encrypt API key
 	encryptedKey, err := Encrypt(provider.APIKey)
 	if err != nil {
@@ -104,7 +104,7 @@ func (s *ProviderStore) Create(provider *Provider) error {
 }
 
 // Get retrieves a provider by ID
-func (s *ProviderStore) Get(id string) (*Provider, error) {
+func (s *ProviderStore) Get(id string) (*ProviderConfig, error) {
 	query := `
 		SELECT id, name, type, api_key_encrypted, base_url, models,
 		       rate_limit, priority, is_active, track_costs,
@@ -116,7 +116,7 @@ func (s *ProviderStore) Get(id string) (*Provider, error) {
 }
 
 // List retrieves all providers
-func (s *ProviderStore) List() ([]*Provider, error) {
+func (s *ProviderStore) List() ([]*ProviderConfig, error) {
 	query := `
 		SELECT id, name, type, api_key_encrypted, base_url, models,
 		       rate_limit, priority, is_active, track_costs,
@@ -129,7 +129,7 @@ func (s *ProviderStore) List() ([]*Provider, error) {
 	}
 	defer rows.Close()
 
-	var providers []*Provider
+	var providers []*ProviderConfig
 	for rows.Next() {
 		provider, err := s.scanProvider(rows)
 		if err != nil {
@@ -142,7 +142,7 @@ func (s *ProviderStore) List() ([]*Provider, error) {
 }
 
 // ListActive retrieves only active providers
-func (s *ProviderStore) ListActive() ([]*Provider, error) {
+func (s *ProviderStore) ListActive() ([]*ProviderConfig, error) {
 	query := `
 		SELECT id, name, type, api_key_encrypted, base_url, models,
 		       rate_limit, priority, is_active, track_costs,
@@ -155,7 +155,7 @@ func (s *ProviderStore) ListActive() ([]*Provider, error) {
 	}
 	defer rows.Close()
 
-	var providers []*Provider
+	var providers []*ProviderConfig
 	for rows.Next() {
 		provider, err := s.scanProvider(rows)
 		if err != nil {
@@ -168,7 +168,7 @@ func (s *ProviderStore) ListActive() ([]*Provider, error) {
 }
 
 // Update modifies a provider
-func (s *ProviderStore) Update(provider *Provider) error {
+func (s *ProviderStore) Update(provider *ProviderConfig) error {
 	// Encrypt API key if provided
 	var encryptedKey interface{}
 	if provider.APIKey != "" {
@@ -242,11 +242,11 @@ func (s *ProviderStore) UpdateLastUsed(id string) error {
 	return err
 }
 
-// scanProvider scans a database row into a Provider struct
+// scanProvider scans a database row into a ProviderConfig struct
 func (s *ProviderStore) scanProvider(scanner interface {
 	Scan(dest ...interface{}) error
-}) (*Provider, error) {
-	var p Provider
+}) (*ProviderConfig, error) {
+	var p ProviderConfig
 	var modelsJSON string
 	var encryptedKey string
 

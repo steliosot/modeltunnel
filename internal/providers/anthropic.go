@@ -56,19 +56,30 @@ func convertToAnthropicMessages(messages []openai.Message) (string, []map[string
 	var anthropicMessages []map[string]string
 
 	for _, msg := range messages {
+		// Content can be string or []ContentPart, handle both
+		var contentStr string
+		switch v := msg.Content.(type) {
+		case string:
+			contentStr = v
+		default:
+			// For complex content types, convert to string representation
+			contentBytes, _ := json.Marshal(v)
+			contentStr = string(contentBytes)
+		}
+
 		switch msg.Role {
 		case "system":
-			system = msg.Content
+			system = contentStr
 		case "user", "assistant":
 			anthropicMessages = append(anthropicMessages, map[string]string{
 				"role":    msg.Role,
-				"content": msg.Content,
+				"content": contentStr,
 			})
 		default:
 			// Map other roles to user
 			anthropicMessages = append(anthropicMessages, map[string]string{
 				"role":    "user",
-				"content": msg.Content,
+				"content": contentStr,
 			})
 		}
 	}
@@ -94,7 +105,7 @@ func (p *AnthropicProvider) ChatCompletion(ctx context.Context, req *openai.Chat
 	if system != "" {
 		anthropicReq["system"] = system
 	}
-	if req.Temperature != 0 {
+	if req.Temperature != nil && *req.Temperature != 0 {
 		anthropicReq["temperature"] = req.Temperature
 	}
 
@@ -195,8 +206,8 @@ func (p *AnthropicProvider) ChatCompletionStream(ctx context.Context, req *opena
 	if system != "" {
 		anthropicReq["system"] = system
 	}
-	if req.Temperature != 0 {
-		anthropicReq["temperature"] = req.Temperature
+	if req.Temperature != nil && *req.Temperature != 0 {
+		anthropicReq["temperature"] = *req.Temperature
 	}
 
 	jsonBody, err := json.Marshal(anthropicReq)
@@ -275,7 +286,7 @@ func (p *AnthropicProvider) ChatCompletionStream(ctx context.Context, req *opena
 				Choices: []openai.StreamChoice{
 					{
 						Index: event.Index,
-						Delta: openai.Message{
+						Delta: openai.Delta{
 							Role:    "assistant",
 							Content: event.Delta.Text,
 						},

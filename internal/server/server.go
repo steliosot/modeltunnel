@@ -19,6 +19,7 @@ import (
 	"github.com/modeltunnel/modeltunnel/internal/jobs"
 	"github.com/modeltunnel/modeltunnel/internal/keys"
 	"github.com/modeltunnel/modeltunnel/internal/models"
+	"github.com/modeltunnel/modeltunnel/internal/providers"
 	"github.com/modeltunnel/modeltunnel/internal/router"
 	"github.com/modeltunnel/modeltunnel/internal/upstream"
 	"github.com/modeltunnel/modeltunnel/pkg/openai"
@@ -132,6 +133,7 @@ type Server struct {
 	server        *http.Server
 	upstreams     *upstream.Manager
 	keystore      *keys.Store
+	providerStore *providers.ProviderStore
 	config        *config.Config
 	rateLimiter   *gateway.RateLimiter
 	intentRouter  *router.IntentRouter
@@ -153,7 +155,7 @@ type TunnelStatus struct {
 }
 
 // NewServer creates a new server
-func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.Store, configPath string) *Server {
+func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.Store, providerStore *providers.ProviderStore, configPath string) *Server {
 	// Initialize job system
 	jobStore := jobs.NewStore()
 	jobQueue := jobs.NewQueue(1000)
@@ -167,17 +169,19 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 	}
 
 	s := &Server{
-		mux:          http.NewServeMux(),
-		upstreams:    upstreams,
-		keystore:     keystore,
-		config:       cfg,
-		intentRouter: router.NewIntentRouterFromConfig(cfg.Intents),
-		jobStore:     jobStore,
-		jobQueue:     jobQueue,
-		jobWorkers:   jobWorkers,
-		logHub:       newLogHub(),
-		configPath:   configPath,
-		modelManager: models.NewManager(ollamaBaseURL),
+		mux:           http.NewServeMux(),
+		server:        nil,
+		upstreams:     upstreams,
+		keystore:      keystore,
+		providerStore: providerStore,
+		config:        cfg,
+		intentRouter:  router.NewIntentRouterFromConfig(cfg.Intents),
+		jobStore:      jobStore,
+		jobQueue:      jobQueue,
+		jobWorkers:    jobWorkers,
+		logHub:        newLogHub(),
+		configPath:    configPath,
+		modelManager:  models.NewManager(ollamaBaseURL),
 	}
 
 	// Setup routes
@@ -198,6 +202,11 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 	s.mux.HandleFunc("/admin/api/models/pull/", s.handleAdminModelsPullProgress)
 	s.mux.HandleFunc("/admin/api/models/", s.handleAdminModelsDelete)
 	s.mux.HandleFunc("/admin/api/models", s.handleAdminModels)
+
+	// Provider routes
+	s.mux.HandleFunc("/admin/api/providers", s.handleAdminProviders)
+	s.mux.HandleFunc("/admin/api/providers/", s.handleAdminProviderDetail)
+	s.mux.HandleFunc("/admin/api/providers/types", s.handleAdminProviderTypes)
 
 	// Setup rate limiter
 	if policy, ok := cfg.Policies["default"]; ok {
@@ -341,10 +350,28 @@ func (s *Server) handleModels(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
+	// Get Ollama models from upstreams
 	models, err := s.upstreams.AllModels(ctx)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+
+	// Add external provider models
+	if s.providerStore != nil {
+		providerList, err := s.providerStore.ListActive()
+		if err == nil {
+			for _, provider := range providerList {
+				for _, modelID := range provider.Models {
+					models = append(models, openai.Model{
+						ID:      fmt.Sprintf("%s/%s", provider.ID, modelID),
+						Object:  "model",
+						Created: time.Now().Unix(),
+						OwnedBy: provider.Type,
+					})
+				}
+			}
+		}
 	}
 
 	s.writeJSON(w, http.StatusOK, openai.ModelList{
@@ -406,6 +433,16 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		upstreamName = parts[0]
 		modelName = parts[1]
 		req.Model = modelName
+	}
+
+	// Check if this is an external provider
+	if s.providerStore != nil {
+		provider, err := s.providerStore.Get(upstreamName)
+		if err == nil && provider.IsActive {
+			// Route to external provider
+			s.handleProviderChatCompletion(w, r, provider, &req)
+			return
+		}
 	}
 
 	up, ok := s.upstreams.Get(upstreamName)
@@ -510,6 +547,66 @@ func (s *Server) handleStreamingResponse(w http.ResponseWriter, r *http.Request,
 
 	fmt.Fprint(w, "data: [DONE]\n\n")
 	flusher.Flush()
+}
+
+// handleProviderChatCompletion routes requests to external providers (OpenAI, Anthropic)
+func (s *Server) handleProviderChatCompletion(w http.ResponseWriter, r *http.Request, providerConfig *providers.ProviderConfig, req *openai.ChatCompletionRequest) {
+	// Create provider instance
+	provider, err := providers.ProviderFromConfig(providerConfig)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to create provider: %v", err))
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+	defer cancel()
+
+	// Track usage
+	var inputTokens, outputTokens int64
+
+	if req.Stream {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			s.writeError(w, http.StatusInternalServerError, "streaming not supported")
+			return
+		}
+
+		err := provider.ChatCompletionStream(ctx, req, func(chunk openai.ChatCompletionStreamResponse) {
+			data, _ := json.Marshal(chunk)
+			fmt.Fprintf(w, "data: %s\n\n", data)
+			flusher.Flush()
+		})
+
+		if err != nil {
+			data, _ := json.Marshal(map[string]string{"error": err.Error()})
+			fmt.Fprintf(w, "data: %s\n\n", data)
+			flusher.Flush()
+		}
+
+		fmt.Fprint(w, "data: [DONE]\n\n")
+		flusher.Flush()
+	} else {
+		resp, err := provider.ChatCompletion(ctx, req)
+		if err != nil {
+			s.writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		inputTokens = int64(resp.Usage.PromptTokens)
+		outputTokens = int64(resp.Usage.CompletionTokens)
+		s.writeJSON(w, http.StatusOK, resp)
+	}
+
+	// Update usage statistics
+	if s.providerStore != nil && providerConfig.TrackCosts {
+		cost := provider.EstimateCost(req.Model, inputTokens, outputTokens)
+		_ = s.providerStore.UpdateUsage(providerConfig.ID, 1, inputTokens+outputTokens, cost)
+		_ = s.providerStore.UpdateLastUsed(providerConfig.ID)
+	}
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -1098,6 +1195,131 @@ func (s *Server) handleJobStatus(w http.ResponseWriter, r *http.Request) {
 
 	// Return job status
 	s.writeJSON(w, http.StatusOK, job)
+}
+
+// Provider handlers
+
+// handleAdminProviders handles GET/POST /admin/api/providers
+func (s *Server) handleAdminProviders(w http.ResponseWriter, r *http.Request) {
+	if s.providerStore == nil {
+		s.writeError(w, http.StatusServiceUnavailable, "provider store not initialized")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		providers, err := s.providerStore.List()
+		if err != nil {
+			s.writeError(w, http.StatusInternalServerError, "failed to list providers")
+			return
+		}
+		s.writeJSON(w, http.StatusOK, providers)
+
+	case http.MethodPost:
+		var req struct {
+			Name      string   `json:"name"`
+			Type      string   `json:"type"`
+			APIKey    string   `json:"api_key"`
+			BaseURL   string   `json:"base_url"`
+			Models    []string `json:"models"`
+			RateLimit string   `json:"rate_limit"`
+			Priority  int      `json:"priority"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			s.writeError(w, http.StatusBadRequest, "invalid request body")
+			return
+		}
+
+		// Generate ID
+		id := fmt.Sprintf("%s-%d", req.Type, time.Now().UnixNano())
+
+		provider := &providers.ProviderConfig{
+			ID:         id,
+			Name:       req.Name,
+			Type:       req.Type,
+			APIKey:     req.APIKey,
+			BaseURL:    req.BaseURL,
+			Models:     req.Models,
+			RateLimit:  req.RateLimit,
+			Priority:   req.Priority,
+			IsActive:   true,
+			TrackCosts: true,
+			CreatedAt:  time.Now(),
+		}
+
+		if err := s.providerStore.Create(provider); err != nil {
+			s.writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to create provider: %v", err))
+			return
+		}
+
+		s.writeJSON(w, http.StatusCreated, provider)
+
+	default:
+		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+	}
+}
+
+// handleAdminProviderDetail handles GET/PUT/DELETE /admin/api/providers/{id}
+func (s *Server) handleAdminProviderDetail(w http.ResponseWriter, r *http.Request) {
+	if s.providerStore == nil {
+		s.writeError(w, http.StatusServiceUnavailable, "provider store not initialized")
+		return
+	}
+
+	// Extract provider ID
+	id := strings.TrimPrefix(r.URL.Path, "/admin/api/providers/")
+	if id == "" || strings.Contains(id, "/") {
+		s.writeError(w, http.StatusBadRequest, "invalid provider id")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		provider, err := s.providerStore.Get(id)
+		if err != nil {
+			s.writeError(w, http.StatusNotFound, "provider not found")
+			return
+		}
+		s.writeJSON(w, http.StatusOK, provider)
+
+	case http.MethodPut:
+		var req providers.ProviderConfig
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			s.writeError(w, http.StatusBadRequest, "invalid request body")
+			return
+		}
+		req.ID = id
+
+		if err := s.providerStore.Update(&req); err != nil {
+			s.writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to update provider: %v", err))
+			return
+		}
+
+		provider, _ := s.providerStore.Get(id)
+		s.writeJSON(w, http.StatusOK, provider)
+
+	case http.MethodDelete:
+		if err := s.providerStore.Delete(id); err != nil {
+			s.writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete provider: %v", err))
+			return
+		}
+		s.writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+
+	default:
+		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+	}
+}
+
+// handleAdminProviderTypes handles GET /admin/api/providers/types
+func (s *Server) handleAdminProviderTypes(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	types := providers.SupportedProviders()
+	s.writeJSON(w, http.StatusOK, types)
 }
 
 // Addr returns the server address

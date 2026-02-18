@@ -8,7 +8,7 @@ import (
 type ProviderFactory struct{}
 
 // NewProvider creates a new provider based on type
-func NewProvider(providerType, id, name, apiKey, baseURL string) (Provider, error) {
+func NewProvider(providerType, id, name, apiKey, baseURL string) (ExternalProvider, error) {
 	switch providerType {
 	case "openai":
 		p := NewOpenAIProvider(id, name, apiKey)
@@ -29,8 +29,8 @@ func NewProvider(providerType, id, name, apiKey, baseURL string) (Provider, erro
 	}
 }
 
-// ProviderFromConfig creates a provider from a database Provider config
-func ProviderFromConfig(config *Provider) (Provider, error) {
+// ProviderFromConfig creates a provider from a database ProviderConfig
+func ProviderFromConfig(config *ProviderConfig) (ExternalProvider, error) {
 	return NewProvider(config.Type, config.ID, config.Name, config.APIKey, config.BaseURL)
 }
 

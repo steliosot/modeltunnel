@@ -13,8 +13,8 @@ import (
 	"github.com/modeltunnel/modeltunnel/pkg/openai"
 )
 
-// Provider defines the interface for external API providers
-type Provider interface {
+// ExternalProvider defines the interface for external API providers
+type ExternalProvider interface {
 	Type() string
 	Name() string
 	ListModels(ctx context.Context) ([]openai.Model, error)
@@ -139,10 +139,10 @@ func (p *OpenAIProvider) ChatCompletion(ctx context.Context, req *openai.ChatCom
 		"messages": req.Messages,
 	}
 
-	if req.Temperature != 0 {
+	if req.Temperature != nil && *req.Temperature != 0 {
 		openAIReq["temperature"] = req.Temperature
 	}
-	if req.MaxTokens != 0 {
+	if req.MaxTokens != nil && *req.MaxTokens != 0 {
 		openAIReq["max_tokens"] = req.MaxTokens
 	}
 	if req.Stream {
@@ -222,10 +222,10 @@ func (p *OpenAIProvider) ChatCompletionStream(ctx context.Context, req *openai.C
 		"stream":   true,
 	}
 
-	if req.Temperature != 0 {
+	if req.Temperature != nil && *req.Temperature != 0 {
 		openAIReq["temperature"] = req.Temperature
 	}
-	if req.MaxTokens != 0 {
+	if req.MaxTokens != nil && *req.MaxTokens != 0 {
 		openAIReq["max_tokens"] = req.MaxTokens
 	}
 
@@ -275,7 +275,7 @@ func (p *OpenAIProvider) ChatCompletionStream(ctx context.Context, req *openai.C
 		for _, c := range chunk.Choices {
 			streamResp.Choices = append(streamResp.Choices, openai.StreamChoice{
 				Index: c.Index,
-				Delta: openai.Message{
+				Delta: openai.Delta{
 					Role:    c.Delta.Role,
 					Content: c.Delta.Content,
 				},
