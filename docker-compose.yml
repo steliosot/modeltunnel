@@ -11,7 +11,7 @@ services:
       - OLLAMA_HOST=0.0.0.0
 
   modeltunnel:
-    image: modeltunnel:ollama-fixed
+    image: ghcr.io/steliosot/modeltunnel:latest
     container_name: modeltunnel-app
     ports:
       - "8080:8080"
