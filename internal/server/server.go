@@ -1210,7 +1210,7 @@ func (s *Server) handleAdminProviders(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		providers, err := s.providerStore.List()
 		if err != nil {
-			s.writeError(w, http.StatusInternalServerError, "failed to list providers")
+			s.writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to list providers: %v", err))
 			return
 		}
 		s.writeJSON(w, http.StatusOK, providers)

@@ -9,22 +9,22 @@ import (
 
 // ProviderConfig represents an external API provider configuration (OpenAI, Anthropic, etc.)
 type ProviderConfig struct {
-	ID            string    `json:"id"`
-	Name          string    `json:"name"`           // Display name (e.g., "My OpenAI Key")
-	Type          string    `json:"type"`           // Provider type: "openai", "anthropic"
-	APIKey        string    `json:"-"`              // Decrypted API key (not serialized)
-	APIKeyMasked  string    `json:"api_key_masked"` // Masked key for display
-	BaseURL       string    `json:"base_url"`       // API base URL
-	Models        []string  `json:"models"`         // Available models
-	RateLimit     string    `json:"rate_limit"`     // e.g., "100/min"
-	Priority      int       `json:"priority"`       // Failover priority (lower = higher priority)
-	IsActive      bool      `json:"is_active"`
-	TrackCosts    bool      `json:"track_costs"` // Enable cost tracking
-	TotalRequests int64     `json:"total_requests"`
-	TotalTokens   int64     `json:"total_tokens"`
-	TotalCost     float64   `json:"total_cost"` // Estimated cost in USD
-	CreatedAt     time.Time `json:"created_at"`
-	LastUsedAt    time.Time `json:"last_used_at"`
+	ID            string     `json:"id"`
+	Name          string     `json:"name"`           // Display name (e.g., "My OpenAI Key")
+	Type          string     `json:"type"`           // Provider type: "openai", "anthropic"
+	APIKey        string     `json:"-"`              // Decrypted API key (not serialized)
+	APIKeyMasked  string     `json:"api_key_masked"` // Masked key for display
+	BaseURL       string     `json:"base_url"`       // API base URL
+	Models        []string   `json:"models"`         // Available models
+	RateLimit     string     `json:"rate_limit"`     // e.g., "100/min"
+	Priority      int        `json:"priority"`       // Failover priority (lower = higher priority)
+	IsActive      bool       `json:"is_active"`
+	TrackCosts    bool       `json:"track_costs"` // Enable cost tracking
+	TotalRequests int64      `json:"total_requests"`
+	TotalTokens   int64      `json:"total_tokens"`
+	TotalCost     float64    `json:"total_cost"` // Estimated cost in USD
+	CreatedAt     time.Time  `json:"created_at"`
+	LastUsedAt    *time.Time `json:"last_used_at,omitempty"`
 }
 
 // ProviderStore manages provider data in SQLite
@@ -280,8 +280,10 @@ func (s *ProviderStore) scanProvider(scanner interface {
 	p.APIKeyMasked = MaskKey(decryptedKey)
 
 	// Deserialize models
-	if err := json.Unmarshal([]byte(modelsJSON), &p.Models); err != nil {
-		return nil, fmt.Errorf("unmarshal models: %w", err)
+	if modelsJSON != "" {
+		if err := json.Unmarshal([]byte(modelsJSON), &p.Models); err != nil {
+			return nil, fmt.Errorf("unmarshal models: %w", err)
+		}
 	}
 
 	return &p, nil
