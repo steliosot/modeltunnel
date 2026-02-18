@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/modeltunnel/modeltunnel/internal/config"
 	"github.com/modeltunnel/modeltunnel/internal/db"
@@ -178,6 +179,46 @@ var upCmd = &cobra.Command{
 			if err != nil {
 				fmt.Printf("⚠️  Failed to initialize provider store: %v\n", err)
 				fmt.Println("   External provider features will not be available")
+			} else {
+				// Load providers from config
+				for _, providerCfg := range cfg.Providers {
+					// Check if provider already exists with same name and type
+					allProviders, _ := providerStore.List()
+					exists := false
+					for _, p := range allProviders {
+						if p.Name == providerCfg.Name && p.Type == providerCfg.Type {
+							exists = true
+							break
+						}
+					}
+
+					if exists {
+						fmt.Printf("ℹ️  Provider '%s' already exists, skipping\n", providerCfg.Name)
+						continue
+					}
+
+					// Generate ID from type and timestamp
+					id := fmt.Sprintf("%s-legacy-%d", providerCfg.Type, time.Now().UnixNano())
+
+					provider := &providers.ProviderConfig{
+						ID:         id,
+						Name:       providerCfg.Name,
+						Type:       providerCfg.Type,
+						APIKey:     providerCfg.APIKey,
+						BaseURL:    providerCfg.BaseURL,
+						Models:     providerCfg.Models,
+						RateLimit:  providerCfg.RateLimit,
+						Priority:   providerCfg.Priority,
+						IsActive:   true,
+						TrackCosts: true,
+					}
+
+					if err := providerStore.Create(provider); err != nil {
+						fmt.Printf("⚠️  Failed to migrate provider '%s' to database: %v\n", providerCfg.Name, err)
+					} else {
+						fmt.Printf("📦 Imported provider '%s' from config\n", providerCfg.Name)
+					}
+				}
 			}
 		}
 

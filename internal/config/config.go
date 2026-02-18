@@ -9,6 +9,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ProviderConfig represents external API provider configuration in config
+type ProviderConfig struct {
+	Name      string   `yaml:"name"`
+	Type      string   `yaml:"type"`
+	APIKey    string   `yaml:"api_key"`
+	BaseURL   string   `yaml:"base_url,omitempty"`
+	Models    []string `yaml:"models,omitempty"`
+	RateLimit string   `yaml:"rate_limit,omitempty"`
+	Priority  int      `yaml:"priority,omitempty"`
+}
+
 // Config represents the modeltunnel configuration
 type Config struct {
 	Server    ServerConfig        `yaml:"server"`
@@ -16,6 +27,7 @@ type Config struct {
 	Policies  map[string]Policy   `yaml:"policies"`
 	Keys      []KeyConfig         `yaml:"keys"`
 	Intents   map[string]Intent   `yaml:"intents,omitempty"`
+	Providers []ProviderConfig    `yaml:"providers,omitempty"`
 }
 
 // ServerConfig represents server configuration
