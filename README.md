@@ -30,6 +30,24 @@
 
 ## Installation
 
+### 🚀 One-Line Installer (Recommended)
+
+Interactive wizard that installs Ollama + Modeltunnel with a guided setup:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash
+```
+
+This will:
+- ✓ Check your system (OS, architecture, dependencies)
+- ✓ Install Ollama (optional - you can skip if already installed)
+- ✓ Install Modeltunnel
+- ✓ Configure ports and directories
+- ✓ Install recommended AI models
+- ✓ Set up systemd service (Linux)
+
+**Supports:** Ubuntu, Debian, CentOS, macOS (Intel & Apple Silicon)
+
 ### Using Homebrew (macOS/Linux)
 
 ```bash
