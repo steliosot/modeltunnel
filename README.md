@@ -18,10 +18,11 @@
 
 - **Zero Configuration** - Works out of the box with Ollama
 - **Key-Based Authentication** - Secure API access with granular permissions
+- **Bring Your Own Key (BYOK)** - Use OpenAI, Anthropic, and other API providers alongside local models
 - **OpenAI-Compatible API** - Drop-in replacement for OpenAI SDK
 - **Async Job API** - Submit long-running jobs and poll for results
 - **Intent-Based Routing** - Smart model selection via `X-Model-Intent` header
-- **Built-in Dashboard** - Web UI for managing keys and monitoring usage
+- **Built-in Dashboard** - Web UI for managing keys, providers, and monitoring usage
 - **Public Tunnels** - Built-in support for LocalTunnel (zero setup)
 - **Per-Model Rate Limiting** - Different limits for different models
 - **Persistent Keys** - SQLite database for key storage (CLI keys available immediately)
@@ -245,6 +246,51 @@ response = client.chat.completions.create(
 - `plan` → deepseek-r1 (reasoning, strategy, architecture)
 - `code` → qwen2.5 (programming, debugging, technical tasks)
 - `chat` → phi (fast conversation, Q&A)
+
+---
+
+### 6. External API Providers (BYOK)
+
+Use your own OpenAI, Anthropic, or other API keys alongside local models:
+
+**Via Dashboard:**
+1. Open http://localhost:8080/admin
+2. Click **Providers** in the navigation
+3. Click **Add Provider**
+4. Select provider type (OpenAI, Anthropic)
+5. Enter your API key and configure models
+
+**Via API:**
+```bash
+curl -X POST http://localhost:8080/admin/api/providers \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My OpenAI Key",
+    "type": "openai",
+    "api_key": "sk-your-key-here",
+    "models": ["gpt-4", "gpt-3.5-turbo"],
+    "rate_limit": "100/min"
+  }'
+```
+
+**Use External Models:**
+```python
+# Use OpenAI GPT-4 through Modeltunnel
+response = client.chat.completions.create(
+    model="provider-id/gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+**Features:**
+- 🔐 API keys are encrypted and stored securely
+- 💰 Cost tracking per provider
+- 🔄 Automatic failover between providers
+- 📊 Usage analytics in dashboard
+
+**Supported Providers:**
+- **OpenAI** - GPT-4, GPT-3.5, and other OpenAI models
+- **Anthropic** - Claude 3 (Opus, Sonnet, Haiku) and Claude 2
 
 ---
 

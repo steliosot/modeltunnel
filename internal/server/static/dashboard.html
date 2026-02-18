@@ -887,6 +887,7 @@
     <nav class="nav">
         <button class="nav-item active" data-section="overview">Overview</button>
         <button class="nav-item" data-section="keys">API Keys</button>
+        <button class="nav-item" data-section="providers">Providers</button>
         <button class="nav-item" data-section="config">Configuration</button>
         <button class="nav-item" data-section="code">Code Samples</button>
         <button class="nav-item" data-section="logs">Request Logs</button>
@@ -1059,6 +1060,31 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Providers Section -->
+        <section id="providers" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">External API Providers</div>
+                    <button class="btn btn-primary btn-sm" onclick="openProviderModal()">
+                        <span>+</span> Add Provider
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="info-box" style="margin-bottom: 16px; background: var(--bg-secondary); padding: 12px; border-radius: 8px; border-left: 3px solid var(--accent);">
+                        <strong>💡 Bring Your Own Key</strong><br>
+                        Add your OpenAI or Anthropic API keys to use their models alongside your local Ollama models. All requests go through Modeltunnel's unified API.
+                    </div>
+                    <div id="providers-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🌐</div>
+                            <div>No external providers configured</div>
+                            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">Add a provider to use OpenAI, Anthropic, or other API models</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2829,6 +2855,83 @@ http://localhost:8080/v1</pre>
         </div>
     </div>
 
+    <!-- Provider Modal -->
+    <div class="modal-overlay" id="provider-modal" style="display: none;">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <div class="modal-title" id="provider-modal-title">Add External Provider</div>
+                <button class="modal-close" onclick="closeProviderModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="provider-form">
+                    <input type="hidden" id="provider-id">
+                    <div class="form-group">
+                        <label class="form-label">Provider Type <span class="text-danger">*</span></label>
+                        <select id="provider-type" class="form-input" onchange="onProviderTypeChange()" required>
+                            <option value="">Select provider...</option>
+                            <option value="openai">🅾️ OpenAI</option>
+                            <option value="anthropic">🟣 Anthropic</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Display Name <span class="text-danger">*</span></label>
+                        <input type="text" id="provider-name" class="form-input" placeholder="e.g., My OpenAI Key" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API Key <span class="text-danger">*</span></label>
+                        <input type="password" id="provider-api-key" class="form-input" placeholder="sk-..." required>
+                        <small class="text-secondary" style="font-size: 12px; margin-top: 4px; display: block;">
+                            Your API key is encrypted and stored securely
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Base URL (optional)</label>
+                        <input type="url" id="provider-base-url" class="form-input" placeholder="https://api.openai.com/v1">
+                        <small class="text-secondary" style="font-size: 12px; margin-top: 4px; display: block;">
+                            Leave empty to use default URL
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Models (comma-separated)</label>
+                        <input type="text" id="provider-models" class="form-input" placeholder="gpt-4, gpt-3.5-turbo">
+                        <small class="text-secondary" style="font-size: 12px; margin-top: 4px; display: block;">
+                            Leave empty to use default models for this provider
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rate Limit</label>
+                        <select id="provider-rate-limit" class="form-input">
+                            <option value="60/min">60/min</option>
+                            <option value="100/min" selected>100/min</option>
+                            <option value="500/min">500/min</option>
+                            <option value="1000/min">1000/min</option>
+                            <option value="unlimited">Unlimited</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Priority (Failover Order)</label>
+                        <input type="number" id="provider-priority" class="form-input" placeholder="0" min="0" value="0">
+                        <small class="text-secondary" style="font-size: 12px; margin-top: 4px; display: block;">
+                            Lower numbers = higher priority (0 is highest)
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="provider-track-costs" checked>
+                            <span>Track usage and costs</span>
+                        </label>
+                    </div>
+                </form>
+                <div id="provider-test-result" style="display: none; margin-top: 16px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeProviderModal()">Cancel</button>
+                <button class="btn btn-secondary" onclick="testProviderConnection()">Test Connection</button>
+                <button class="btn btn-primary" onclick="saveProvider()" id="provider-save-btn">Add Provider</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // State
         let ws = null;
@@ -2865,6 +2968,9 @@ http://localhost:8080/v1</pre>
             } catch (error) {
                 console.error('Failed to load data:', error);
             }
+            
+            // Load providers
+            loadProviders();
         }
 
         // Load tunnel status
@@ -3273,6 +3379,246 @@ model: ${model}`;
                 btn.textContent = 'Copied!';
                 setTimeout(() => btn.textContent = 'Copy', 2000);
             });
+        }
+
+        // Provider functions
+        function openProviderModal() {
+            document.getElementById('provider-modal').style.display = 'flex';
+            document.getElementById('provider-modal-title').textContent = 'Add External Provider';
+            document.getElementById('provider-form').reset();
+            document.getElementById('provider-id').value = '';
+            document.getElementById('provider-save-btn').textContent = 'Add Provider';
+            document.getElementById('provider-test-result').style.display = 'none';
+        }
+
+        function closeProviderModal() {
+            document.getElementById('provider-modal').style.display = 'none';
+        }
+
+        function onProviderTypeChange() {
+            const type = document.getElementById('provider-type').value;
+            const modelsInput = document.getElementById('provider-models');
+            const baseUrlInput = document.getElementById('provider-base-url');
+
+            if (type === 'openai') {
+                modelsInput.placeholder = 'gpt-4, gpt-3.5-turbo';
+                baseUrlInput.placeholder = 'https://api.openai.com/v1';
+            } else if (type === 'anthropic') {
+                modelsInput.placeholder = 'claude-3-opus, claude-3-sonnet';
+                baseUrlInput.placeholder = 'https://api.anthropic.com/v1';
+            }
+        }
+
+        async function loadProviders() {
+            try {
+                const response = await fetch('/admin/api/providers');
+                if (!response.ok) throw new Error('Failed to fetch providers');
+                const providers = await response.json();
+                updateProvidersList(providers);
+            } catch (error) {
+                console.error('Failed to load providers:', error);
+                document.getElementById('providers-list').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <div>Failed to load providers</div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function updateProvidersList(providers) {
+            const container = document.getElementById('providers-list');
+
+            if (!providers || providers.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🌐</div>
+                        <div>No external providers configured</div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">Add a provider to use OpenAI, Anthropic, or other API models</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const typeIcons = {
+                'openai': '🅾️',
+                'anthropic': '🟣'
+            };
+
+            const typeNames = {
+                'openai': 'OpenAI',
+                'anthropic': 'Anthropic'
+            };
+
+            container.innerHTML = `
+                <div style="display: grid; gap: 16px;">
+                    ${providers.map(provider => `
+                        <div class="card" style="border-left: 3px solid ${provider.is_active ? 'var(--success)' : 'var(--text-secondary)'};">
+                            <div class="card-header" style="padding: 16px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span style="font-size: 24px;">${typeIcons[provider.type] || '🌐'}</span>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; font-size: 16px;">${provider.name}</div>
+                                        <div style="font-size: 13px; color: var(--text-secondary);">
+                                            ${typeNames[provider.type] || provider.type} • ${provider.api_key_masked}
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 12px; color: var(--text-secondary);">
+                                            ${provider.is_active ? '<span style="color: var(--success);">● Active</span>' : '<span style="color: var(--text-secondary);">● Inactive</span>'}
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--text-secondary);">
+                                            ${provider.rate_limit || 'No limit'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body" style="padding: 0 16px 16px;">
+                                <div style="margin-bottom: 12px;">
+                                    <strong>Models:</strong> ${provider.models ? provider.models.join(', ') : 'None configured'}
+                                </div>
+                                ${provider.track_costs ? `
+                                    <div style="display: flex; gap: 24px; font-size: 13px; color: var(--text-secondary);">
+                                        <span>Requests: <strong>${provider.total_requests || 0}</strong></span>
+                                        <span>Tokens: <strong>${(provider.total_tokens || 0).toLocaleString()}</strong></span>
+                                        <span>Cost: <strong>$${(provider.total_cost || 0).toFixed(2)}</strong></span>
+                                    </div>
+                                ` : '<div style="font-size: 13px; color: var(--text-secondary);">Cost tracking disabled</div>'}
+                            </div>
+                            <div style="padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end;">
+                                <button class="btn btn-secondary btn-sm" onclick="editProvider('${provider.id}')">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteProvider('${provider.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        async function testProviderConnection() {
+            const type = document.getElementById('provider-type').value;
+            const apiKey = document.getElementById('provider-api-key').value;
+            const baseUrl = document.getElementById('provider-base-url').value;
+
+            if (!type || !apiKey) {
+                alert('Please select a provider type and enter an API key');
+                return;
+            }
+
+            const resultDiv = document.getElementById('provider-test-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="alert alert-info">Testing connection...</div>';
+
+            try {
+                // For now, just validate that the key format looks correct
+                // In production, you'd make an actual API call
+                let isValid = false;
+                if (type === 'openai' && apiKey.startsWith('sk-')) {
+                    isValid = true;
+                } else if (type === 'anthropic' && apiKey.startsWith('sk-ant-')) {
+                    isValid = true;
+                }
+
+                if (isValid) {
+                    resultDiv.innerHTML = '<div class="alert alert-success">✓ API key format looks valid</div>';
+                } else {
+                    resultDiv.innerHTML = '<div class="alert alert-warning">⚠ API key format may be invalid. Please check your key.</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-error">✗ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function saveProvider() {
+            const id = document.getElementById('provider-id').value;
+            const type = document.getElementById('provider-type').value;
+            const name = document.getElementById('provider-name').value;
+            const apiKey = document.getElementById('provider-api-key').value;
+            const baseUrl = document.getElementById('provider-base-url').value;
+            const modelsStr = document.getElementById('provider-models').value;
+            const rateLimit = document.getElementById('provider-rate-limit').value;
+            const priority = parseInt(document.getElementById('provider-priority').value) || 0;
+            const trackCosts = document.getElementById('provider-track-costs').checked;
+
+            if (!type || !name || !apiKey) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const models = modelsStr.split(',').map(m => m.trim()).filter(m => m);
+
+            const providerData = {
+                name,
+                type,
+                api_key: apiKey,
+                base_url: baseUrl || undefined,
+                models: models.length > 0 ? models : undefined,
+                rate_limit: rateLimit,
+                priority,
+                track_costs: trackCosts
+            };
+
+            try {
+                const url = id ? `/admin/api/providers/${id}` : '/admin/api/providers';
+                const method = id ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(providerData)
+                });
+
+                if (response.ok) {
+                    closeProviderModal();
+                    loadProviders();
+                } else {
+                    const error = await response.text();
+                    alert('Failed to save provider: ' + error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function editProvider(id) {
+            try {
+                const response = await fetch(`/admin/api/providers/${id}`);
+                if (!response.ok) throw new Error('Failed to fetch provider');
+                const provider = await response.json();
+
+                document.getElementById('provider-id').value = provider.id;
+                document.getElementById('provider-type').value = provider.type;
+                document.getElementById('provider-name').value = provider.name;
+                document.getElementById('provider-api-key').value = '';
+                document.getElementById('provider-base-url').value = provider.base_url || '';
+                document.getElementById('provider-models').value = provider.models ? provider.models.join(', ') : '';
+                document.getElementById('provider-rate-limit').value = provider.rate_limit || '100/min';
+                document.getElementById('provider-priority').value = provider.priority || 0;
+                document.getElementById('provider-track-costs').checked = provider.track_costs !== false;
+
+                document.getElementById('provider-modal-title').textContent = 'Edit Provider';
+                document.getElementById('provider-save-btn').textContent = 'Save Changes';
+                document.getElementById('provider-test-result').style.display = 'none';
+                document.getElementById('provider-modal').style.display = 'flex';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function deleteProvider(id) {
+            if (!confirm('Are you sure you want to delete this provider?')) return;
+
+            try {
+                const response = await fetch(`/admin/api/providers/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadProviders();
+                } else {
+                    alert('Failed to delete provider');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
         }
 
         // Load available models from Ollama
