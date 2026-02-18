@@ -535,6 +535,24 @@ install_modeltunnel() {
 install_modeltunnel_from_source() {
     print_step "Building Modeltunnel from source..."
 
+    if ! command -v git &> /dev/null || ! command -v go &> /dev/null; then
+        print_info "Git and/or Go not found, installing..."
+        if [ "$OS" = "linux" ]; then
+            if command -v apt-get &> /dev/null; then
+                run_with_sudo apt-get update -qq
+                run_with_sudo apt-get install -y git golang
+            elif command -v yum &> /dev/null; then
+                run_with_sudo yum install -y git golang
+            else
+                print_error "Please install Git and Go first"
+                exit 1
+            fi
+        elif [ "$OS" = "darwin" ]; then
+            print_info "Please install Git and Go: brew install git go"
+            exit 1
+        fi
+    fi
+
     local temp_dir="/tmp/modeltunnel-build"
     rm -rf "$temp_dir"
     mkdir -p "$temp_dir"
@@ -801,8 +819,8 @@ main() {
         print_info "Installing Modeltunnel in silent mode..."
         print_info "Detected: $OS_NAME ${OS_VERSION:-} ($ARCH)"
 
-        # Directly install the binary, skip Ollama checks
-        install_modeltunnel_binary
+        # Build from source (no pre-built binaries available)
+        install_modeltunnel_from_source
 
         print_success "Installation complete!"
         print_info "Run 'modeltunnel --help' to get started"
