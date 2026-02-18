@@ -42,6 +42,7 @@ MODELTUNNEL_PORT="$DEFAULT_MODELTUNNEL_PORT"
 SELECTED_MODELS=()
 RUN_AS_SERVICE=true
 REQUIRES_SUDO=false
+SILENT_MODE=false
 
 # ============================================
 # UTILITY FUNCTIONS
@@ -533,28 +534,32 @@ install_modeltunnel() {
 
 install_modeltunnel_from_source() {
     print_step "Building Modeltunnel from source..."
-    
+
     local temp_dir="/tmp/modeltunnel-build"
+    rm -rf "$temp_dir"
     mkdir -p "$temp_dir"
-    cd "$temp_dir"
-    
+
     print_info "Cloning repository..."
-    git clone --depth 1 "https://github.com/$MODELTUNNEL_REPO.git" . || {
+    git clone --depth 1 "https://github.com/$MODELTUNNEL_REPO.git" "$temp_dir" || {
         print_error "Failed to clone repository"
         exit 1
     }
-    
+
+    cd "$temp_dir"
+
     print_info "Building..."
     go build -o modeltunnel ./cmd/modeltunnel/main.go || {
         print_error "Build failed"
+        ls -la
+        pwd
         exit 1
     }
-    
+
     run_with_sudo mv modeltunnel "$INSTALL_DIR/"
-    
+
     cd - > /dev/null
     rm -rf "$temp_dir"
-    
+
     print_success "Modeltunnel built and installed!"
 }
 
@@ -773,14 +778,17 @@ show_summary() {
 # ============================================
 
 main() {
-    # Check if running in non-interactive mode
-    if [ ! -t 0 ]; then
+    # Check if running in non-interactive mode (unless --silent is set)
+    if [ "$SILENT_MODE" = false ] && [ ! -t 0 ]; then
         print_error "This installer requires an interactive terminal"
         print_info "Please run: curl -fsSL ... | bash"
+        print_info "Or for non-interactive: curl -fsSL ... | bash -s -- --silent"
         exit 1
     fi
     
-    print_header
+    if [ "$SILENT_MODE" = false ]; then
+        print_header
+    fi
     
     # System checks
     detect_os
@@ -788,27 +796,79 @@ main() {
     check_dependencies
     check_sudo
     
-    # Show main menu
-    show_main_menu
-    
-    # Install Ollama if requested
-    if [ "$INSTALL_OLLAMA" = true ]; then
-        handle_ollama_installation
+    if [ "$SILENT_MODE" = true ]; then
+        # Silent mode - just install modeltunnel binary
+        print_info "Installing Modeltunnel in silent mode..."
+        print_info "Detected: $OS_NAME ${OS_VERSION:-} ($ARCH)"
+
+        # Directly install the binary, skip Ollama checks
+        install_modeltunnel_binary
+
+        print_success "Installation complete!"
+        print_info "Run 'modeltunnel --help' to get started"
+        print_info "Dashboard: http://localhost:8080/admin"
+    else
+        # Interactive mode
+        # Show main menu
+        show_main_menu
+        
+        # Install Ollama if requested
+        if [ "$INSTALL_OLLAMA" = true ]; then
+            handle_ollama_installation
+        fi
+        
+        # Install Modeltunnel if requested
+        if [ "$INSTALL_MODELTUNNEL" = true ]; then
+            handle_modeltunnel_installation
+        fi
+        
+        # Install models
+        if [ "$INSTALL_OLLAMA" = true ] || check_ollama_installed; then
+            install_models_menu
+        fi
+        
+        # Show final summary
+        show_summary
     fi
-    
-    # Install Modeltunnel if requested
-    if [ "$INSTALL_MODELTUNNEL" = true ]; then
-        handle_modeltunnel_installation
-    fi
-    
-    # Install models
-    if [ "$INSTALL_OLLAMA" = true ] || check_ollama_installed; then
-        install_models_menu
-    fi
-    
-    # Show final summary
-    show_summary
+}
+
+# Parse command line arguments
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --silent)
+                SILENT_MODE=true
+                shift
+                ;;
+            --with-ollama)
+                INSTALL_OLLAMA=true
+                shift
+                ;;
+            --install-dir)
+                INSTALL_DIR="$2"
+                shift 2
+                ;;
+            --help)
+                echo "Modeltunnel Installer"
+                echo ""
+                echo "Usage:"
+                echo "  curl -fsSL ... | bash"
+                echo "  curl -fsSL ... | bash -s -- [options]"
+                echo ""
+                echo "Options:"
+                echo "  --silent         Non-interactive mode (installs modeltunnel only)"
+                echo "  --with-ollama    Also install Ollama"
+                echo "  --install-dir    Installation directory (default: /usr/local/bin)"
+                echo "  --help           Show this help message"
+                exit 0
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
 }
 
 # Run main function
+parse_args "$@"
 main "$@"
