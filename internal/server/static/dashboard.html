@@ -1075,15 +1075,14 @@
                     </button>
                 </div>
                 <div class="card-body">
-                    <div class="info-box" style="margin-bottom: 16px; background: var(--bg-secondary); padding: 12px; border-radius: 8px; border-left: 3px solid var(--accent);">
-                        <strong>💡 Bring Your Own Key</strong><br>
+                    <div class="info-box" style="margin-bottom: 16px; background: var(--bg-secondary); padding: 12px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">
+                        <strong>Bring Your Own Key</strong><br>
                         Add your OpenAI or Anthropic API keys to use their models alongside your local Ollama models. All requests go through Modeltunnel's unified API.
                     </div>
                     <div id="providers-list">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">🌐</div>
-                            <div>No external providers configured</div>
-                            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">Add a provider to use OpenAI, Anthropic, or other API models</div>
+                        <div class="empty-state" style="padding: 40px 20px;">
+                            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">No providers configured</div>
+                            <div style="font-size: 13px; color: var(--text-tertiary);">Click "Add Provider" to add your OpenAI or Anthropic API key</div>
                         </div>
                     </div>
                 </div>
@@ -2869,8 +2868,8 @@ http://localhost:8080/v1</pre>
                         <label class="form-label">Provider Type <span class="text-danger">*</span></label>
                         <select id="provider-type" class="form-input" onchange="onProviderTypeChange()" required>
                             <option value="">Select provider...</option>
-                            <option value="openai">🅾️ OpenAI</option>
-                            <option value="anthropic">🟣 Anthropic</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -3412,18 +3411,20 @@ model: ${model}`;
         async function loadProviders() {
             try {
                 const response = await fetch('/admin/api/providers');
-                if (!response.ok) throw new Error('Failed to fetch providers');
+                if (!response.ok) {
+                    // If 404 or other error, just show empty state (no providers configured yet)
+                    if (response.status === 404 || response.status === 500) {
+                        updateProvidersList([]);
+                        return;
+                    }
+                    throw new Error('Failed to fetch providers');
+                }
                 const providers = await response.json();
                 updateProvidersList(providers);
             } catch (error) {
                 console.error('Failed to load providers:', error);
-                document.getElementById('providers-list').innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">⚠️</div>
-                        <div>Failed to load providers</div>
-                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">${error.message}</div>
-                    </div>
-                `;
+                // Show empty state instead of error
+                updateProvidersList([]);
             }
         }
 
@@ -3432,19 +3433,13 @@ model: ${model}`;
 
             if (!providers || providers.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🌐</div>
-                        <div>No external providers configured</div>
-                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">Add a provider to use OpenAI, Anthropic, or other API models</div>
+                    <div class="empty-state" style="padding: 40px 20px;">
+                        <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">No providers configured</div>
+                        <div style="font-size: 13px; color: var(--text-tertiary);">Click "Add Provider" to add your OpenAI or Anthropic API key</div>
                     </div>
                 `;
                 return;
             }
-
-            const typeIcons = {
-                'openai': '🅾️',
-                'anthropic': '🟣'
-            };
 
             const typeNames = {
                 'openai': 'OpenAI',
@@ -3457,7 +3452,6 @@ model: ${model}`;
                         <div class="card" style="border-left: 3px solid ${provider.is_active ? 'var(--success)' : 'var(--text-secondary)'};">
                             <div class="card-header" style="padding: 16px;">
                                 <div style="display: flex; align-items: center; gap: 12px;">
-                                    <span style="font-size: 24px;">${typeIcons[provider.type] || '🌐'}</span>
                                     <div style="flex: 1;">
                                         <div style="font-weight: 600; font-size: 16px;">${provider.name}</div>
                                         <div style="font-size: 13px; color: var(--text-secondary);">
@@ -3466,7 +3460,7 @@ model: ${model}`;
                                     </div>
                                     <div style="text-align: right;">
                                         <div style="font-size: 12px; color: var(--text-secondary);">
-                                            ${provider.is_active ? '<span style="color: var(--success);">● Active</span>' : '<span style="color: var(--text-secondary);">● Inactive</span>'}
+                                            ${provider.is_active ? '<span style="color: var(--success);">Active</span>' : '<span style="color: var(--text-secondary);">Inactive</span>'}
                                         </div>
                                         <div style="font-size: 12px; color: var(--text-secondary);">
                                             ${provider.rate_limit || 'No limit'}
@@ -3475,7 +3469,7 @@ model: ${model}`;
                                 </div>
                             </div>
                             <div class="card-body" style="padding: 0 16px 16px;">
-                                <div style="margin-bottom: 12px;">
+                                <div style="margin-bottom: 12px; font-size: 13px;">
                                     <strong>Models:</strong> ${provider.models ? provider.models.join(', ') : 'None configured'}
                                 </div>
                                 ${provider.track_costs ? `
