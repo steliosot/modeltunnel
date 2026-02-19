@@ -124,32 +124,6 @@ func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 // adminAuth wraps admin routes with optional HTTP Basic Auth
-func (s *Server) adminAuth(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		adminConfig := s.config.Server.Admin
-		if !adminConfig.Enabled || adminConfig.Username == "" || adminConfig.Password == "" {
-			next(w, r)
-			return
-		}
-
-		auth := r.Header.Get("Authorization")
-		if auth == "" {
-			w.Header().Set("WWW-Authenticate", `Basic realm="Modeltunnel Admin"`)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		expectedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(adminConfig.Username+":"+adminConfig.Password))
-		if auth != expectedAuth {
-			w.Header().Set("WWW-Authenticate", `Basic realm="Modeltunnel Admin"`)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		next(w, r)
-	}
-}
-
 // adminAuth wraps admin routes with optional HTTP Basic Auth
 func (s *Server) adminAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -873,15 +847,18 @@ func (s *Server) SetTunnelStatus(connected bool, url string, message ...string) 
 func (s *Server) handleAdminConfig(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		// Read current config file
 		data, err := os.ReadFile(s.configPath)
-		if err != nil {
-			s.writeError(w, http.StatusInternalServerError, "failed to read config")
-			return
+		configContent := string(data)
+
+		// If config is missing or empty, use default config
+		if err != nil || configContent == "" {
+			defaultConfig := config.DefaultConfig()
+			yamlData, _ := yaml.Marshal(defaultConfig)
+			configContent = string(yamlData)
 		}
 
 		s.writeJSON(w, http.StatusOK, map[string]interface{}{
-			"config":      string(data),
+			"config":      configContent,
 			"server_host": s.config.Server.Host,
 			"server_port": s.config.Server.Port,
 		})
