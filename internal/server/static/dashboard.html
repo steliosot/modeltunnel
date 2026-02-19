@@ -3991,6 +3991,14 @@ alert('Failed to delete model: ' + error.message);
             }
         }
 
+        // Show vLLM load command
+        function showVLLMCommand(modelName) {
+            const command = `pip install vllm
+vllm serve ${modelName} --port 8000 --dtype auto`;
+            
+            alert(`To load this vLLM model, run:\n\n${command}\n\n1. Install vLLM: pip install vllm\n2. Start the server with your model: vllm serve ${modelName} --port 8000 --dtype auto\n3. The model will be available at http://localhost:8000`);
+        }
+
         // Refresh local models list
         function refreshLocalModels() {
             document.getElementById('installed-local-models-list').innerHTML = `
@@ -4179,8 +4187,8 @@ alert('Failed to delete model: ' + error.message);
                                 </div>
                             </div>
                             ${isVLLM ? `
-                                <button class="btn btn-secondary btn-sm" disabled style="font-size: 11px; padding: 4px 12px; opacity: 0.5;">
-                                    Auto-loaded
+                                <button class="btn btn-secondary btn-sm" onclick="showVLLMCommand('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
+                                    How to load
                                 </button>
                             ` : `
                                 <button class="btn btn-secondary btn-sm" onclick="pullModel('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
