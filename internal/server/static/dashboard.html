@@ -1129,20 +1129,24 @@
                         <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Recommended Models</h3>
                         <p class="text-secondary" style="margin-bottom: 16px; font-size: 12px;">Click on a model to install it</p>
                         
+                        <!-- vLLM (OpenAI-compatible server) -->
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">vLLM Models</h4>
+                        <div id="local-recommended-vllm" style="margin-bottom: 16px;"></div>
+                        
                         <!-- General Purpose -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">General Purpose</h4>
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">General Purpose (Ollama)</h4>
                         <div id="local-recommended-general" style="margin-bottom: 16px;"></div>
                         
                         <!-- Coding -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Coding</h4>
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">Coding (Ollama)</h4>
                         <div id="local-recommended-coding" style="margin-bottom: 16px;"></div>
                         
                         <!-- Vision -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Vision</h4>
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">Vision (Ollama)</h4>
                         <div id="local-recommended-vision" style="margin-bottom: 16px;"></div>
                         
                         <!-- Reasoning -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Reasoning</h4>
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">Reasoning (Ollama)</h4>
                         <div id="local-recommended-reasoning" style="margin-bottom: 16px;"></div>
                     </div>
                 
@@ -4004,7 +4008,7 @@ alert('Failed to delete model: ' + error.message);
                 const data = await response.json();
                 
                 const allModels = data.data || [];
-                const localModels = allModels.filter(model => model.id && model.id.startsWith('default/'));
+                const localModels = allModels.filter(model => model.id);
                 
                 const container = document.getElementById('installed-local-models-list');
                 
@@ -4019,7 +4023,16 @@ alert('Failed to delete model: ' + error.message);
 
                 container.innerHTML = localModels.map(model => {
                     const modelId = model.id || model.name || 'unknown';
-                    const shortName = modelId.replace('default/', '');
+                    const provider = model.owned_by || 'unknown';
+                    
+                    // Extract upstream and model name
+                    let upstreamName = '';
+                    let shortName = modelId;
+                    let displayProvider = provider.toUpperCase();
+                    
+                    if (modelId.includes('/')) {
+                        [upstreamName, shortName] = modelId.split('/', 2);
+                    }
                     
                     let size = '-';
                     if (model.size && model.size > 0) {
@@ -4043,7 +4056,9 @@ alert('Failed to delete model: ' + error.message);
                     }
                     modelDetails.push('Status: Ready');
                     
-                    let badges = [];
+                    let badges = [`
+                        <span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">${displayProvider}</span>
+                    `];
                     
                     if (model.intents && model.intents.length > 0) {
                         model.intents.forEach(intent => {
@@ -4057,7 +4072,7 @@ alert('Failed to delete model: ' + error.message);
                         <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
                             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
                                 <div>
-                                    <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500;">${modelId}</div>
+                                    <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500;">${shortName}</div>
                                     <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">
                                         ${size} │ 
                                         ${recommended ? recommended.context + ' │ ' + recommended.description : ''}
@@ -4065,11 +4080,13 @@ alert('Failed to delete model: ' + error.message);
                                     </div>
                                     ${badgesHtml}
                                 </div>
+                                ${provider === 'ollama' ? `
                                 <div style="flex-shrink: 0;">
                                     <button class="btn btn-sm btn-secondary" onclick="deleteModel('${modelId}')" style="font-size: 11px; padding: 4px 12px; margin-left: 8px;">
                                         Remove
                                     </button>
                                 </div>
+                                ` : ''}
                             </div>
                         </div>
                     `;
@@ -4086,6 +4103,7 @@ alert('Failed to delete model: ' + error.message);
 
         // Update local recommended models
         function updateLocalRecommendedModels() {
+            updateRecommendedModels('local-recommended-vllm', 'vllm');
             updateRecommendedModels('local-recommended-general', 'general');
             updateRecommendedModels('local-recommended-coding', 'coding');
             updateRecommendedModels('local-recommended-vision', 'vision');
@@ -4110,17 +4128,38 @@ alert('Failed to delete model: ' + error.message);
             general: [
                 {name: 'llama3.2:3b', size: '2.3GB', context: '8K', description: 'Well-rounded, balanced performance'},
                 {name: 'mistral:7b', size: '4.1GB', context: '32K', description: 'Fast, intelligent, versatile'},
-                {name: 'phi4', size: '2.7GB', context: '32K', description: 'Small but powerful, reasoning'}
+                {name: 'phi4', size: '2.7GB', context: '32K', description: 'Small but powerful, reasoning'},
+                {name: 'qwen2.5:3b', size: '1.9GB', context: '32K', description: 'Multilingual, efficient'},
+                {name: 'gemma2:2b', size: '1.6GB', context: '8K', description: 'Google\'s efficient model'},
+                {name: 'tinyllama:latest', size: '1.1GB', context: '1K', description: 'Ultra-fast, minimal resource'},
+                {name: 'stablelm2:1.6b', size: '3.3GB', context: '4K', description: 'Stability AI, general purpose'},
+                {name: 'orca-mini:3b', size: '2.1GB', context: '4K', description: 'Instruction following'}
             ],
             coding: [
                 {name: 'codellama:7b', size: '4.2GB', context: '32K', description: 'Code generation and completion'},
-                {name: 'deepseek-coder:6.7b', size: '4.5GB', context: '32K', description: 'Competitive programming, coding'}
+                {name: 'deepseek-coder:6.7b', size: '4.5GB', context: '32K', description: 'Competitive programming, coding'},
+                {name: 'starcoder2:3b', size: '6.1GB', context: '16K', description: 'BigCode, multi-language'},
+                {name: 'qwen2.5-coder:3b', size: '3.8GB', context: '32K', description: 'Alibaba, code completion'},
+                {name: 'codestral', size: '7.4GB', context: '32K', description: 'Mistral, code optimization'}
             ],
             vision: [
-                {name: 'llava:7b', size: '4.5GB', context: '32K', description: 'Image understanding, vision-language'}
+                {name: 'llava:7b', size: '4.5GB', context: '32K', description: 'Image understanding, vision-language'},
+                {name: 'llava-llama3:8b', size: '16GB', context: '4K', description: 'Llama3 vision model'},
+                {name: 'bakllava:latest', size: '19GB', context: '4K', description: 'OCR, document analysis'}
             ],
             reasoning: [
-                {name: 'deepseek-r1:8b', size: '4.8GB', context: '32K', description: 'Math, logic, reasoning tasks'}
+                {name: 'deepseek-r1:8b', size: '4.8GB', context: '32K', description: 'Math, logic, reasoning tasks'},
+                {name: 'qwen2.5-math:7b', size: '4.3GB', context: '32K', description: 'Math problem solving'},
+                {name: 'deepseek-r1:14b', size: '9.0GB', context: '32K', description: 'Advanced reasoning, multi-step'},
+                {name: 'command-r:latest', size: '4.1GB', context: '128K', description: 'Cohere, long context'}
+            ],
+            vllm: [
+                {name: 'meta-llama/Llama-3.1-8B-Instruct', size: '16GB', context: '131K', description: 'Meta, long context'},
+                {name: 'microsoft/Phi-4-mini-instruct', size: '2.3GB', context: '128K', description: 'Microsoft, efficient'},
+                {name: 'Qwen/Qwen2.5-7B-Instruct', size: '14GB', context: '32K', description: 'Alibaba, multilingual'},
+                {name: 'mistralai/Mistral-7B-Instruct-v0.3', size: '15GB', context: '32K', description: 'MistralAI, fast'},
+                {name: 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', size: '14GB', context: '32K', description: 'DeepSeek reasoning'},
+                {name: 'google/gemma-3-27b-it', size: '54GB', context: '8K', description: 'Google, large model'}
             ]
         };
 
@@ -4129,19 +4168,25 @@ alert('Failed to delete model: ' + error.message);
             for (const [category, models] of Object.entries(recommendedModels)) {
                 const container = document.getElementById(`recommended-${category}`);
                 if (!container) continue;
-
+                const isVLLM = category === 'vllm';
                 container.innerHTML = models.map(model => `
                     <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
                             <div>
-                                <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500;">${model.name}</div>
+                                <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500; word-break: break-all;">${model.name}</div>
                                 <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">
                                     ${model.size} │ ${model.context} context │ ${model.description}
                                 </div>
                             </div>
-                            <button class="btn btn-secondary btn-sm" onclick="pullModel('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
-                                Pull
-                            </button>
+                            ${isVLLM ? `
+                                <button class="btn btn-secondary btn-sm" disabled style="font-size: 11px; padding: 4px 12px; opacity: 0.5;">
+                                    Auto-loaded
+                                </button>
+                            ` : `
+                                <button class="btn btn-secondary btn-sm" onclick="pullModel('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
+                                    Pull
+                                </button>
+                            `}
                         </div>
                     </div>
                 `).join('');
@@ -4155,19 +4200,26 @@ alert('Failed to delete model: ' + error.message);
 
             const container = document.getElementById(containerId);
             if (!container) return;
+            const isVLLM = category === 'vllm';
 
             container.innerHTML = models.map(model => `
                 <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
                         <div>
-                            <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500;">${model.name}</div>
+                            <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500; word-break: break-all;">${model.name}</div>
                             <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">
                                 ${model.size} │ ${model.context} context │ ${model.description}
                             </div>
                         </div>
-                        <button class="btn btn-secondary btn-sm" onclick="pullModel('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
-                            Pull
-                        </button>
+                        ${isVLLM ? `
+                            <button class="btn btn-secondary btn-sm" disabled style="font-size: 11px; padding: 4px 12px; opacity: 0.5;">
+                                Auto-loaded
+                            </button>
+                        ` : `
+                            <button class="btn btn-secondary btn-sm" onclick="pullModel('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
+                                Pull
+                            </button>
+                        `}
                     </div>
                 </div>
             `).join('');
