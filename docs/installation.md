@@ -102,6 +102,63 @@ modeltunnel version
 
 ---
 
+## Systemd Services (Persistent Installation)
+
+### Problem: Closing VM Window Kills the Process
+
+Running `modeltunnel up --ollama --tunnel &` and closing the VM window kills the process because the terminal sends a SIGHUP signal.
+
+### Solution: Systemd Services
+
+Services survive closing windows, session termination, and restart on failure:
+
+```bash
+# Install with systemd service enabled
+curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash -
+
+# Services created automatically
+sudo systemctl status ollama      # Check Ollama service
+sudo systemctl status modeltunnel  # Check Modeltunnel service
+```
+
+### Features
+
+- ✓ Auto-restart on failure (3-10 seconds)
+- ✓ Survives closing VM window
+- ✓ Auto-start on system boot
+- ✓ Logs available: `journalctl -u modeltunnel -f`
+
+### Managing Services
+
+```bash
+# Check status
+sudo systemctl status ollama modeltunnel
+
+# Restart services
+sudo systemctl restart modeltunnel
+
+# View logs
+sudo journalctl -u modeltunnel -f
+
+# Stop/Start
+sudo systemctl stop modeltunnel
+sudo systemctl start modeltunnel
+
+# Enable/disable auto-start
+sudo systemctl enable modeltunnel  # Enable
+sudo systemctl disable modeltunnel # Disable
+```
+
+### Service Files
+
+Both services are created by the installer at:
+- `/etc/systemd/system/ollama.service` - Ollama LLM server
+- `/etc/systemd/system/modeltunnel.service` - Modeltunnel API + tunnel
+
+Modeltunnel service depends on Ollama and both auto-restart on failure.
+
+---
+
 ## Docker
 
 ### Using Pre-Built Image

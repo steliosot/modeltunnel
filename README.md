@@ -28,6 +28,7 @@
 - **Persistent Keys** - SQLite database for key storage (CLI keys available immediately)
 - **Hot Reload** - Configuration changes apply without restart
 - **Request Logging** - Real-time monitoring via WebSocket
+- **Systemd Services** - Auto-restart on failure, survives closing VM window
 
 ## Installation
 
