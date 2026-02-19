@@ -4221,8 +4221,8 @@ vllm serve ${modelName} --port 8000 --dtype auto`;
                             </div>
                         </div>
                         ${isVLLM ? `
-                            <button class="btn btn-secondary btn-sm" disabled style="font-size: 11px; padding: 4px 12px; opacity: 0.5;">
-                                Auto-loaded
+                            <button class="btn btn-secondary btn-sm" onclick="showVLLMCommand('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
+                                How to load
                             </button>
                         ` : `
                             <button class="btn btn-secondary btn-sm" onclick="pullModel('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
