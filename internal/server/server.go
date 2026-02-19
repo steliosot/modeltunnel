@@ -395,10 +395,27 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 	// Check for intent-based routing
 	intent := r.Header.Get("X-Model-Intent")
 	if intent != "" || req.Model == "auto" {
-		// Get available models from upstream
+		// Get available models from upstreams and providers
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 		availableModels, _ := s.upstreams.AllModels(ctx)
+
+		// Add external provider models to available models
+		if s.providerStore != nil {
+			providerList, err := s.providerStore.ListActive()
+			if err == nil {
+				for _, provider := range providerList {
+					for _, modelID := range provider.Models {
+						availableModels = append(availableModels, openai.Model{
+							ID:      fmt.Sprintf("%s/%s", provider.ID, modelID),
+							Object:  "model",
+							Created: time.Now().Unix(),
+							OwnedBy: provider.Type,
+						})
+					}
+				}
+			}
+		}
 
 		// Convert to string slice
 		modelIDs := make([]string, len(availableModels))
