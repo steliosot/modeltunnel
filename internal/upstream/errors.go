@@ -103,6 +103,18 @@ func ParseOllamaError(err error, statusCode int, body string, baseURL string) Ol
 		}
 	}
 
+	// Check for vision model errors
+	bodyLower := strings.ToLower(body)
+	if strings.Contains(bodyLower, "does not support image input") ||
+		strings.Contains(bodyLower, "cannot read") && strings.Contains(bodyLower, "image") {
+		return OllamaError{
+			Type:        "UNSUPPORTED_VISION_INPUT",
+			Message:     "This model does not support image input (vision/multimodal)",
+			Action:      "Use a vision-capable model like llava, bakllava, or moondream, or remove the image from your request",
+			IsRetryable: false,
+		}
+	}
+
 	if statusCode == http.StatusNotFound {
 		return OllamaError{
 			Type:        "ENDPOINT_NOT_FOUND",

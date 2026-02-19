@@ -3764,7 +3764,7 @@ alert('Failed to delete model: ' + error.message);
         // Load and display local models
         async function loadLocalModels() {
             try {
-                const response = await fetch('/v1/models');
+                const response = await fetch('/admin/api/models');
                 const data = await response.json();
                 
                 const allModels = data.data || [];
@@ -3838,22 +3838,14 @@ alert('Failed to delete model: ' + error.message);
                         </div>
                     `;
                 }).join('');
-            } catch (error) {
+} catch (error) {
                 console.error('Failed to load local models:', error);
-                document.getElementById('installed-local-models-list').innnerHTML = `
+                document.getElementById('installed-local-models-list').innerHTML = `
                     <p style="color: var(--text-secondary); font-size: 13px;">
                         Failed to load local models. Is Ollama running?
                     </p>
                 `;
             }
-        }
-
-        // Update local recommended models
-        function updateLocalRecommendedModels() {
-            updateRecommendedModels('local-recommended-general', 'general');
-            updateRecommendedModels('local-recommended-coding', 'coding');
-            updateRecommendedModels('local-recommended-vision', 'vision');
-            updateRecommendedModels('local-recommended-reasoning', 'reasoning');
         }
 
         // Initialize local models when tab is clicked
@@ -3863,7 +3855,6 @@ alert('Failed to delete model: ' + error.message);
                 item.addEventListener('click', () => {
                     if (item.dataset.section === 'local-models') {
                         loadLocalModels();
-                        updateLocalRecommendedModels();
                     }
                 });
             });
