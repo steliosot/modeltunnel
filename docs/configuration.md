@@ -57,6 +57,10 @@ upstreams:
     model: mixtral
     timeout: 60s
   
+  vllm-local:
+    type: vllm
+    base_url: http://127.0.0.1:8000
+  
   remote:
     type: ollama
     base_url: https://ollama.example.com
@@ -66,9 +70,9 @@ upstreams:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `type` | ollama | Upstream type (only ollama supported) |
-| `base_url` | required | Ollama API URL |
-| `model` | mistral | Default model |
+| `type` | ollama | Upstream type (ollama, vllm) |
+| `base_url` | required | Upstream API URL |
+| `model` | mistral | Default model (ollama only) |
 | `timeout` | 30s | Request timeout |
 
 ---
@@ -253,6 +257,10 @@ upstreams:
     base_url: http://127.0.0.1:11434
     model: mistral
     timeout: 30s
+  
+  vllm-local:
+    type: vllm
+    base_url: http://127.0.0.1:8000
 
 policies:
   default:

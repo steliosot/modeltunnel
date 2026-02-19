@@ -145,6 +145,10 @@ var upCmd = &cobra.Command{
 				case "ollama":
 					ollamaUpstream := upstream.NewOllamaUpstream(u.BaseURL, u.Model)
 					manager.Register(name, ollamaUpstream)
+				case "vllm":
+					vllmUpstream := upstream.NewVLLMUpstream(u.BaseURL)
+					manager.Register(name, vllmUpstream)
+					fmt.Printf("✓ vLLM upstream configured at: %s\n", u.BaseURL)
 				}
 			}
 		}
