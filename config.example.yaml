@@ -1,19 +1,137 @@
+# Modeltunnel Configuration - Demo MVP
+#
+# This configuration demonstrates key features:
+# - Intent-based routing (auto-selects the best model)
+# - API key authentication
+# - Rate limiting per-key or per-model
+# - Multiple upstream providers (Ollama, OpenAI)
+#
+# Get your API key from: https://your-tunnel-url/admin
+#
+# Quick Start:
+# 1. modeltunnel up --ollama --tunnel
+# 2. Use the API key from /admin to make requests
+# 3. Try different intents with X-Model-Intent header
+
 server:
   host: "127.0.0.1"
   port: 8080
-  # Optional: Enable admin panel authentication for public tunnel access
-  admin:
-    enabled: true
-    username: "admin"
-    password: "changeme"  # CHANGE THIS in production!
+  # Optional: Admin panel authentication
+  # Uncomment to password-protect /admin when using tunnel
+  # admin:
+  #   enabled: true
+  #   username: "admin"
+  #   password: "secure-password"
 
+# Upstream Model Providers
 upstreams:
-  ollama:
+  # Local Ollama with your installed models
+  default:
     type: ollama
     base_url: "http://127.0.0.1:11434"
 
+  # Optional: OpenAI as fallback for premium features
+  # Remove this section if you don't have OpenAI API access
+  openai:
+    type: openai
+    api_key: "YOUR_OPENAI_API_KEY"  # Replace with your key
+    base_url: "https://api.openai.com/v1"
+    rate_limit: 50/min
+
+# Intent-Based Routing
+# Automatically selects the best model based on request intent
+intents:
+  # Code generation and programming tasks
+  code:
+    priority:
+      - "default/llama3.2:3b"  # Fast, efficient for code
+      - "default/mistral:7b"   # Larger context, better reasoning
+    description: "Programming, code generation, debugging, technical questions"
+    temperature: 0.2
+    max_tokens: 4096
+
+  # General chat and conversation
+  chat:
+    priority:
+      - "default/llama3.2:3b"  # Fast responses
+      - "default/mistral:latest"
+    description: "General conversation, Q&A, customer support"
+    temperature: 0.7
+    max_tokens: 2048
+
+  # Strategic planning and analysis
+  plan:
+    priority:
+      - "default/mistral:7b"  # Larger context window
+    description: "Complex reasoning, planning, strategy, analysis"
+    temperature: 0.3
+    max_tokens: 8192
+
+# Rate Limiting Policies
 policies:
+  # Default policy for most keys
   default:
     rate_limit: "60/min"
     max_tokens: 4096
 
+  # High-volume policy for internal services
+  high-volume:
+    rate_limit: "500/min"
+    max_tokens: 8192
+
+  # Premium policy with higher limits
+  premium:
+    rate_limit: "200/min"
+    max_tokens: 16384
+
+# Per-model rate limit overrides
+# (useful when some models are slower or more expensive)
+# models:
+#   default/mistral:7b:
+#     rate_limit: "30/min"
+#   default/mistral:latest:
+#     rate_limit: "100/min"
+
+# API Keys
+# Use the keys from the /admin page to authenticate requests
+# To create keys: modeltunnel key create <name>
+keys:
+  # Example keys (managed via CLI - keep empty and let CLI manage them)
+  # - name: demo
+  #   key: mt_sk_demo_xxx
+  #   policy: default
+
+# External Providers (OpenAI, Anthropic, etc.)
+# Uncomment to add external providers
+# providers:
+#   - name: GPT-4
+#     type: openai
+#     api_key: "YOUR_OPENAI_API_KEY"
+#     base_url: "https://api.openai.com/v1"
+#     models:
+#       - gpt-4-turbo-preview
+#       - gpt-3.5-turbo
+#     rate_limit: 100/min
+#
+# Usage Examples:
+#
+# 1. Simple chat completion:
+#    curl -H "Authorization: Bearer YOUR_API_KEY" \
+#         -H "Content-Type: application/json" \
+#         -d '{"model":"default/llama3.2:3b","messages":[{"role":"user","content":"Hello"}]}' \
+#         http://localhost:8080/v1/chat/completions
+#
+# 2. Intent-based routing with X-Model-Intent header:
+#    curl -H "Authorization: Bearer YOUR_API_KEY" \
+#         -H "X-Model-Intent: code" \
+#         -H "Content-Type: application/json" \
+#         -d '{"model":"auto","messages":[{"role":"user","content":"Write a Python function"}]}' \
+#         http://localhost:8080/v1/chat/completions
+#
+# 3. Streaming response:
+#    curl -H "Authorization: Bearer YOUR_API_KEY" \
+#         -H "Content-Type: application/json" \
+#         -d '{"model":"default/llama3.2:3b","messages":[{"role":"user","content":"Count to 5"}],"stream":true}' \
+#         http://localhost:8080/v1/chat/completions
+#
+# For more examples, visit: http://localhost:8080/admin
