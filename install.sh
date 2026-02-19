@@ -215,27 +215,33 @@ detect_arch() {
 
 check_dependencies() {
     print_step "Checking dependencies..."
-    
+
     local missing_deps=()
-    
+
     if ! command -v curl &> /dev/null && ! command -v wget &> /dev/null; then
         missing_deps+=("curl or wget")
     fi
-    
+
+    if [ "$OS" = "linux" ]; then
+        if ! command -v zstd &> /dev/null; then
+            missing_deps+=("zstd")
+        fi
+    fi
+
     if [ ${#missing_deps[@]} -ne 0 ]; then
         print_error "Missing required dependencies: ${missing_deps[*]}"
         print_info "Please install them and run this script again."
-        
+
         if [ "$OS" = "linux" ]; then
-            print_info "On Ubuntu/Debian: sudo apt-get install -y curl"
-            print_info "On CentOS/RHEL: sudo yum install -y curl"
+            print_info "On Ubuntu/Debian: sudo apt-get install -y ${missing_deps[*]}"
+            print_info "On CentOS/RHEL: sudo dnf install -y ${missing_deps[*]}"
         elif [ "$OS" = "darwin" ]; then
-            print_info "On macOS: brew install curl"
+            print_info "On macOS: brew install ${missing_deps[*]}"
         fi
-        
+
         exit 1
     fi
-    
+
     print_success "All dependencies satisfied"
 }
 
