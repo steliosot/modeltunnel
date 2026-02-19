@@ -284,17 +284,22 @@ var upCmd = &cobra.Command{
 
 			// Check if using localtunnel
 			if strings.Contains(tunnelURL, "loca.lt") {
-				fmt.Println("\n   ℹ️  localtunnel.me password protection:")
-				fmt.Println("      This tunnel service shows a one-time password page.")
-				fmt.Println("      - First visit: Enter empty password or check page")
-				fmt.Println("      - Bookmark URL: After first access for quick return")
-				fmt.Println("      - For production: Install ngrok for password-free tunnels")
+				fmt.Println("\n   🔐 First time setup:")
+				fmt.Println("      1. Open https://%s/admin in your browser", tunnelURL)
+				fmt.Println("      2. You'll see a password page from localtunnel.me")
+				fmt.Println("      3. Click through or enter any password to continue")
+				fmt.Println("      4. Bookmark the URL for quick access later")
+				fmt.Println("\n   This is a ONE-TIME check. Share the URL with your team!")
 			}
 		} else {
 			fmt.Printf("   Local:  http://%s/v1\n", srv.Addr())
 		}
 		fmt.Println("\n   Dashboard:")
-		fmt.Printf("   http://%s/admin\n", srv.Addr())
+		if tunnelURL != "" {
+			fmt.Printf("   https://%s/admin (public access)", tunnelURL)
+		} else {
+			fmt.Printf("   http://%s/admin (local only)\n", srv.Addr())
+		}
 		fmt.Println("\n   OpenCode/Cursor settings:")
 		if tunnelURL != "" {
 			fmt.Printf("   - Base URL: https://%s/v1\n", tunnelURL)
