@@ -10,6 +10,7 @@ import (
 
 	"github.com/modeltunnel/modeltunnel/internal/config"
 	"github.com/modeltunnel/modeltunnel/internal/db"
+	"github.com/modeltunnel/modeltunnel/internal/detect"
 	"github.com/modeltunnel/modeltunnel/internal/keys"
 	"github.com/modeltunnel/modeltunnel/internal/providers"
 	"github.com/modeltunnel/modeltunnel/internal/server"
@@ -99,6 +100,24 @@ var upCmd = &cobra.Command{
 
 		if port != 0 {
 			cfg.Server.Port = port
+		}
+
+		// Get flags
+		bindAll, _ := cmd.Flags().GetBool("bind-all")
+		host, _ := cmd.Flags().GetString("host")
+
+		// Auto-detect environment and bind to 0.0.0.0 if needed
+		if host != "" {
+			cfg.Server.Host = host
+		} else if bindAll {
+			cfg.Server.Host = "0.0.0.0"
+			fmt.Println("Binding to 0.0.0.0 (--bind-all flag specified)")
+		} else if cfg.Server.Host == "127.0.0.1" && detect.ShouldBindPublic() {
+			fmt.Println(detect.GetBindingMessage())
+			cfg.Server.Host = "0.0.0.0"
+		} else {
+			_, description := detect.GetEnvironment()
+			fmt.Printf("%s\n", description)
 		}
 
 		manager := upstream.NewManager()
@@ -444,6 +463,8 @@ func init() {
 	upCmd.Flags().Bool("tunnel", false, "Create a public tunnel using LocalTunnel")
 	upCmd.Flags().String("subdomain", "", "Custom subdomain for tunnel (e.g., 'mymodel' -> mymodel.loca.lt)")
 	upCmd.Flags().Int("port", 0, "Server port (overrides config)")
+	upCmd.Flags().Bool("bind-all", false, "Bind to 0.0.0.0 (all interfaces) for external access")
+	upCmd.Flags().String("host", "", "Bind to specific host (overrides config)")
 
 	keyCmd.AddCommand(keyCreateCmd)
 	keyCmd.AddCommand(keyListCmd)

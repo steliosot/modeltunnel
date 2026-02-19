@@ -19,6 +19,7 @@ import (
 	"github.com/modeltunnel/modeltunnel/internal/jobs"
 	"github.com/modeltunnel/modeltunnel/internal/keys"
 	"github.com/modeltunnel/modeltunnel/internal/models"
+	"github.com/modeltunnel/modeltunnel/internal/network"
 	"github.com/modeltunnel/modeltunnel/internal/providers"
 	"github.com/modeltunnel/modeltunnel/internal/router"
 	"github.com/modeltunnel/modeltunnel/internal/upstream"
@@ -207,6 +208,9 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 	s.mux.HandleFunc("/admin/api/providers", s.handleAdminProviders)
 	s.mux.HandleFunc("/admin/api/providers/", s.handleAdminProviderDetail)
 	s.mux.HandleFunc("/admin/api/providers/types", s.handleAdminProviderTypes)
+
+	// Network endpoints
+	s.mux.HandleFunc("/admin/api/network", s.handleNetwork)
 
 	// Setup rate limiter
 	if policy, ok := cfg.Policies["default"]; ok {
@@ -1342,4 +1346,35 @@ func (s *Server) handleAdminProviderTypes(w http.ResponseWriter, r *http.Request
 // Addr returns the server address
 func (s *Server) Addr() string {
 	return s.server.Addr
+}
+
+// handleNetwork handles GET /admin/api/network
+func (s *Server) handleNetwork(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	// Get all public IP addresses
+	type Response struct {
+		BindHost  string   `json:"bind_host"`
+		Port      int      `json:"port"`
+		IPs       []string `json:"ips"`
+		DefaultIP string   `json:"default_ip"`
+	}
+
+	bindHost := s.config.Server.Host
+	port := s.config.Server.Port
+
+	ips := network.GetPublicIPs()
+	defaultIP := network.GetDefaultIP()
+
+	response := Response{
+		BindHost:  bindHost,
+		Port:      port,
+		IPs:       ips,
+		DefaultIP: defaultIP,
+	}
+
+	s.writeJSON(w, http.StatusOK, response)
 }

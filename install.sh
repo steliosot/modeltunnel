@@ -513,6 +513,83 @@ configure_modeltunnel() {
     fi
 }
 
+setup_modeltunnel_config() {
+    # Detect environment for binding configuration
+    local env_type="local"
+    local bind_host="127.0.0.1"
+    
+    # Check for Docker
+    if [[ -f /.dockerenv ]]; then
+        env_type="docker"
+        bind_host="0.0.0.0"
+    # Check for WSL2
+    elif [[ -f /proc/version ]] && grep -q Microsoft /proc/version; then
+        env_type="wsl2"
+        bind_host="0.0.0.0"
+    # Check for Cloud VM
+    elif [[ -f /sys/hypervisor/uuid ]] || [[ -f /etc/os-release ]] && (grep -q "ID=google\|ID=ubuntu-cloud" /etc/os-release 2>/dev/null); then
+        env_type="cloud"
+        bind_host="0.0.0.0"
+    # Check for VirtualBox
+    elif [[ -f /sys/class/dmi/id/product_name ]] && grep -qi "virtualbox" /sys/class/dmi/id/product_name 2>/dev/null; then
+        env_type="virtualbox"
+        bind_host="0.0.0.0"
+    # Check for VMware
+    elif grep -qi "vmware" /proc/cpuinfo 2>/dev/null; then
+        env_type="vmware"
+        bind_host="0.0.0.0"
+    fi
+    
+    local config_dir="$HOME/.config/modeltunnel"
+    local config_file="$config_dir/config.yaml"
+    
+    mkdir -p "$config_dir"
+    
+    cat > "$config_file" << CONFIG_EOF
+server:
+  host: ${bind_host}
+  port: ${MODELTUNNEL_PORT}
+
+policies:
+  default:
+    rate_limit: 60/min
+    max_tokens: 4096
+
+intents:
+  chat:
+    priority:
+      - phi
+      - mistral:latest
+    description: General chat, Q&A, support
+    temperature: 0.7
+    max_tokens: 1000
+  code:
+    priority:
+      - deepseek-coder:6.7b
+      - mistral:latest
+    description: Programming, debugging, technical
+    temperature: 0.2
+    max_tokens: 2000
+  plan:
+    priority:
+      - deepseek-r1:latest
+      - qemu:latest
+    description: Planning, strategy, reasoning
+    temperature: 0.3
+    max_tokens: 4000
+CONFIG_EOF
+    
+    print_info "Configuration created at: $config_file"
+    if [[ "$bind_host" == "0.0.0.0" ]]; then
+        echo ""
+        print_info "Running in ${env_type} environment: server will be accessible from external machines"
+        echo ""
+        echo "  After starting, access via:"
+        echo "  • Dashboard: http://YOUR_VM_IP:${MODELTUNNEL_PORT}/admin"
+        echo "  • API:      http://YOUR_VM_IP:${MODELTUNNEL_PORT}/v1"
+    fi
+}
+
 install_modeltunnel() {
     print_step "Installing Modeltunnel..."
     
@@ -520,16 +597,19 @@ install_modeltunnel() {
     local use_source=false
     
     if command -v go &> /dev/null; then
-        if ask_yes_no "Go is installed. Build from source instead of downloading binary?" "N"; then
+            if ask_yes_no "Go is installed. Build from source instead of downloading binary?" "N"; then
             use_source=true
         fi
     fi
     
     if [ "$use_source" = true ]; then
-        install_modeltunnel_from_source
+            install_modeltunnel_from_source
     else
-        install_modeltunnel_binary
+            install_modeltunnel_binary
     fi
+    
+    # Setup config file after installation
+    setup_modeltunnel_config
 }
 
 install_modeltunnel_from_source() {
