@@ -253,10 +253,10 @@ check_ollama_installed() {
 }
 
 get_latest_ollama_version() {
-    local latest=$(curl -s "https://api.github.com/repos/$OLLAMA_REPO/releases/latest" | grep -oP '"tag_name": "\K[^"]+' || echo "")
+    local latest=$(curl -s "https://api.github.com/repos/$OLLAMA_REPO/releases/latest" | grep '"tag_name"' | sed 's/.*: "\([^"]*\)".*/\1/' || echo "")
     if [ -z "$latest" ]; then
         print_warning "Could not fetch latest Ollama version, using default"
-        echo "v0.3.13"
+        echo "v0.16.2"
     else
         echo "$latest"
     fi
@@ -365,7 +365,7 @@ handle_ollama_installation() {
     configure_ollama
     
     # Install
-    install_ollama "$latest_version"
+    install_ollama
 }
 
 configure_ollama() {
@@ -402,39 +402,41 @@ configure_ollama() {
 }
 
 install_ollama() {
-    local version="$1"
-    local download_url="https://github.com/$OLLAMA_REPO/releases/download/${version}/ollama-${OS}-${ARCH}"
-    local temp_file="/tmp/ollama-${OS}-${ARCH}"
-    
+    local temp_dir="/tmp/ollama-install-$$"
+
     echo ""
-    print_step "Downloading Ollama ${version}..."
+    print_step "Installing Ollama..."
     print_info "This may take a few minutes depending on your connection."
     print_info "Download size: ~450MB"
-    
-    # Download with progress
-    if command -v curl &> /dev/null; then
-        curl -fsSL --progress-bar "$download_url" -o "$temp_file" || {
-            print_error "Failed to download Ollama"
-            exit 1
-        }
-    else
-        wget -q --show-progress "$download_url" -O "$temp_file" || {
-            print_error "Failed to download Ollama"
-            exit 1
-        }
+
+    mkdir -p "$temp_dir"
+
+    # Download Ollama install script which handles all formats
+    OLLAMA_INSTALL_URL="https://ollama.com/install.sh"
+    if ! curl -fsSL "$OLLAMA_INSTALL_URL" -o "$temp_dir/ollama-install.sh"; then
+        print_error "Failed to download Ollama install script"
+        rm -rf "$temp_dir"
+        return 1
     fi
-    
-    print_success "Download complete"
-    
-    # Install
-    print_step "Installing Ollama..."
-    run_with_sudo chmod +x "$temp_file"
-    run_with_sudo mv "$temp_file" "$INSTALL_DIR/ollama"
-    
+
+    chmod +x "$temp_dir/ollama-install.sh"
+
+    # Run Ollama install
+    print_info "Running Ollama installation script..."
+    if bash "$temp_dir/ollama-install.sh"; then
+        print_success "Ollama installed successfully"
+    else
+        print_error "Ollama installation failed"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    rm -rf "$temp_dir"
+
     # Setup directories
     print_step "Setting up directories..."
     mkdir -p "$HOME/.ollama"
-    
+
     # Setup systemd service (Linux only)
     if [ "$OS" = "linux" ] && [ "$RUN_AS_SERVICE" = true ]; then
         setup_ollama_service
@@ -966,20 +968,14 @@ main() {
         # Install Ollama (required for model support)
         if ! command -v ollama &> /dev/null; then
             print_info "Installing Ollama for local model support..."
-            OLLAMA_VERSION="v0.3.13"
-            download_url="https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION}/ollama-linux-amd64"
-            print_step "Downloading Ollama ${OLLAMA_VERSION}..."
-            print_info "Download size: ~450MB (may take 5-15 minutes)"
-            if ! timeout 600 curl -fsSL --connect-timeout 30 --progress-bar "$download_url" -o /tmp/ollama; then
-                print_error "Ollama download timed out or failed"
+            if install_ollama ""; then
+                print_success "Ollama installed!"
+            else
+                print_warning "Ollama installation skipped or failed"
                 print_info "You can install Ollama manually later with:"
-                print_info "  curl -fsSL https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION}/ollama-linux-amd64 -o ollama"
-                print_info "  chmod +x ollama"
-                print_info "  sudo mv ollama $INSTALL_DIR/ollama"
+                print_info "  curl -fsSL https://ollama.com/install.sh | bash"
                 return 0
             fi
-            run_with_sudo mv /tmp/ollama $INSTALL_DIR/ollama
-            print_success "Ollama installed successfully!"
         fi
 
         # Setup systemd services for persistent installation
