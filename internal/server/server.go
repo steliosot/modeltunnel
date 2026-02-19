@@ -153,6 +153,7 @@ type Server struct {
 type TunnelStatus struct {
 	Connected bool   `json:"connected"`
 	URL       string `json:"url,omitempty"`
+	Message   string `json:"message,omitempty"`
 }
 
 // NewServer creates a new server
@@ -787,6 +788,7 @@ func (s *Server) handleAdminTunnel(w http.ResponseWriter, r *http.Request) {
 	s.mu.RUnlock()
 
 	if status == nil {
+		// No tunnel started at all
 		s.writeJSON(w, http.StatusOK, TunnelStatus{Connected: false})
 		return
 	}
@@ -795,12 +797,17 @@ func (s *Server) handleAdminTunnel(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetTunnelStatus updates the tunnel connection status
-func (s *Server) SetTunnelStatus(connected bool, url string) {
+func (s *Server) SetTunnelStatus(connected bool, url string, message ...string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	msg := ""
+	if len(message) > 0 {
+		msg = message[0]
+	}
 	s.tunnelStatus = &TunnelStatus{
 		Connected: connected,
 		URL:       url,
+		Message:   msg,
 	}
 }
 

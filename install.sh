@@ -908,23 +908,48 @@ main() {
             OLLAMA_VERSION="v0.3.13"
             download_url="https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION}/ollama-linux-amd64"
             print_step "Downloading Ollama ${OLLAMA_VERSION}..."
-            print_info "Download size: ~450MB"
-            curl -fsSL --progress-bar "$download_url" -o /tmp/ollama || return 0
+            print_info "Download size: ~450MB (may take 5-15 minutes)"
+            if ! timeout 600 curl -fsSL --connect-timeout 30 --progress-bar "$download_url" -o /tmp/ollama; then
+                print_error "Ollama download timed out or failed"
+                print_info "You can install Ollama manually later with:"
+                print_info "  curl -fsSL https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION}/ollama-linux-amd64 -o ollama"
+                print_info "  chmod +x ollama"
+                print_info "  sudo mv ollama $INSTALL_DIR/ollama"
+                return 0
+            fi
             run_with_sudo mv /tmp/ollama $INSTALL_DIR/ollama
             print_success "Ollama installed successfully!"
         fi
         
         # Install localtunnel for tunnel support
-        if ! command -v localtunnel &> /dev/null; then
+        if ! command -v localtunnel &> /dev/null && ! command -v lt &> /dev/null; then
             print_info "Installing localtunnel for tunnel support..."
             if [ "$OS" = "linux" ]; then
                 # Install Node.js and npm
-                print_step "Installing Node.js..."
-                curl -fsSL https://deb.nodesource.com/setup_18.x | run_with_sudo bash - > /dev/null && \
-                    run_with_sudo apt-get update -qq && \
-                    run_with_sudo apt-get install -y nodejs npm > /dev/null 2>&1
+                print_step "Installing Node.js (this may take a few minutes)..."
+                export DEBIAN_FRONTEND=noninteractive
+                if ! curl -fsSL https://deb.nodesource.com/setup_18.x | run_with_sudo bash - > /dev/null 2>&1; then
+                    print_error "Failed to add Node.js repository"
+                    return 1
+                fi
+                
+                if ! run_with_sudo apt-get update -qq -o Acquire::Retries=3 > /dev/null 2>&1; then
+                    print_error "Failed to update package list"
+                    return 1
+                fi
+                
+                if ! timeout 180 run_with_sudo apt-get install -y -qq nodejs npm > /dev/null 2>&1; then
+                    print_error "Node.js installation timed out or failed"
+                    print_info "You can install Node.js manually later with: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && sudo apt-get install -y nodejs"
+                    return 1
+                fi
+                
                 print_step "Installing localtunnel..."
-                run_with_sudo npm install -g localtunnel > /dev/null 2>&1
+                if ! timeout 120 run_with_sudo npm install -g localtunnel > /dev/null 2>&1; then
+                    print_error "localtunnel installation timed out or failed"
+                    print_info "You can install localtunnel manually later with: sudo npm install -g localtunnel"
+                    return 1
+                fi
                 print_success "Tunnel dependencies installed!"
             fi
         fi

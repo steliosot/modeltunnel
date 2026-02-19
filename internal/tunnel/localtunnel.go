@@ -143,6 +143,9 @@ func (c *SimpleTunnelClient) tryNgrok() (string, error) {
 		return url, nil
 	case <-time.After(30 * time.Second):
 		cancel()
+		if c.onStatusChange != nil {
+			c.onStatusChange(false, "")
+		}
 		return "", fmt.Errorf("timeout waiting for ngrok")
 	}
 }
@@ -238,6 +241,9 @@ func (c *SimpleTunnelClient) tryLocalTunnel() (string, error) {
 		return url, nil
 	case <-time.After(30 * time.Second):
 		cancel()
+		if c.onStatusChange != nil {
+			c.onStatusChange(false, "")
+		}
 		return "", fmt.Errorf("timeout waiting for localtunnel")
 	}
 }

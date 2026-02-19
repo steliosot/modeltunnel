@@ -3094,7 +3094,8 @@ http://localhost:8080/v1</pre>
                 } else {
                     tunnelStat.textContent = '—';
                     tunnelStat.style.color = 'var(--text-tertiary)';
-                    tunnelUrl.textContent = 'Not configured';
+                    // Show error message if available, otherwise show default message
+                    tunnelUrl.textContent = data.message || 'Not configured';
                     // Reset to local URL
                     updateQuickstartUrl(null);
                 }

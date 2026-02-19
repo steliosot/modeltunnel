@@ -263,6 +263,8 @@ var upCmd = &cobra.Command{
 			if err != nil {
 				fmt.Printf("⚠️  Failed to start tunnel: %v\n", err)
 				fmt.Println("   Server is still running locally.")
+				// Set tunnel status with error message
+				srv.SetTunnelStatus(false, "", err.Error())
 			} else {
 				tunnelURL = publicURL
 				// Immediately set tunnel status so dashboard shows it
