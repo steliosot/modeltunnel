@@ -4011,100 +4011,113 @@ vllm serve ${modelName} --port 8000 --dtype auto`;
         }
 
         // Load and display local models
+// Load and display local models
         async function loadLocalModels() {
             try {
                 const response = await authFetch('/admin/api/models');
                 const data = await response.json();
                 
                 const allModels = data.data || [];
-                const localModels = allModels.filter(model => model.id && model.owned_by !== 'vllm');
+                const ollamaModels = allModels.filter(m => m.id && m.owned_by === 'ollama');
+                const vllmModels = allModels.filter(m => m.id && m.owned_by === 'vllm');
                 
                 const container = document.getElementById('installed-local-models-list');
                 
-                if (localModels.length === 0) {
+                if (ollamaModels.length === 0 && vllmModels.length === 0) {
                     container.innerHTML = `
                         <p style="color: var(--text-secondary); font-size: 13px;">
-                            No local models found. Use the pull button above to download a model.
+                            No models found.
                         </p>
                     `;
                     return;
                 }
 
-                container.innerHTML = localModels.map(model => {
-                    const modelId = model.id || model.name || 'unknown';
-                    const provider = model.owned_by || 'unknown';
-                    
-                    // Extract upstream and model name
-                    let upstreamName = '';
-                    let shortName = modelId;
-                    let displayProvider = provider.toUpperCase();
-                    
-                    if (modelId.includes('/')) {
-                        [upstreamName, shortName] = modelId.split('/', 2);
-                    }
-                    
-                    let size = '-';
-                    if (model.size && model.size > 0) {
-                        const bytes = model.size;
-                        if (bytes >= 1073741824) {
-                            size = (bytes / 1073741824).toFixed(1) + ' GB';
-                        } else if (bytes >= 1048576) {
-                            size = (bytes / 1048576).toFixed(1) + ' MB';
-                        } else if (bytes >= 1024) {
-                            size = (bytes / 1024).toFixed(1) + ' KB';
-                        } else {
-                            size = bytes + ' B';
+                let html = '';
+                
+                // Ollama models
+                if (ollamaModels.length > 0) {
+                    html += ollamaModels.map(model => {
+                        const modelId = model.id || model.name || 'unknown';
+                        const shortName = modelId.includes('/') ? modelId.split('/')[1] : modelId;
+                        let size = '-';
+                        if (model.size && model.size > 0) {
+                            const bytes = model.size;
+                            if (bytes >= 1073741824) {
+                                size = (bytes / 1073741824).toFixed(1) + ' GB';
+                            } else if (bytes >= 1048576) {
+                                size = (bytes / 1048576).toFixed(1) + ' MB';
+                            }
                         }
-                    }
-
-                    const recommended = findRecommendedModel(shortName);
-                    const modelDetails = [];
-                    
-                    if (recommended) {
-                        modelDetails.push(recommended.context + ' │ ' + recommended.description);
-                    }
-                    modelDetails.push('Status: Ready');
-                    
-                    let badges = [`
-                        <span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">${displayProvider}</span>
-                    `];
-                    
-                    if (model.intents && model.intents.length > 0) {
-                        model.intents.forEach(intent => {
-                            badges.push(`<span style="background: #fef3c7; color: #854d0e; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">${intent}</span>`);
-                        });
-                    }
-                    
-                    const badgesHtml = badges.length > 0 ? '<div style="margin-top: 4px; display: flex; flex-wrap: wrap;">' + badges.join('') + '</div>' : '';
-                    
-                    return `
-                        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                                <div>
-                                    <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500;">${shortName}</div>
-                                    <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">
-                                        ${size} │ 
-                                        ${recommended ? recommended.context + ' │ ' + recommended.description : ''}
-                                        Status: Ready
+                        const recommended = findRecommendedModel(shortName);
+                        
+                        let badges = [`<span style="background: #fef3c7; color: #854d0e; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">OLLAMA</span>`];
+                        if (model.intents && model.intents.length > 0) {
+                            model.intents.forEach(intent => {
+                                badges.push(`<span style="background: #fef3c7; color: #854d0e; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">${intent}</span>`);
+                            });
+                        }
+                        const badgesHtml = badges.length > 0 ? '<div style="margin-top: 4px; display: flex; flex-wrap: wrap;">' + badges.join('') + '</div>' : '';
+                        
+                        return `
+                            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                    <div>
+                                        <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500;">${shortName}</div>
+                                        <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">
+                                            ${size}
+                                            ${recommended ? ' │ ' + recommended.context + ' │ ' + recommended.description : ''}
+                                            Status: Ready
+                                        </div>
+                                        ${badgesHtml}
                                     </div>
-                                    ${badgesHtml}
-                                </div>
-                                ${provider === 'ollama' ? `
-                                <div style="flex-shrink: 0;">
                                     <button class="btn btn-sm btn-secondary" onclick="deleteModel('${modelId}')" style="font-size: 11px; padding: 4px 12px; margin-left: 8px;">
                                         Remove
                                     </button>
                                 </div>
-                                ` : ''}
                             </div>
+                        `;
+                    }).join('');
+                }
+                
+                // vLLM models
+                if (vllmModels.length > 0) {
+                    html += `
+                        <div style="margin-top: 24px; margin-bottom: 12px;">
+                            <h3 style="font-size: 13px; font-weight: 500;">vLLM Models</h3>
                         </div>
                     `;
-                }).join('');
-} catch (error) {
+                    html += vllmModels.map(model => {
+                        const modelId = model.id || model.name || 'unknown';
+                        const shortName = modelId.includes('/') ? modelId.split('/')[1] : modelId;
+                        const recommended = findRecommendedModel(shortName);
+                        const size = recommended && recommended.size ? recommended.size : '-';
+                        
+                        return `
+                            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                    <div>
+                                        <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500;">${shortName}</div>
+                                        <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">
+                                            ${size}
+                                            ${recommended ? ' │ ' + recommended.context + ' │ ' + recommended.description : ''}
+                                            Status: Ready
+                                        </div>
+                                        <div style="margin-top: 4px; display: flex; flex-wrap: wrap;">
+                                            <span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">VLLM</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+                container.innerHTML = html;
+            } catch (error) {
                 console.error('Failed to load local models:', error);
                 document.getElementById('installed-local-models-list').innerHTML = `
                     <p style="color: var(--text-secondary); font-size: 13px;">
-                        Failed to load local models. Is Ollama running?
+                        Failed to load local models.
                     </p>
                 `;
             }
