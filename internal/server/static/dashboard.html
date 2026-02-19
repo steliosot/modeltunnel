@@ -1120,7 +1120,8 @@
 
                     <!-- Installed Models -->
                     <div style="margin-bottom: 24px;">
-                        <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Installed Models</h3>
+                        <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Installed Ollama Models</h3>
+                        <p class="text-secondary" style="margin-bottom: 16px; font-size: 12px;">Locally installed Ollama models. vLLM models appear under Recommended Models below.</p>
                         <div id="installed-local-models-list"></div>
                     </div>
 
@@ -4016,7 +4017,7 @@ vllm serve ${modelName} --port 8000 --dtype auto`;
                 const data = await response.json();
                 
                 const allModels = data.data || [];
-                const localModels = allModels.filter(model => model.id);
+                const localModels = allModels.filter(model => model.id && model.owned_by !== 'vllm');
                 
                 const container = document.getElementById('installed-local-models-list');
                 
