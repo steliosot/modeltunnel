@@ -1,6 +1,7 @@
 package upstream
 
 import (
+	"time"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -25,7 +26,7 @@ func NewVLLMUpstream(baseURL string) *VLLMUpstream {
 	}
 	return &VLLMUpstream{
 		baseURL: baseURL,
-		client:  &http.Client{Timeout: 120 * 1000},
+		client:  &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
