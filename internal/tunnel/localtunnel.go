@@ -43,111 +43,13 @@ func (c *SimpleTunnelClient) SetStatusCallback(cb func(connected bool, url strin
 
 // Start starts the tunnel and returns the public URL
 func (c *SimpleTunnelClient) Start() (string, error) {
-	// Try ngrok first (most reliable)
-	if url, err := c.tryNgrok(); err == nil {
-		return url, nil
-	}
-
-	// Try localtunnel npm package
+	// Use localtunnel only (no ngrok - requires authentication)
 	if url, err := c.tryLocalTunnel(); err == nil {
 		return url, nil
 	}
 
-	// If both fail, return error with instructions
-	return "", fmt.Errorf("no tunnel tool available")
-}
-
-// tryNgrok tries to use ngrok if available
-func (c *SimpleTunnelClient) tryNgrok() (string, error) {
-	ngrokPath, err := exec.LookPath("ngrok")
-	if err != nil {
-		return "", fmt.Errorf("ngrok not found")
-	}
-
-	port := strings.Split(c.localAddr, ":")[1]
-
-	ctx, cancel := context.WithCancel(context.Background())
-	c.cancel = cancel
-
-	args := []string{"http", port}
-	if c.subdomain != "" {
-		args = append(args, "--subdomain", c.subdomain)
-	}
-
-	c.cmd = exec.CommandContext(ctx, ngrokPath, args...)
-
-	// Capture both stdout and stderr (ngrok prints to stderr)
-	stdout, err := c.cmd.StdoutPipe()
-	if err != nil {
-		cancel()
-		return "", err
-	}
-
-	stderr, err := c.cmd.StderrPipe()
-	if err != nil {
-		cancel()
-		return "", err
-	}
-
-	if err := c.cmd.Start(); err != nil {
-		cancel()
-		return "", err
-	}
-
-	// Parse ngrok output to find URL (check both stdout and stderr)
-	urlChan := make(chan string, 1)
-
-	go func() {
-		scanner := bufio.NewScanner(stdout)
-		for scanner.Scan() {
-			line := scanner.Text()
-			fmt.Println("ngrok-stdout:", line)
-			if strings.Contains(line, "https://") && strings.Contains(line, ".ngrok") {
-				parts := strings.Fields(line)
-				for _, part := range parts {
-					if strings.HasPrefix(part, "https://") {
-						urlChan <- part
-						return
-					}
-				}
-			}
-		}
-	}()
-
-	go func() {
-		scanner := bufio.NewScanner(stderr)
-		for scanner.Scan() {
-			line := scanner.Text()
-			fmt.Println("ngrok-stderr:", line)
-			if strings.Contains(line, "Forwarding") && strings.Contains(line, "https://") {
-				parts := strings.Fields(line)
-				for _, part := range parts {
-					if strings.HasPrefix(part, "https://") {
-						urlChan <- part
-						return
-					}
-				}
-			}
-		}
-	}()
-
-	// Wait for URL or timeout (30 seconds for slow connections)
-	select {
-	case url := <-urlChan:
-		c.tunnelURL = url
-		c.connected = true
-		if c.onStatusChange != nil {
-			c.onStatusChange(true, url)
-		}
-		c.saveURL()
-		return url, nil
-	case <-time.After(30 * time.Second):
-		cancel()
-		if c.onStatusChange != nil {
-			c.onStatusChange(false, "")
-		}
-		return "", fmt.Errorf("timeout waiting for ngrok")
-	}
+	// If localtunnel fails, return error with instructions
+	return "", fmt.Errorf("localtunnel not available. Install with: npm install -g localtunnel")
 }
 
 // tryLocalTunnel tries to use localtunnel npm package
