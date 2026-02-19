@@ -921,34 +921,33 @@ main() {
             print_success "Ollama installed successfully!"
         fi
         
-        # Install localtunnel for tunnel support
+# Install localtunnel for tunnel support (optional)
         if ! command -v localtunnel &> /dev/null && ! command -v lt &> /dev/null; then
-            print_info "Installing localtunnel for tunnel support..."
+            print_info "Installing localtunnel for tunnel support (optional, may take 10-30 minutes)..."
+            print_info "You can skip this with: modeltunnel up --ollama (no --tunnel flag)"
             if [ "$OS" = "linux" ]; then
                 # Install Node.js and npm
                 print_step "Installing Node.js (this may take a few minutes)..."
                 export DEBIAN_FRONTEND=noninteractive
                 if ! curl -fsSL https://deb.nodesource.com/setup_20.x | run_with_sudo bash - > /dev/null 2>&1; then
-                    print_error "Failed to add Node.js repository"
-                    return 1
+                    print_warning "Skipped: Node.js repository could not be added"
+                    return 0
                 fi
                 
                 if ! run_with_sudo apt-get update -qq -o Acquire::Retries=3 > /dev/null 2>&1; then
-                    print_error "Failed to update package list"
-                    return 1
+                    print_warning "Skipped: Could not update package list"
+                    return 0
                 fi
                 
                 if ! timeout 300 run_with_sudo apt-get install -y -qq nodejs npm > /dev/null 2>&1; then
-                    print_error "Node.js installation timed out or failed"
-                    print_info "You can install Node.js manually later with: curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs"
+                    print_warning "Skipped: Node.js installation timed out or failed"
                     return 0
                 fi
                 
                 print_step "Installing localtunnel..."
                 if ! timeout 120 run_with_sudo npm install -g localtunnel > /dev/null 2>&1; then
-                    print_error "localtunnel installation timed out or failed"
-                    print_info "You can install localtunnel manually later with: sudo npm install -g localtunnel"
-                    return 1
+                    print_warning "Skipped: localtunnel installation timed out or failed"
+                    return 0
                 fi
                 print_success "Tunnel dependencies installed!"
             fi
