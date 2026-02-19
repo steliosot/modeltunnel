@@ -902,6 +902,33 @@ main() {
         # Build from source (no pre-built binaries available)
         install_modeltunnel_from_source
 
+        # Install Ollama (required for model support)
+        if ! command -v ollama &> /dev/null; then
+            print_info "Installing Ollama for local model support..."
+            OLLAMA_VERSION="v0.3.13"
+            download_url="https://github.com/ollama/ollama/releases/download/${OLLAMA_VERSION}/ollama-linux-amd64"
+            print_step "Downloading Ollama ${OLLAMA_VERSION}..."
+            print_info "Download size: ~450MB"
+            curl -fsSL --progress-bar "$download_url" -o /tmp/ollama || return 0
+            run_with_sudo mv /tmp/ollama $INSTALL_DIR/ollama
+            print_success "Ollama installed successfully!"
+        fi
+        
+        # Install localtunnel for tunnel support
+        if ! command -v localtunnel &> /dev/null; then
+            print_info "Installing localtunnel for tunnel support..."
+            if [ "$OS" = "linux" ]; then
+                # Install Node.js and npm
+                print_step "Installing Node.js..."
+                curl -fsSL https://deb.nodesource.com/setup_18.x | run_with_sudo bash - > /dev/null && \
+                    run_with_sudo apt-get update -qq && \
+                    run_with_sudo apt-get install -y nodejs npm > /dev/null 2>&1
+                print_step "Installing localtunnel..."
+                run_with_sudo npm install -g localtunnel > /dev/null 2>&1
+                print_success "Tunnel dependencies installed!"
+            fi
+        fi
+
         print_success "Installation complete!"
         print_info "Run 'modeltunnel --help' to get started"
         print_info "Dashboard: http://localhost:8080/admin"
