@@ -4559,22 +4559,23 @@ main();`;
             `;
         }
 
-        // Initialize
+// Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadData();
             loadTunnelStatus();
             loadConfig();
             loadModels();
             displayRecommendedModels();
+            updateLocalRecommendedModels();
             connectWebSocket();
             
             // Start uptime counter
             updateUptime();
             setInterval(updateUptime, 1000);
-            
+             
             setInterval(loadData, 10000);
             setInterval(loadTunnelStatus, 10000);
-            
+             
             // Update code samples after data loads
             setTimeout(updateCodeSamples, 1000);
         });
