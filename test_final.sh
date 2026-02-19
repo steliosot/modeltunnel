@@ -1,7 +1,7 @@
 #!/bin/bash
 
-BASE_URL="https://solid-stars-crash.loca.lt/v1"
-API_KEY="mt_sk_test-key_20bb766b9f85f81170595111b5f1a3f409c8f02044a3549392a251696bd9a2fc"
+BASE_URL="${BASE_URL:-https://solid-stars-crash.loca.lt/v1}"
+API_KEY="${API_KEY:-mt_sk_test-key_20bb766b9f85f81170595111b5f1a3f409c8f02044a3549392a251696bd9a2fc}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
