@@ -39,6 +39,12 @@ Interactive wizard that installs Ollama + Modeltunnel with a guided setup:
 curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash
 ```
 
+**Silent installation for servers/CI (no interactive prompts):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash -s -- --silent
+```
+
 This will:
 - ✓ Check your system (OS, architecture, dependencies)
 - ✓ Install Ollama (optional - you can skip if already installed)
@@ -48,6 +54,17 @@ This will:
 - ✓ Set up systemd service (Linux)
 
 **Supports:** Ubuntu, Debian, CentOS, macOS (Intel & Apple Silicon)
+
+**Installer options:**
+- `--silent` - Non-interactive mode (installs modeltunnel only)
+- `--with-ollama` - Also install Ollama
+- `--install-dir` - Installation directory (default: /usr/local/bin)
+- `--help` - Show all options
+
+Example with options:
+```bash
+curl -fsSL ... | bash -s -- --with-ollama
+```
 
 ### Using Homebrew (macOS/Linux)
 

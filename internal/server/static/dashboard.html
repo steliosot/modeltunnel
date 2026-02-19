@@ -1504,9 +1504,57 @@ main();</pre>
                     
                     <section id="docs-installation" class="docs-section">
                         <h2 class="docs-section-title">Installation</h2>
-                        <p class="docs-text">modeltunnel is distributed as a single binary. Download the latest release for your platform from the releases page, or build from source.</p>
                         
-                        <h3 class="docs-subsection-title">From Source</h3>
+                        <h3 class="docs-subsection-title">One-Line Installer (Recommended)</h3>
+                        <p class="docs-text">Interactive wizard that installs Ollama + Modeltunnel with a guided setup:</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash</pre>
+                        </div>
+                        
+                        <p class="docs-text">For non-interactive / server installation:</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash -s -- --silent</pre>
+                        </div>
+                        
+                        <p class="docs-text">This will:</p>
+                        <ul class="docs-list">
+                            <li>Check your system (OS, architecture, dependencies)</li>
+                            <li>Install Ollama (optional - you can skip if already installed)</li>
+                            <li>Install Modeltunnel</li>
+                            <li>Configure ports and directories</li>
+                            <li>Install recommended AI models</li>
+                            <li>Set up systemd service (Linux)</li>
+                        </ul>
+                        
+                        <p class="docs-text"><strong>Supports:</strong> Ubuntu, Debian, CentOS, macOS (Intel & Apple Silicon)</p>
+                        
+                        <p class="docs-text"><strong>Installer options:</strong></p>
+                        <ul class="docs-list">
+                            <li><code class="docs-inline-code">--silent</code> - Non-interactive mode (installs modeltunnel only)</li>
+                            <li><code class="docs-inline-code">--with-ollama</code> - Also install Ollama</li>
+                            <li><code class="docs-inline-code">--install-dir</code> - Installation directory (default: /usr/local/bin)</li>
+                            <li><code class="docs-inline-code">--help</code> - Show all options</li>
+                        </ul>
+
+                        <h3 class="docs-subsection-title">Using Homebrew (macOS/Linux)</h3>
+<div class="docs-code-block">
+    <div class="docs-code-header">
+        <span>Terminal</span>
+        <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre class="docs-code">brew tap steliosot/modeltunnel
+brew install modeltunnel</pre>
+</div>
+
+<h3 class="docs-subsection-title">From Source</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
@@ -1778,7 +1826,28 @@ curl http://localhost:8080/v1/chat/completions \
                     <section id="docs-macos" class="docs-section">
                         <h2 class="docs-section-title">macOS Installation</h2>
                         
-                        <h3 class="docs-subsection-title">Step 1: Install Ollama</h3>
+                        <h3 class="docs-subsection-title">Option 1: One-Line Installer (Recommended)</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Option 2: Using Homebrew</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">brew tap steliosot/modeltunnel
+brew install modeltunnel</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Option 3: Manual Installation</h3>
+                        
+                        <h4 class="docs-subsection-title">Step 1: Install Ollama</h4>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
@@ -1818,7 +1887,19 @@ ngrok http 8080</pre>
                     <section id="docs-windows" class="docs-section">
                         <h2 class="docs-section-title">Windows Installation</h2>
                         
-                        <h3 class="docs-subsection-title">Step 1: Install Ollama</h3>
+                        <h3 class="docs-subsection-title">Option 1: One-Line Installer (WSL/Git Bash)</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal (WSL/Git Bash)</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash -s -- --silent</pre>
+                        </div>
+                        <p class="docs-text">Note: Installers run in WSL or Git Bash will install modeltunnel for Windows.</p>
+                        
+                        <h3 class="docs-subsection-title">Option 2: Using Pre-Built Windows Binary</h3>
+                        
+                        <h4 class="docs-subsection-title">Step 1: Install Ollama</h4>
                         <p class="docs-text">Download and install Ollama from <a href="https://ollama.com/download/windows" target="_blank" class="docs-link">ollama.com/download/windows</a></p>
                         <p class="docs-text">Open PowerShell as Administrator and start Ollama:</p>
                         <div class="docs-code-block">
@@ -1862,7 +1943,27 @@ go install github.com/modeltunnel/modeltunnel/cmd/modeltunnel@latest</pre>
                     <section id="docs-linux" class="docs-section">
                         <h2 class="docs-section-title">Linux Installation</h2>
                         
-                        <h3 class="docs-subsection-title">Step 1: Install Ollama</h3>
+                        <h3 class="docs-subsection-title">Option 1: One-Line Installer (Recommended)</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash</pre>
+                        </div>
+                        
+                        <p class="docs-text">For non-interactive / server installation:</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash -s -- --silent</pre>
+                        </div>
+                        
+                        <h3 class="docs-subsection-title">Option 2: Manual Installation</h3>
+                        
+                        <h4 class="docs-subsection-title">Step 1: Install Ollama</h4>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
