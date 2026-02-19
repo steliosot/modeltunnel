@@ -955,6 +955,11 @@ main() {
         print_info "Installing Modeltunnel in silent mode..."
         print_info "Detected: $OS_NAME ${OS_VERSION:-} ($ARCH)"
 
+        # Enable systemd services for persistent installation
+        if [ "$OS" = "linux" ]; then
+            RUN_AS_SERVICE=true
+        fi
+
         # Build from source (no pre-built binaries available)
         install_modeltunnel_from_source
 
@@ -977,8 +982,14 @@ main() {
             print_success "Ollama installed successfully!"
         fi
 
+        # Setup systemd services for persistent installation
+        if [ "$OS" = "linux" ] && [ "$RUN_AS_SERVICE" = true ]; then
+            setup_modeltunnel_service
+        fi
+
         print_success "Installation complete!"
         print_info "Run 'modeltunnel --help' to get started"
+        print_info "Dashboard: http://localhost:8080/admin"
         print_info "Dashboard: http://localhost:8080/admin"
     else
         # Interactive mode

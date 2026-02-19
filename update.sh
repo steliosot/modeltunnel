@@ -44,9 +44,15 @@ PRINT_MODE="info" bash "$TEMP_SCRIPT" --silent || print_error "Update failed"
 
 rm -f "$TEMP_SCRIPT"
 
+# Create systemd services if they don't exist (for persistence)
+create_systemd_services
+
 # Verify and restart
 if [ -f "/usr/local/bin/modeltunnel" ]; then
     print_success "New binary installed"
+
+    # Setup systemd services if not present
+    create_systemd_services
 
     # Restart with existing config
     print_info "Restarting..."
@@ -69,3 +75,66 @@ echo "Update complete! Data preserved in:"
 echo "  - $CONFIG_DIR/config.yaml"
 echo "  - $CONFIG_DIR/keys.db"
 echo "  - $CONFIG_DIR/tunnel.url"
+echo ""
+echo "Services running? Use: sudo systemctl status ollama modeltunnel"
+}
+
+create_systemd_services() {
+    # Only for Linux
+    if [ "$(uname -s)" != "Linux" ]; then
+        return
+    fi
+
+    # Skip if services already exist
+    if [ -f "/etc/systemd/system/modeltunnel.service" ]; then
+        return
+    fi
+
+    print_info "Setting up systemd services..."
+
+    # Create Ollama service
+    sudo tee /etc/systemd/system/ollama.service > /dev/null <<EOF
+[Unit]
+Description=Ollama Local LLM Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ollama serve
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Create Modeltunnel service
+    sudo tee /etc/systemd/system/modeltunnel.service > /dev/null <<EOF
+[Unit]
+Description=Modeltunnel API Server
+After=network-online.target ollama.service
+Wants=ollama.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/modeltunnel up --ollama --tunnel
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Reload systemd and enable services
+    sudo systemctl daemon-reload
+    sudo systemctl enable ollama modeltunnel > /dev/null 2>&1 || true
+    sudo systemctl restart ollama
+    sudo systemctl start modeltunnel
+
+    print_success "Systemd services created and started"
+    print_info "Services: sudo systemctl status ollama modeltunnel"
