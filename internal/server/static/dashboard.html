@@ -3175,50 +3175,67 @@ http://localhost:8080/v1</pre>
             });
         }
 
+        // Robust clipboard copy with fallback
+        function copyToClipboardWithFallback(text, button) {
+            const showFeedback = (btn) => {
+                if (btn) {
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => { btn.textContent = originalText; }, 2000);
+                }
+            };
+
+            // Try modern clipboard API first
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showFeedback(button);
+                }).catch(() => {
+                    // Fallback to execCommand
+                    fallbackCopy(text, button, showFeedback);
+                });
+            } else {
+                // Fallback for non-secure contexts
+                fallbackCopy(text, button, showFeedback);
+            }
+        }
+
+        function fallbackCopy(text, button, callback) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                callback(button);
+            } catch (err) {
+                console.error('Copy failed:', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
         // Copy to clipboard
         function copyToClipboard(elementId) {
             const element = document.getElementById(elementId);
             const text = element.textContent || element.innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                // Show temporary feedback
-                const originalText = event.target.textContent;
-                event.target.textContent = 'Copied!';
-                setTimeout(() => {
-                    event.target.textContent = originalText;
-                }, 2000);
-            });
+            copyToClipboardWithFallback(text, event.target);
         }
 
         // Copy key by ID (for table rows)
         function copyKeyById(keyId) {
             const fullKeyElement = document.getElementById(`key-full-${keyId}`);
             const text = fullKeyElement.textContent;
-            
-            navigator.clipboard.writeText(text).then(() => {
-                // Find the button that triggered this
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            });
+            copyToClipboardWithFallback(text, event.target);
         }
 
         // Copy admin key specifically
         function copyAdminKey() {
             const fullKey = document.getElementById('admin-key-full').textContent;
             if (!fullKey) return;
-            
-            navigator.clipboard.writeText(fullKey).then(() => {
-                // Find the button and show feedback
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            });
+            copyToClipboardWithFallback(fullKey, event.target);
         }
 
         // Copy entire connection block
@@ -3231,14 +3248,7 @@ http://localhost:8080/v1</pre>
 api_key: ${apiKey}
 model: ${model}`;
             
-            navigator.clipboard.writeText(block).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            });
+            copyToClipboardWithFallback(block, event.target);
         }
 
         // Update quickstart URL based on tunnel status
@@ -3478,11 +3488,7 @@ model: ${model}`;
         // Copy key
         function copyKey() {
             const key = document.getElementById('new-key-value').textContent;
-            navigator.clipboard.writeText(key).then(() => {
-                const btn = document.querySelector('.copy-btn');
-                btn.textContent = 'Copied!';
-                setTimeout(() => btn.textContent = 'Copy', 2000);
-            });
+            copyToClipboardWithFallback(key, document.querySelector('.copy-btn'));
         }
 
         // Provider functions
@@ -4220,53 +4226,25 @@ alert('Failed to delete model: ' + error.message);
 
         // Copy text to clipboard
         function copyText(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            });
+            copyToClipboardWithFallback(text, event.target);
         }
 
         // Copy Python code sample
         function copyPythonCode() {
             const code = document.getElementById('python-sample-code').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            });
+            copyToClipboardWithFallback(code, event.target);
         }
 
         // Copy cURL code sample
         function copyCurlCode() {
             const code = document.getElementById('curl-sample-code').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            });
+            copyToClipboardWithFallback(code, event.target);
         }
 
         // Copy JavaScript code sample
         function copyJsCode() {
             const code = document.getElementById('js-sample-code').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            });
+            copyToClipboardWithFallback(code, event.target);
         }
 
         // Update code samples with current connection info
@@ -4445,14 +4423,7 @@ main();`;
         function copyCode(button) {
             const codeBlock = button.closest('.docs-code-block').querySelector('.docs-code');
             const text = codeBlock.textContent;
-            
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = button.textContent;
-                button.textContent = 'Copied!';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                }, 2000);
-            });
+            copyToClipboardWithFallback(text, button);
         }
 
         // Documentation smooth scrolling and active link highlighting
@@ -4632,12 +4603,7 @@ main();`;
 
         function copyCurl() {
             const curl = document.getElementById('api-tester-curl').textContent;
-            navigator.clipboard.writeText(curl).then(() => {
-                const btn = event.target;
-                const original = btn.textContent;
-                btn.textContent = '✅ Copied!';
-                setTimeout(() => btn.textContent = original, 2000);
-            });
+            copyToClipboardWithFallback(curl, event.target);
         }
 
         async function executeApiRequest() {
