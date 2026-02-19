@@ -1115,31 +1115,9 @@
                     </div>
 
                     <!-- Installed Models -->
-                    <div style="margin-bottom: 24px;">
+                    <div>
                         <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Installed Models</h3>
                         <div id="installed-local-models-list"></div>
-                    </div>
-
-                    <!-- Recommended Models -->
-                    <div>
-                        <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Recommended Models</h3>
-                        <p class="text-secondary" style="margin-bottom: 16px; font-size: 12px;">Click on a model to install it</p>
-                        
-                        <!-- General Purpose -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">General Purpose</h4>
-                        <div id="local-recommended-general" style="margin-bottom: 16px;"></div>
-                        
-                        <!-- Coding -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Coding</h4>
-                        <div id="local-recommended-coding" style="margin-bottom: 16px;"></div>
-                        
-                        <!-- Vision -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Vision</h4>
-                        <div id="local-recommended-vision" style="margin-bottom: 16px;"></div>
-                        
-                        <!-- Reasoning -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Reasoning</h4>
-                        <div id="local-recommended-reasoning" style="margin-bottom: 16px;"></div>
                     </div>
                     
                 </div>
@@ -1207,60 +1185,6 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Models</div>
-                    <button class="btn btn-secondary btn-sm" onclick="refreshModels()">Refresh</button>
-                </div>
-                <div class="card-body">
-                    
-                    <!-- Pull New Model -->
-                    <div style="margin-bottom: 24px;">
-                        <label style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
-                            + Pull a new model...
-                        </label>
-                        <div style="display: flex; gap: 8px;">
-                            <input type="text" id="pull-model-input" 
-                                   placeholder="e.g., mistral, llama3.2:3b" 
-                                   style="flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 4px; font-family: var(--mono-font); font-size: 13px;">
-                            <button class="btn btn-primary btn-sm" onclick="pullModelFromInput()">Pull</button>
-                        </div>
-                        <p class="text-secondary" style="margin-top: 8px; font-size: 12px;">
-                            Try: mistral, llama3.2, phi, codellama
-                        </p>
-                    </div>
-
-                    <!-- Installed Models -->
-                    <div style="margin-bottom: 24px;">
-                        <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Installed Models</h3>
-                        <div id="installed-models-list"></div>
-                    </div>
-
-                    <!-- Recommended Models -->
-                    <div>
-                        <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Recommended Models</h3>
-                        <p class="text-secondary" style="margin-bottom: 16px; font-size: 12px;">Click on a model to install it</p>
-                        
-                        <!-- General Purpose -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">General Purpose</h4>
-                        <div id="recommended-general" style="margin-bottom: 16px;"></div>
-                        
-                        <!-- Coding -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Coding</h4>
-                        <div id="recommended-coding" style="margin-bottom: 16px;"></div>
-                        
-                        <!-- Vision -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Vision</h4>
-                        <div id="recommended-vision" style="margin-bottom: 16px;"></div>
-                        
-                        <!-- Reasoning -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Reasoning</h4>
-                        <div id="recommended-reasoning" style="margin-bottom: 16px;"></div>
-                    </div>
-
                 </div>
             </div>
         </section>
