@@ -238,6 +238,14 @@ func (c *SimpleTunnelClient) tryLocalTunnel() (string, error) {
 			c.onStatusChange(true, url)
 		}
 		c.saveURL()
+
+		// Print instructions for localtunnel password
+		fmt.Printf("\n✓ Tunnel URL: %s\n", url)
+		fmt.Printf("\nℹ  Using localtunnel.me (temporary password page)\n")
+		fmt.Printf("   On first visit, you'll see a password protection page.\n")
+		fmt.Printf("   bookmark the URL after first access for continued use.\n")
+		fmt.Printf("   The password page is a one-time check by localtunnel.me.\n\n")
+
 		return url, nil
 	case <-time.After(30 * time.Second):
 		cancel()

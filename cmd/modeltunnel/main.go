@@ -281,6 +281,15 @@ var upCmd = &cobra.Command{
 		if tunnelURL != "" {
 			fmt.Printf("   Public: https://%s/v1\n", tunnelURL)
 			fmt.Printf("   Local:  http://%s/v1\n", srv.Addr())
+
+			// Check if using localtunnel
+			if strings.Contains(tunnelURL, "loca.lt") {
+				fmt.Println("\n   ℹ️  localtunnel.me password protection:")
+				fmt.Println("      This tunnel service shows a one-time password page.")
+				fmt.Println("      - First visit: Enter empty password or check page")
+				fmt.Println("      - Bookmark URL: After first access for quick return")
+				fmt.Println("      - For production: Install ngrok for password-free tunnels")
+			}
 		} else {
 			fmt.Printf("   Local:  http://%s/v1\n", srv.Addr())
 		}
