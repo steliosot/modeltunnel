@@ -30,7 +30,7 @@ print_result() {
 
 # Get HTTP status code using curl -w
 get_status() {
-    curl -s -w "%{http_code}" -o /dev/null "$@"
+    curl -s -w "%{http_code}" -o /dev/null --max-time 30 "$@"
 }
 
 # Simple tests
