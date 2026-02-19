@@ -473,6 +473,57 @@ EOF
     print_success "Systemd service created and started"
 }
 
+setup_modeltunnel_service() {
+    print_step "Creating systemd services..."
+    
+    # Install Ollama service
+    setup_ollama_service
+    
+    # Install Modeltunnel service
+    local modeltunnel_service_file="/etc/systemd/system/modeltunnel.service"
+    
+    run_with_sudo tee "$modeltunnel_service_file" > /dev/null <<EOF
+[Unit]
+Description=Modeltunnel API Server
+After=network-online.target ollama.service
+Wants=ollama.service
+
+[Service]
+Type=simple
+ExecStart=$INSTALL_DIR/modeltunnel up --ollama --tunnel
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    
+    run_with_sudo systemctl daemon-reload
+    
+    # Enable both services (start on boot)
+    run_with_sudo systemctl enable modeltunnel
+    run_with_sudo systemctl enable ollama
+    
+    # Order: start ollama first, then modeltunnel
+    print_info "Starting services..."
+    run_with_sudo systemctl restart ollama
+    sleep 3
+    run_with_sudo systemctl start modeltunnel
+    
+    print_success "Systemd services created and started"
+    print_info "Services: sudo systemctl status ollama modeltunnel"
+    
+    # Save tunnel URL from modeltunnel
+    print_info "Waiting for tunnel connection..."
+    sleep 5
+    
+    if [ -f "$HOME/.config/modeltunnel/tunnel.url" ]; then
+        print_info "Public URL: $(cat $HOME/.config/modeltunnel/tunnel.url)"
+    fi
+}
+
 # ============================================
 # MODELTUNNEL INSTALLATION
 # ============================================
@@ -495,6 +546,11 @@ handle_modeltunnel_installation() {
     
     configure_modeltunnel
     install_modeltunnel
+    
+    # Setup systemd service for Modeltunnel and Ollama (Linux only)
+    if [ "$OS" = "linux" ] && [ "$RUN_AS_SERVICE" = true ]; then
+        setup_modeltunnel_service
+    fi
 }
 
 configure_modeltunnel() {
