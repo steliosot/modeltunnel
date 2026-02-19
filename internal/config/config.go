@@ -32,8 +32,16 @@ type Config struct {
 
 // ServerConfig represents server configuration
 type ServerConfig struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host  string      `yaml:"host"`
+	Port  int         `yaml:"port"`
+	Admin AdminConfig `yaml:"admin,omitempty"`
+}
+
+// AdminConfig represents admin panel authentication
+type AdminConfig struct {
+	Enabled  bool   `yaml:"enabled"`  // Enable admin panel access via tunnel
+	Username string `yaml:"username"` // Basic auth username
+	Password string `yaml:"password"` // Basic auth password
 }
 
 // Upstream represents an upstream provider

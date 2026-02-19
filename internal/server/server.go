@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -122,6 +123,37 @@ func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return nil, nil, fmt.Errorf("response writer does not support hijacking")
 }
 
+// adminAuth wraps admin routes with optional HTTP Basic Auth
+func (s *Server) adminAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Check if admin auth is enabled
+		adminConfig := s.config.Server.Admin
+		if !adminConfig.Enabled || adminConfig.Username == "" || adminConfig.Password == "" {
+			// No auth configured - allow public admin access
+			next(w, r)
+			return
+		}
+
+		// Basic Auth check
+		auth := r.Header.Get("Authorization")
+		if auth == "" {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Modeltunnel Admin"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Parse Basic Auth
+		expectedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(adminConfig.Username+":"+adminConfig.Password))
+		if auth != expectedAuth {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Modeltunnel Admin"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		next(w, r)
+	}
+}
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true // Allow all origins for dashboard
@@ -193,25 +225,25 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 	s.mux.HandleFunc("/v1/jobs/", s.handleJobStatus)
 	s.mux.HandleFunc("/health", s.handleHealth)
 
-	// Dashboard routes
-	s.mux.HandleFunc("/admin", s.handleDashboard)
-	s.mux.HandleFunc("/admin/api/keys", s.handleAdminKeys)
-	s.mux.HandleFunc("/admin/api/keys/", s.handleAdminKeyDetail)
-	s.mux.HandleFunc("/admin/api/logs", s.handleAdminLogs)
-	s.mux.HandleFunc("/admin/api/tunnel", s.handleAdminTunnel)
-	s.mux.HandleFunc("/admin/api/config", s.handleAdminConfig)
-	s.mux.HandleFunc("/admin/api/models/pull", s.handleAdminModelsPull)
-	s.mux.HandleFunc("/admin/api/models/pull/", s.handleAdminModelsPullProgress)
-	s.mux.HandleFunc("/admin/api/models/", s.handleAdminModelsDelete)
-	s.mux.HandleFunc("/admin/api/models", s.handleAdminModels)
+	// Dashboard routes with optional authentication
+	s.mux.HandleFunc("/admin", s.adminAuth(s.handleDashboard))
+	s.mux.HandleFunc("/admin/api/keys", s.adminAuth(s.handleAdminKeys))
+	s.mux.HandleFunc("/admin/api/keys/", s.adminAuth(s.handleAdminKeyDetail))
+	s.mux.HandleFunc("/admin/api/logs", s.adminAuth(s.handleAdminLogs))
+	s.mux.HandleFunc("/admin/api/tunnel", s.adminAuth(s.handleAdminTunnel))
+	s.mux.HandleFunc("/admin/api/config", s.adminAuth(s.handleAdminConfig))
+	s.mux.HandleFunc("/admin/api/models/pull", s.adminAuth(s.handleAdminModelsPull))
+	s.mux.HandleFunc("/admin/api/models/pull/", s.adminAuth(s.handleAdminModelsPullProgress))
+	s.mux.HandleFunc("/admin/api/models/", s.adminAuth(s.handleAdminModelsDelete))
+	s.mux.HandleFunc("/admin/api/models", s.adminAuth(s.handleAdminModels))
 
 	// Provider routes
-	s.mux.HandleFunc("/admin/api/providers", s.handleAdminProviders)
-	s.mux.HandleFunc("/admin/api/providers/", s.handleAdminProviderDetail)
-	s.mux.HandleFunc("/admin/api/providers/types", s.handleAdminProviderTypes)
+	s.mux.HandleFunc("/admin/api/providers", s.adminAuth(s.handleAdminProviders))
+	s.mux.HandleFunc("/admin/api/providers/", s.adminAuth(s.handleAdminProviderDetail))
+	s.mux.HandleFunc("/admin/api/providers/types", s.adminAuth(s.handleAdminProviderTypes))
 
 	// Network endpoints
-	s.mux.HandleFunc("/admin/api/network", s.handleNetwork)
+	s.mux.HandleFunc("/admin/api/network", s.adminAuth(s.handleNetwork))
 
 	// Setup rate limiter
 	if policy, ok := cfg.Policies["default"]; ok {

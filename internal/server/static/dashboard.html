@@ -3081,6 +3081,63 @@ http://localhost:8080/v1</pre>
     </div>
 
     <script>
+        // Authentication
+        let authCredentials = null;
+
+        function getAuthHeader() {
+            const saved = sessionStorage.getItem('admin_auth');
+            if (saved) {
+                return 'Basic ' + saved;
+            }
+            return '';
+        }
+
+        async function authFetch(url, options = {}) {
+            const headers = options.headers || {};
+            const auth = getAuthHeader();
+            if (auth) {
+                headers['Authorization'] = auth;
+            }
+
+            const response = await fetch(url, { ...options, headers });
+
+            if (response.status === 401) {
+                showLoginModal();
+                return null;
+            }
+
+            return response;
+        }
+
+        function showLoginModal() {
+            document.getElementById('login-modal').classList.add('active');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.remove('active');
+        }
+
+        async function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            const credentials = btoa(username + ':' + password);
+            try {
+                const response = await authFetch('/admin', {
+                    headers: { 'Authorization': 'Basic ' + credentials }
+                });
+
+                if (response.ok) {
+                    sessionStorage.setItem('admin_auth', credentials);
+                    closeLoginModal();
+                    loadData();
+                    return;
+                }
+            } catch (e) {}
+
+            alert('Invalid credentials');
+        }
+
         // State
         let ws = null;
         let reconnectAttempts = 0;
@@ -3100,7 +3157,7 @@ http://localhost:8080/v1</pre>
         // Load data
         async function loadData() {
             try {
-                const response = await fetch('/admin/api/keys');
+                const response = await authFetch('/admin/api/keys');
                 const data = await response.json();
                 
                 updateStats(data.stats);
@@ -3124,7 +3181,7 @@ http://localhost:8080/v1</pre>
         // Load tunnel status
         async function loadTunnelStatus() {
             try {
-                const response = await fetch('/admin/api/tunnel');
+                const response = await authFetch('/admin/api/tunnel');
                 const data = await response.json();
                 
                 const tunnelStat = document.getElementById('stat-tunnel');
@@ -3402,7 +3459,7 @@ model: ${model}`;
         // Load configuration
         async function loadConfig() {
             try {
-                const response = await fetch('/admin/api/config');
+                const response = await authFetch('/admin/api/config');
                 const data = await response.json();
                 document.getElementById('yaml-editor').value = data.config;
                 
@@ -3422,7 +3479,7 @@ model: ${model}`;
             const config = document.getElementById('yaml-editor').value;
             
             try {
-                const response = await fetch('/admin/api/config', {
+                const response = await authFetch('/admin/api/config', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ config })
@@ -3484,7 +3541,7 @@ model: ${model}`;
                 .filter(u => u);
             
             try {
-                const response = await fetch('/admin/api/keys', {
+                const response = await authFetch('/admin/api/keys', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -3566,7 +3623,7 @@ model: ${model}`;
 
         async function loadProviders() {
             try {
-                const response = await fetch('/admin/api/providers');
+                const response = await authFetch('/admin/api/providers');
                 if (!response.ok) {
                     // If 404 or other error, just show empty state (no providers configured yet)
                     if (response.status === 404 || response.status === 500) {
@@ -3774,7 +3831,7 @@ model: ${model}`;
         // Load available models from Ollama
         async function loadModels() {
             try {
-                const response = await fetch('/admin/api/models');
+                const response = await authFetch('/admin/api/models');
                 if (!response.ok) {
                     throw new Error('Failed to fetch models');
                 }
@@ -3939,7 +3996,7 @@ alert('Failed to delete model: ' + error.message);
         // Load and display local models
         async function loadLocalModels() {
             try {
-                const response = await fetch('/admin/api/models');
+                const response = await authFetch('/admin/api/models');
                 const data = await response.json();
                 
                 const allModels = data.data || [];
@@ -4120,7 +4177,7 @@ alert('Failed to delete model: ' + error.message);
             btn.disabled = true;
 
             try {
-                const response = await fetch('/admin/api/models/pull', {
+                const response = await authFetch('/admin/api/models/pull', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({model_name: modelName})
@@ -4158,7 +4215,7 @@ alert('Failed to delete model: ' + error.message);
             btn.disabled = true;
 
             try {
-                const response = await fetch('/admin/api/models/pull', {
+                const response = await authFetch('/admin/api/models/pull', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({model_name: modelName})
@@ -4199,7 +4256,7 @@ alert('Failed to delete model: ' + error.message);
             btn.disabled = true;
 
             try {
-                const response = await fetch('/admin/api/models/pull', {
+                const response = await authFetch('/admin/api/models/pull', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({model_name: modelName})
@@ -4532,7 +4589,7 @@ main();`;
 
         async function loadApiKeys() {
             try {
-                const response = await fetch('/admin/api/keys');
+                const response = await authFetch('/admin/api/keys');
                 const data = await response.json();
                 const select = document.getElementById('api-tester-key-select');
                 
@@ -4785,6 +4842,31 @@ main();`;
 
         const styleSheet = document.createElement('style');
         styleSheet.textContent = mobileStyles;
+        document.head.appendChild(styleSheet);
+    </script>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Admin Login</div>
+                <button class="modal-close" onclick="closeLoginModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Username</label>
+                    <input type="text" id="login-username" class="form-input" placeholder="admin">
+                </div>
+                <div class="form-group">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Password</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="password">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="login()">Login</button>
+            </div>
+        </div>
+    </div>
         document.head.appendChild(styleSheet);
     </script>
 </body>
