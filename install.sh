@@ -928,7 +928,7 @@ main() {
                 # Install Node.js and npm
                 print_step "Installing Node.js (this may take a few minutes)..."
                 export DEBIAN_FRONTEND=noninteractive
-                if ! curl -fsSL https://deb.nodesource.com/setup_18.x | run_with_sudo bash - > /dev/null 2>&1; then
+                if ! curl -fsSL https://deb.nodesource.com/setup_20.x | run_with_sudo bash - > /dev/null 2>&1; then
                     print_error "Failed to add Node.js repository"
                     return 1
                 fi
@@ -940,7 +940,7 @@ main() {
                 
                 if ! timeout 180 run_with_sudo apt-get install -y -qq nodejs npm > /dev/null 2>&1; then
                     print_error "Node.js installation timed out or failed"
-                    print_info "You can install Node.js manually later with: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && sudo apt-get install -y nodejs"
+                    print_info "You can install Node.js manually later with: curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs"
                     return 1
                 fi
                 
