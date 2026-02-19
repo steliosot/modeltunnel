@@ -938,10 +938,10 @@ main() {
                     return 1
                 fi
                 
-                if ! timeout 180 run_with_sudo apt-get install -y -qq nodejs npm > /dev/null 2>&1; then
+                if ! timeout 300 run_with_sudo apt-get install -y -qq nodejs npm > /dev/null 2>&1; then
                     print_error "Node.js installation timed out or failed"
                     print_info "You can install Node.js manually later with: curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs"
-                    return 1
+                    return 0
                 fi
                 
                 print_step "Installing localtunnel..."
