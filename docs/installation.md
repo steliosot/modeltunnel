@@ -455,6 +455,55 @@ rm ~/.config/modeltunnel/keys.db
 
 ---
 
+## Updating Modeltunnel
+
+Safely update Modeltunnel without losing your configuration, API keys, or database:
+
+### One-Command Update
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/update.sh | sudo bash
+```
+
+### What Gets Preserved
+
+The update script automatically backs up and preserves:
+
+- ✓ **Configuration**: `~/.config/modeltunnel/config.yaml`
+- ✓ **API Keys**: `~/.config/modeltunnel/keys.db` (SQLite database)
+- ✓ **Tunnel Settings**: `~/.config/modeltunnel/tunnel.url`
+- **Default location**: `/usr/local/bin/modeltunnel` (binary only)
+
+### What Gets Updated
+
+Just the binary - all your data remains intact.
+
+### Update Script Workflow
+
+1. **Backup**: Creates backup of `~/.config/modeltunnel/` to `/tmp/modeltunnel-backup-<timestamp>/`
+2. **Stop Running Service**: Gracefully stops modeltunnel if running
+3. **Install New Binary**: Downloads and installs latest modeltunnel
+4. **Restore Service**: Restarts with your existing configuration
+
+### Running in Docker
+
+For Docker installations, simply restart the container:
+
+```bash
+# Stop and remove container
+docker-compose down
+
+# Pull latest image
+docker pull ghcr.io/steliosot/modeltunnel:latest
+
+# Restart with your previous volumes
+docker-compose up -d
+
+# Data persists in named volumes (ollama_data)
+```
+
+---
+
 ## Next Steps
 
 - [CLI Reference](cli.md) - Command documentation

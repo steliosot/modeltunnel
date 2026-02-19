@@ -1475,6 +1475,7 @@ main();</pre>
                     <div class="docs-nav">
                         <div class="docs-nav-title">Getting Started</div>
                         <a href="#docs-installation" class="docs-nav-link active">Installation</a>
+                        <a href="#docs-update" class="docs-nav-link">Updating</a>
                         <a href="#docs-docker" class="docs-nav-link">Docker</a>
                         <a href="#docs-quickstart" class="docs-nav-link">Quick Start</a>
                         <a href="#docs-configuration" class="docs-nav-link">Configuration</a>
@@ -1572,6 +1573,50 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                             <li>Optional: ngrok or localtunnel for public URLs</li>
                         </ul>
                     </section>
+                    
+                    <section id="docs-update" class="docs-section">
+                        <h2 class="docs-section-title">Updating Modeltunnel</h2>
+                        <p class="docs-text">Safely update Modeltunnel while preserving your configuration, API keys, and tunnel settings.</p>
+                        
+                        <h3 class="docs-subsection-title">One-Command Update</h3>
+                        <p class="docs-text">Run this single command to update to the latest version:</p>
+                        
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/update.sh | sudo bash</pre>
+                        </div>
+                        
+                        <h4 class="docs-subsection-title">What Gets Preserved</h4>
+                        <ul class="docs-list">
+                            <li><code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code> - Your server configuration</li>
+                            <li><code class="docs-inline-code">~/.config/modeltunnel/keys.db</code> - All your API keys</li>
+                            <li><code class="docs-inline-code">~/.config/modeltunnel/tunnel.url</code> - Your tunnel settings</li>
+                        </ul>
+                        
+                        <h4 class="docs-subsection-title">What Gets Updated</h4>
+                        <ul class="docs-list">
+                            <li><code class="docs-inline-code">/usr/local/bin/modeltunnel</code> - The binary only</li>
+                        </ul>
+                        
+                        <h3 class="docs-subsection-title">Manual Update Steps</h3>
+                        <p class="docs-text">If you prefer manual control:</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Terminal</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># 1. Download update script
+curl -O https://raw.githubusercontent.com/steliosot/modeltunnel/main/update.sh
+
+# 2. Make it executable
+chmod +x update.sh
+
+# 3. Run the update
+sudo ./update.sh</pre>
+                        </div>
                     
                     <section id="docs-docker" class="docs-section">
                         <h2 class="docs-section-title">Docker</h2>

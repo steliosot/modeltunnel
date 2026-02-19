@@ -19,6 +19,27 @@ make build
 sudo make install
 ```
 
+## Updating Modeltunnel
+
+Safely update to the latest version while preserving your configuration and API keys:
+
+```bash
+# One-command update (preserves all data)
+curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/update.sh | sudo bash
+```
+
+**What Gets Preserved:**
+- ✓ `~/.config/modeltunnel/config.yaml` - Your server configuration
+- ✓ `~/.config/modeltunnel/keys.db` - All your API keys
+- ✓ `~/.config/modeltunnel/tunnel.url` - Your tunnel settings
+
+**What Gets Updated:**
+- `/usr/local/bin/modeltunnel` - The binary only
+
+For full details, see [update.sh](../update.sh) source code.
+
+---
+
 ## Global Options
 
 ```bash

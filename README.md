@@ -92,6 +92,25 @@ sudo make install
 
 Download from [Releases](https://github.com/steliosot/modeltunnel/releases)
 
+### Updating Modeltunnel
+
+Safely update Modeltunnel while preserving your configuration, API keys, and tunnel settings:
+
+```bash
+# One-command update (preserves all data)
+curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/update.sh | sudo bash
+```
+
+**What gets preserved:**
+- ✓ `~/.config/modeltunnel/config.yaml` - Your server configuration
+- ✓ `~/.config/modeltunnel/keys.db` - All your API keys
+- ✓ `~/.config/modeltunnel/tunnel.url` - Your tunnel URL
+
+**What gets updated:**
+- `/usr/local/bin/modeltunnel` - The binary only
+
+For manual updates: See the [update.sh](update.sh) source code for details.
+
 ### Docker
 
 #### Using Pre-Built Image (GitHub Container Registry)

@@ -1,0 +1,16 @@
+{
+  "summary": {
+    "timestamp": "2026-02-19 07:44:24 UTC",
+    "base_url": "https://itchy-masks-tie.loca.lt/v1",
+    "total": 10,
+    "passed": 10,
+    "failed": 0
+  },
+  "results": {
+    "authentication": "validated",
+    "endpoints": "tested",
+    "rate_limiting": "present",
+    "intent_routing": "functional",
+    "error_handling": "working"
+  }
+}
