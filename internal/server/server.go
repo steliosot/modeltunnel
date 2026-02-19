@@ -126,6 +126,33 @@ func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 // adminAuth wraps admin routes with optional HTTP Basic Auth
 func (s *Server) adminAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		adminConfig := s.config.Server.Admin
+		if !adminConfig.Enabled || adminConfig.Username == "" || adminConfig.Password == "" {
+			next(w, r)
+			return
+		}
+
+		auth := r.Header.Get("Authorization")
+		if auth == "" {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Modeltunnel Admin"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		expectedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(adminConfig.Username+":"+adminConfig.Password))
+		if auth != expectedAuth {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Modeltunnel Admin"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		next(w, r)
+	}
+}
+
+// adminAuth wraps admin routes with optional HTTP Basic Auth
+func (s *Server) adminAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		// Check if admin auth is enabled
 		adminConfig := s.config.Server.Admin
 		if !adminConfig.Enabled || adminConfig.Username == "" || adminConfig.Password == "" {

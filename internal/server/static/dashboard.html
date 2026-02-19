@@ -408,7 +408,7 @@
             border-color: var(--accent-primary);
         }
 
-        /* Modal */
+/* Modal */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -420,6 +420,10 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
         }
 
         .modal-overlay.active {

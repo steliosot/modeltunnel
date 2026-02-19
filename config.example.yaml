@@ -17,28 +17,3 @@ policies:
     rate_limit: "60/min"
     max_tokens: 4096
 
-intents:
-  code:
-    priority:
-      - "default/qwen2.5:latest"
-      - "default/deepseek-coder:6.7b"
-      - "default/codellama:7b"
-    description: "Code-heavy tasks, programming assistance"
-    temperature: 0.2
-    max_tokens: 8192
-
-  plan:
-    priority:
-      - "default/deepseek-r1:latest"
-      - "default/mistral:latest"
-    description: "Strategic planning, architectural decisions"
-    temperature: 0.7
-    max_tokens: 4096
-
-  chat:
-    priority:
-      - "default/phi:latest"
-      - "default/gemma:latest"
-    description: "Conversational AI, quick questions"
-    temperature: 0.8
-    max_tokens: 2048
