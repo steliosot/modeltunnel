@@ -1628,13 +1628,12 @@ sudo ./update.sh</pre>
                         </div>
                     
                     <section id="docs-docker" class="docs-section">
-                        <h2 class="docs-section-title">Docker</h2>
-                        <p class="docs-text">Run modeltunnel in a container for easy deployment and isolation.</p>
+                        <h2 class="docs-section-title">Docker & VM Deployment</h2>
+                        <p class="docs-text">Run Modeltunnel with Ollama and vLLM in Docker. Perfect for VM deployment with public IP access.</p>
                         
-                        <h3 class="docs-subsection-title">Using Docker Compose (Recommended)</h3>
-                        <p class="docs-text">Docker Compose provides Modeltunnel with an integrated Ollama backend and persistent model storage. This is the easiest way to get started.</p>
+                        <h3 class="docs-subsection-title">🚀 Quick Start (Recommended for VMs)</h3>
+                        <p class="docs-text">Get Ollama + vLLM + Modeltunnel running on any VM:</p>
                         
-                        <h4 class="docs-subsection-title">Quick Start</h4>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
@@ -1642,52 +1641,102 @@ sudo ./update.sh</pre>
                             </div>
                             <pre class="docs-code">git clone https://github.com/steliosot/modeltunnel.git
 cd modeltunnel
-docker-compose up -d</pre>
+
+# Start all services
+docker compose up -d
+
+# Check logs
+docker compose logs -f</pre>
                         </div>
                         
-                        <p class="docs-text">This starts:</p>
+                        <p class="docs-text"><strong>What you get:</strong></p>
                         <ul class="docs-list">
-                            <li><strong>Ollama</strong> on port 11434 (for model storage and execution)</li>
-                            <li><strong>Modeltunnel</strong> on port 8080 (API and dashboard)</li>
+                            <li><strong>Ollama</strong> on port 11434 - Pull and run Ollama models</li>
+                            <li><strong>vLLM</strong> on port 8000 - Run HuggingFace models with OpenAI API</li>
+                            <li><strong>Modeltunnel</strong> on port 8080 - Unified API and dashboard</li>
+                            <li><strong>Persistent storage</strong> - Models survive container restarts</li>
+                            <li><strong>Auto-restart</strong> - Services restart on failure</li>
                         </ul>
                         
-                        <h4 class="docs-subsection-title">Access Dashboard and Pull Models</h4>
+                        <h4 class="docs-subsection-title">Access Dashboard</h4>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Browser</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">http://YOUR_VM_PUBLIC_IP:8080/admin</pre>
+                        </div>
+                        
+                        <h4 class="docs-subsection-title">Pull Models</h4>
+                        
+                        <p class="docs-text"><strong>Option 1: Via Dashboard (Recommended)</strong></p>
+                        <p class="docs-text">Open the dashboard → Click "Local Models" → Click "Pull" on recommended models</p>
+                        
+                        <p class="docs-text"><strong>Option 2: Via Command Line</strong></p>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code"># Open dashboard
-open http://localhost:8080/admin
+                            <pre class="docs-code"># Pull Ollama models
+docker exec -it modeltunnel-ollama ollama pull mistral
+docker exec -it modeltunnel-ollama ollama pull deepseek-r1
 
-# Pull models via web UI
-# Dashboard shows:
-# - Pull input field for custom models
-# - Recommended models by category
-# - Real-time pull progress</pre>
+# vLLM models are auto-loaded from HuggingFace
+# Change model in docker-compose.yml:
+#   --model Qwen/Qwen2.5-7B-Instruct</pre>
                         </div>
                         
-                        <h4 class="docs-subsection-title">Pull Models from Command Line</h4>
+                        <h4 class="docs-subsection-title">Test the API</h4>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code"># Pull phi model
-docker exec modeltunnel-ollama ollama pull phi
+                            <pre class="docs-code"># Create API key
+docker exec modeltunnel-app ./modeltunnel key create test
 
-# Pull deepseek models
-docker exec modeltunnel-ollama ollama pull deepseek-r1
-docker exec modeltunnel-ollama ollama pull deepseek-coder:6.7b
+# Test Ollama model
+curl http://YOUR_VM_IP:8080/v1/chat/completions \
+  -H "Authorization: Bearer mt_sk_test_xxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "default/mistral", "messages": [{"role": "user", "content": "Hello!"}]}'
 
-# Test with pulled model
-curl http://localhost:8080/v1/chat/completions \
-  -H "Authorization: Bearer YOUR_KEY" \
-  -d '{"model": "ollama/phi:latest", "messages": [{"role": "user", "content": "Hello!"}]}'</pre>
+# Test vLLM model
+curl http://YOUR_VM_IP:8080/v1/chat/completions \
+  -H "Authorization: Bearer mt_sk_test_xxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "vllm/microsoft/Phi-4-mini-instruct", "messages": [{"role": "user", "content": "Hello!"}]}'</pre>
                         </div>
                         
-                        <h4 class="docs-subsection-title">Model Persistence</h4>
-                        <p class="docs-text">Models persist in the <code class="docs-inline-code">ollama_data</code> volume across container restarts. No need to re-download models after restarting.</p>
+                        <h4 class="docs-subsection-title">Resource Management</h4>
+                        <p class="docs-text">Default limits (adjust in docker-compose.yml):</p>
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>CPU Limit</th>
+                                    <th>Memory Limit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Ollama</td>
+                                    <td>4 cores</td>
+                                    <td>8 GB</td>
+                                </tr>
+                                <tr>
+                                    <td>vLLM</td>
+                                    <td>4 cores</td>
+                                    <td>16 GB</td>
+                                </tr>
+                                <tr>
+                                    <td>Modeltunnel</td>
+                                    <td>1 core</td>
+                                    <td>512 MB</td>
+                                </tr>
+                            </tbody>
+                        </table>
                         
                         <h4 class="docs-subsection-title">Common Commands</h4>
                         <div class="docs-code-block">
@@ -1696,43 +1745,61 @@ curl http://localhost:8080/v1/chat/completions \
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
                             <pre class="docs-code"># View logs
-docker-compose logs -f modeltunnel
-docker-compose logs -f ollama
+docker compose logs -f modeltunnel
+docker compose logs -f ollama
+docker compose logs -f vllm
 
-# Stop containers
-docker-compose down
+# Stop all services
+docker compose down
 
 # Stop and remove volumes (deletes models)
-docker-compose down -v
+docker compose down -v
 
-# Restart services
-docker-compose restart modeltunnel</pre>
+# Restart a specific service
+docker compose restart vllm
+
+# Update to latest version
+docker compose pull
+docker compose up -d</pre>
                         </div>
                         
-                        <h4 class="docs-subsection-title">Test API</h4>
+                        <h3 class="docs-subsection-title">🔒 Security for Public VMs</h3>
+                        <p class="docs-text">When exposing to the public internet, add authentication:</p>
+                        
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>config.docker.yaml</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">server:
+  host: 0.0.0.0
+  port: 8080
+  admin:
+    enabled: true
+    username: admin
+    password: your-secure-password-here</pre>
+                        </div>
+                        
+                        <p class="docs-text">Then restart: <code class="docs-inline-code">docker compose restart modeltunnel</code></p>
+                        
+                        <h3 class="docs-subsection-title">Pre-Built Image (Standalone)</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code"># Get key from container
-KEY=$(docker exec modeltunnel-app ./modeltunnel key list | grep "API Key:" | cut -d: -f2 | xargs)
+                            <pre class="docs-code">docker pull ghcr.io/steliosot/modeltunnel:latest
 
-# Test with pulled model
-curl http://localhost:8080/v1/chat/completions \
-  -H "Authorization: Bearer $KEY" \
-  -d '{"model": "ollama/phi:latest", "messages": [{"role": "user", "content": "Hello!"}]}'</pre>
+# Run with local Ollama
+docker run -d -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  ghcr.io/steliosot/modeltunnel:latest up --ollama
+
+# Run with public tunnel
+docker run -d -p 8080:8080 \
+  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  ghcr.io/steliosot/modeltunnel:latest up --ollama --tunnel</pre>
                         </div>
-                        
-                        <h3 class="docs-subsection-title">Pull Pre-Built Image (Standalone)</h3>
-                        <div class="docs-code-block">
-                            <div class="docs-code-header">
-                                <span>Terminal</span>
-                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
-                            </div>
-                            <pre class="docs-code" id="docker-pull">docker pull ghcr.io/steliosot/modeltunnel:latest</pre>
-                        </div>
-                        <p class="docs-text">Image available on GitHub Container Registry: <code class="docs-inline-code">ghcr.io/steliosot/modeltunnel</code></p>
                         
                         <h3 class="docs-subsection-title">Build from Source</h3>
                         <div class="docs-code-block">
@@ -1740,60 +1807,9 @@ curl http://localhost:8080/v1/chat/completions \
                                 <span>Terminal</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code" id="docker-build">docker build -t modeltunnel:latest .</pre>
+                            <pre class="docs-code">docker build -t modeltunnel:latest .
+docker run -d -p 8080:8080 modeltunnel:latest up --ollama</pre>
                         </div>
-                        
-                        <h3 class="docs-subsection-title">Run with Ollama (Local Only)</h3>
-                        <div class="docs-code-block">
-                            <div class="docs-code-header">
-                                <span>Terminal</span>
-                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
-                            </div>
-                            <pre class="docs-code" id="docker-basic">docker run -d -p 8080:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral</pre>
-                        </div>
-                        
-                        <h3 class="docs-subsection-title">Run with Public Tunnel</h3>
-                        <div class="docs-code-block">
-                            <div class="docs-code-header">
-                                <span>Terminal</span>
-                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
-                            </div>
-                            <pre class="docs-code" id="docker-tunnel">docker run -d -p 8080:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral --tunnel</pre>
-                        </div>
-                        
-                        <h3 class="docs-subsection-title">Custom Configuration</h3>
-                        <p class="docs-text">Mount your custom config file to use custom settings:</p>
-                        <div class="docs-code-block">
-                            <div class="docs-code-header">
-                                <span>Terminal</span>
-                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
-                            </div>
-                            <pre class="docs-code" id="docker-config">docker run -d -p 8080:8080 \
-  -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
-  ghcr.io/steliosot/modeltunnel:latest up</pre>
-                        </div>
-                        
-                        <h3 class="docs-subsection-title">Environment Variables</h3>
-                        <table class="docs-table">
-                            <thead>
-                                <tr>
-                                    <th>Variable</th>
-                                    <th>Description</th>
-                                    <th>Default</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><code class="docs-inline-code">OLLAMA_BASE_URL</code></td>
-                                    <td>Ollama server URL</td>
-                                    <td><code class="docs-inline-code">http://127.0.0.1:11434</code></td>
-                                </tr>
-                            </tbody>
-                        </table>
                         
                         <h3 class="docs-subsection-title">Volumes</h3>
                         <table class="docs-table">
@@ -1805,12 +1821,16 @@ curl http://localhost:8080/v1/chat/completions \
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><code class="docs-inline-code">/home/appuser/.config/modeltunnel/config.yaml</code></td>
-                                    <td>Custom configuration file</td>
+                                    <td><code class="docs-inline-code">ollama_data</code></td>
+                                    <td>Ollama models storage</td>
                                 </tr>
                                 <tr>
-                                    <td><code class="docs-inline-code">/home/appuser/.config/modeltunnel/keys.db</code></td>
-                                    <td>SQLite database for API keys</td>
+                                    <td><code class="docs-inline-code">vllm_data</code></td>
+                                    <td>vLLM/HuggingFace models cache</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="docs-inline-code">config_data</code></td>
+                                    <td>Modeltunnel config and keys database</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -114,6 +114,128 @@ For manual updates: See the [update.sh](update.sh) source code for details.
 
 ### Docker
 
+#### Using Docker Compose (Recommended for VM Deployment)
+
+**Perfect for VM deployment** - Get Ollama + vLLM + Modeltunnel running on any VM with public IP access.
+
+**Quick Start:**
+
+```bash
+# Clone repository
+git clone https://github.com/steliosot/modeltunnel.git
+cd modeltunnel
+
+# Start all services (Ollama + vLLM + Modeltunnel)
+docker compose up -d
+
+# Check logs
+docker compose logs -f
+
+# Access dashboard
+open http://YOUR_VM_IP:8080/admin
+```
+
+**What you get:**
+- ✅ **Ollama** on port 11434 (pull/run Ollama models)
+- ✅ **vLLM** on port 8000 (run HuggingFace models with OpenAI API)
+- ✅ **Modeltunnel** on port 8080 (unified API + dashboard)
+- ✅ **Persistent storage** (models survive restarts)
+- ✅ **Auto-restart** (services restart on failure)
+
+**Pull Models:**
+
+```bash
+# Pull Ollama models via command line
+docker exec -it modeltunnel-ollama ollama pull deepseek-r1
+docker exec -it modeltunnel-ollama ollama pull mistral
+
+# Or pull via dashboard (recommended)
+# Open http://YOUR_VM_IP:8080/admin → Local Models → Pull models
+```
+
+**Change vLLM Model:**
+
+Edit `docker-compose.yml` and update the `--model` parameter:
+
+```yaml
+vllm:
+  command: >
+    --model Qwen/Qwen2.5-7B-Instruct
+    --port 8000
+    --dtype auto
+    --host 0.0.0.0
+```
+
+Then restart:
+```bash
+docker compose down
+docker compose up -d
+```
+
+**Resource Management:**
+
+Default limits (CPU-only, no GPU):
+
+| Service | CPU Limit | Memory Limit | 
+|---------|-----------|--------------|
+| Ollama  | 4 cores   | 8 GB         |
+| vLLM    | 4 cores   | 16 GB        |
+| Modeltunnel | 1 core | 512 MB      |
+
+Adjust in `docker-compose.yml` based on your VM size.
+
+**Expose to Public Internet:**
+
+The dashboard is accessible at `http://YOUR_VM_IP:8080/admin`. To secure it:
+
+1. **Add authentication** in `config.docker.yaml`:
+   ```yaml
+   server:
+     admin:
+       enabled: true
+       username: admin
+       password: your-secure-password
+   ```
+
+2. **Or use a reverse proxy** (nginx/traefik) for HTTPS
+
+**Test the API:**
+
+```bash
+# Get an API key
+docker exec modeltunnel-app ./modeltunnel key create test
+
+# Test Ollama model
+curl http://YOUR_VM_IP:8080/v1/chat/completions \
+  -H "Authorization: Bearer mt_sk_test_xxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "default/mistral", "messages": [{"role": "user", "content": "Hello!"}]}'
+
+# Test vLLM model
+curl http://YOUR_VM_IP:8080/v1/chat/completions \
+  -H "Authorization: Bearer mt_sk_test_xxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "vllm/microsoft/Phi-4-mini-instruct", "messages": [{"role": "user", "content": "Hello!"}]}'
+```
+
+**Management:**
+
+```bash
+# View logs
+docker compose logs -f modeltunnel
+docker compose logs -f ollama
+docker compose logs -f vllm
+
+# Stop all services
+docker compose down
+
+# Stop and remove volumes (deletes models)
+docker compose down -v
+
+# Restart a specific service
+docker compose restart vllm
+```
+
 #### Using Pre-Built Image (GitHub Container Registry)
 
 ```bash
@@ -135,68 +257,6 @@ docker run -d -p 8080:8080 \
   -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
   ghcr.io/steliosot/modeltunnel:latest up
 ```
-
-#### Using Docker Compose (Recommended with Ollama)
-
-Docker Compose provides Modeltunnel with integrated Ollama backend and persistent model storage.
-
-```bash
-# Clone repository
-git clone https://github.com/steliosot/modeltunnel.git
-cd modeltunnel
-
-# Start both services (Ollama + Modeltunnel)
-docker-compose up -d
-
-# Access dashboard
-open http://localhost:8080/admin
-
-# Pull models via web UI
-# Dashboard shows:
-# - Pull input field
-# - Recommended models by category  
-# - Real-time progress
-# - Model badges (intents, rate limits, tokens)
-```
-
-**Pull Models:**
-
-```bash
-# Via dashboard (web UI) - recommended
-# Pull deepseek-r1, deepseek-coder, etc.
-
-# Via command line
-docker exec -it modeltunnel-ollama ollama pull deepseek-r1
-docker exec -it modeltunnel-ollama ollama pull phi
-```
-
-**Test API:**
-
-```bash
-# Get key from container
-KEY=$(docker exec modeltunnel-app ./modeltunnel key list --format json | jq -r '.[0].key')
-
-# Test with deepseek-r1
-curl http://localhost:8080/v1/chat/completions \
-  -H "Authorization: Bearer $KEY" \
-  -d '{"model": "ollama/deepseek-r1:latest", "messages": [{"role": "user", "content": "Hello!"}]}'
-```
-
-**Persistence & Logs:**
-
-```bash
-# View logs
-docker-compose logs -f modeltunnel
-docker-compose logs -f ollama
-
-# Stop containers
-docker-compose down
-
-# Stop and remove volumes (deletes models)
-docker-compose down -v
-```
-
-Models persist in `ollama_data` volume across restarts.
 
 #### Building from Source
 

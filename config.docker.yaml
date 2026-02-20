@@ -8,7 +8,10 @@ server:
 upstreams:
   default:
     type: ollama
-    base_url: http://host.docker.internal:11434
+    base_url: http://ollama:11434
+  vllm:
+    type: vllm
+    base_url: http://vllm:8000
 
 policies:
   default:
