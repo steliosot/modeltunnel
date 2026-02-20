@@ -35,7 +35,7 @@ services:
           memory: 16G
 
   modeltunnel:
-    image: ghcr.io/steliosot/modeltunnel:latest
+    build: .
     container_name: modeltunnel-app
     ports:
       - "8080:8080"
