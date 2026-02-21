@@ -117,9 +117,9 @@ ask_input() {
     fi
 
     while true; do
-        echo -en "${BLUE}❓${NC} $prompt"
-        echo ""
-        echo -n "   [$default] "
+        echo -e "${BLUE}❓${NC} $prompt"
+        echo -e "   ${CYAN}Type a value and press Enter${NC} (default: ${default})"
+        echo -n "   > "
         read -r response
 
         if [ -z "$response" ]; then
@@ -268,7 +268,10 @@ configure_modeltunnel() {
     echo ""
     echo -e "${BOLD}Modeltunnel Configuration${NC}"
     echo "───────────────────────────────────────────────────────────"
+    echo -e "${CYAN}Please answer the prompts below.${NC}"
+    echo -e "${CYAN}Press Enter to accept the default value shown.${NC}"
 
+    echo ""
     MODELTUNNEL_PORT=$(ask_input "Modeltunnel port" "$DEFAULT_MODELTUNNEL_PORT")
 
     # Service
@@ -283,7 +286,8 @@ configure_modeltunnel() {
     echo "  Port: $MODELTUNNEL_PORT"
     echo "  Service: $([[ "$RUN_AS_SERVICE" = true ]] && echo "Enabled" || echo "Disabled")"
 
-    if ask_yes_no "Is this correct?"; then
+    echo ""
+    if ask_yes_no "Is this correct?" "Y"; then
         return
     else
         configure_modeltunnel
