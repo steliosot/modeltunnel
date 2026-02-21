@@ -494,10 +494,15 @@ main() {
 
     # Check if running in non-interactive mode (unless --silent is set)
     if [ "$SILENT_MODE" = false ] && [ ! -t 0 ]; then
-        print_error "This installer requires an interactive terminal"
-        print_info "Please run: curl -fsSL ... | bash"
-        print_info "Or for non-interactive: curl -fsSL ... | bash -s -- --silent"
-        exit 1
+        if [ -r /dev/tty ]; then
+            # Reattach stdin to the terminal for interactive prompts
+            exec </dev/tty
+        else
+            print_error "This installer requires an interactive terminal"
+            print_info "Please run: curl -fsSL ... | bash"
+            print_info "Or for non-interactive: curl -fsSL ... | bash -s -- --silent"
+            exit 1
+        fi
     fi
 
     if [ "$SILENT_MODE" = false ]; then
