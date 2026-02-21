@@ -541,7 +541,12 @@ main() {
         print_success "Installation complete!"
         print_info "Run 'modeltunnel --help' to get started"
         print_info "Dashboard: http://localhost:$MODELTUNNEL_PORT"
-        print_info "Start with: $INSTALL_DIR/modeltunnel up --ollama"
+        print_info "Start with: $INSTALL_DIR/modeltunnel up"
+        print_info "Next steps:"
+        echo "  1) Start server: $INSTALL_DIR/modeltunnel up"
+        echo "  2) Open dashboard: http://localhost:$MODELTUNNEL_PORT/admin"
+        echo "  3) Create API keys in the dashboard"
+        echo "  4) Configure your backend URL in ~/.config/modeltunnel/config.yaml"
     else
         # Interactive mode
         configure_modeltunnel
@@ -553,6 +558,12 @@ main() {
 
         # Show final summary
         show_summary
+        echo ""
+        print_info "Next steps:"
+        echo "  1) Start server: $INSTALL_DIR/modeltunnel up"
+        echo "  2) Open dashboard: http://localhost:$MODELTUNNEL_PORT/admin"
+        echo "  3) Create API keys in the dashboard"
+        echo "  4) Configure your backend URL in ~/.config/modeltunnel/config.yaml"
     fi
 }
 
