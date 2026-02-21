@@ -1023,14 +1023,6 @@
             target.classList.add('active');
         }
 
-        // Navigation click handlers
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                setActiveSection(item.dataset.section);
-                history.replaceState(null, '', `#${item.dataset.section}`);
-            });
-        });
-
         // Uptime with localStorage persistence
         function initializeUptime() {
             const storedStart = localStorage.getItem('server_start_time');
@@ -2049,21 +2041,29 @@ model: ${model}`;
             `;
         }
 
-        // DOMContentLoaded
+// DOMContentLoaded
         document.addEventListener('DOMContentLoaded', () => {
             initializeUptime();
             updateUptime();
             setInterval(updateUptime, 1000);
-            
+
             loadData();
             loadTunnelStatus();
             loadConfig();
             loadLocalModels();
             updateLocalRecommendedModels();
             connectWebSocket();
-            
+
             setInterval(loadData, 10000);
             setInterval(loadTunnelStatus, 10000);
+
+            // Navigation click handlers
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    setActiveSection(item.dataset.section);
+                    history.replaceState(null, '', `#${item.dataset.section}`);
+                });
+            });
 
             // Handle deep-linking
             if (window.location.hash) {
@@ -2079,6 +2079,16 @@ model: ${model}`;
                         closeModal();
                     }
                 });
+            }
+
+            // Refresh models when providers tab is clicked
+            const providersNavItem = document.querySelector('[data-section="providers"]');
+            if (providersNavItem) {
+                providersNavItem.addEventListener('click', () => {
+                    loadLocalModels();
+                });
+            }
+        });
             }
 
             // Refresh models when providers tab is clicked
