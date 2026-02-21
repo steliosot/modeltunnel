@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>modeltunnel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+                        mono: ['Space Mono', 'ui-monospace', 'SFMono-Regular']
+                    },
+                    colors: {
+                        bg: {
+                            primary: '#fafafa',
+                            secondary: '#ffffff',
+                            tertiary: '#f5f5f5'
+                        },
+                        text: {
+                            primary: '#171717',
+                            secondary: '#525252',
+                            tertiary: '#737373'
+                        },
+                        border: '#e5e5e5',
+                        accent: {
+                            primary: '#171717',
+                            secondary: '#404040'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: #fafafa;
+            color: #171717;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <div class="min-h-screen flex flex-col">
+        <header class="border-b border-border bg-bg-secondary">
+            <div class="mx-auto w-full max-w-6xl px-6 py-4 flex items-center justify-between">
+                <div class="font-mono text-lg font-bold tracking-tight">modeltunnel<span class="text-text-tertiary">.dev</span></div>
+                <div class="flex items-center gap-2">
+                    <a href="/admin" class="inline-flex items-center rounded-md bg-accent-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-secondary">
+                        Admin Panel
+                    </a>
+                    <a href="/admin#docs" class="inline-flex items-center rounded-md border border-border bg-bg-secondary px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-bg-tertiary">
+                        View Docs
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1">
+            <section class="mx-auto w-full max-w-6xl px-6 py-20">
+                <div class="grid gap-10 lg:grid-cols-2 lg:items-center">
+                    <div class="space-y-6">
+                        <div class="inline-flex items-center gap-2 rounded-full border border-border bg-bg-secondary px-3 py-1 text-xs text-text-secondary">
+                            Unified API for local and cloud models
+                        </div>
+                        <h1 class="text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl font-mono">
+                            Turn Your Local and Cloud Models into a Single Unified Provider
+                        </h1>
+                        <p class="text-sm text-text-secondary">
+                            Expose a single OpenAI-compatible API. Configure intents, routing, and limits centrally. Run local models for low-cost tasks and cloud models for advanced workloads — all through one unified, model-agnostic layer.
+                        </p>
+                        <div class="rounded-lg border border-border bg-bg-tertiary px-4 py-3 font-mono text-xs text-text-secondary">
+                            <div class="flex items-center justify-between">
+                                <div class="inline-flex items-center rounded-full border border-border bg-bg-secondary px-2.5 py-1 text-[11px] text-text-tertiary font-mono">
+                                    Install
+                                </div>
+                                <button class="rounded-md border border-border bg-bg-secondary px-2 py-1 text-[11px] text-text-tertiary hover:bg-bg-tertiary" onclick="copyInstallCommand(this)">
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="mt-2" id="install-command">curl -fsSL https://modeltunnel.dev/install.sh | bash</div>
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-border bg-bg-secondary p-6">
+                        <div class="flex items-center justify-between text-sm text-text-tertiary">
+                            <span class="font-mono">/v1/chat/completions</span>
+                            <span class="font-mono">200 OK</span>
+                        </div>
+                        <div class="mt-4 space-y-3 text-sm text-text-secondary">
+                            <div class="rounded-lg border border-border bg-bg-tertiary p-3">
+                                <div class="font-mono text-xs text-text-tertiary">intent: code</div>
+                                <div class="mt-2">Route to the best model for each task.</div>
+                            </div>
+                            <div class="rounded-lg border border-border bg-bg-tertiary p-3">
+                                <div class="font-mono text-xs text-text-tertiary">provider: peer-nyc</div>
+                                <div class="mt-2">Add another ModelTunnel as a remote provider.</div>
+                            </div>
+                            <div class="rounded-lg border border-border bg-bg-tertiary p-3">
+                                <div class="font-mono text-xs text-text-tertiary">limits: 100/min</div>
+                                <div class="mt-2">Apply limits per key and per policy.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mx-auto w-full max-w-6xl px-6 pb-20">
+                <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="rounded-xl border border-border bg-bg-secondary p-5 transition-shadow transition-colors duration-200 hover:bg-bg-tertiary hover:shadow-sm">
+                        <h3 class="text-base font-semibold text-text-primary font-mono">Model-agnostic provider</h3>
+                        <p class="mt-2 text-sm text-text-secondary">Treat Ollama, vLLM, and cloud APIs as one consistent interface.</p>
+                    </div>
+                    <div class="rounded-xl border border-border bg-bg-secondary p-5 transition-shadow transition-colors duration-200 hover:bg-bg-tertiary hover:shadow-sm">
+                        <h3 class="text-base font-semibold text-text-primary font-mono">Custom intents</h3>
+                        <p class="mt-2 text-sm text-text-secondary">Route “chat”, “code”, or “plan” to the best model automatically.</p>
+                    </div>
+                    <div class="rounded-xl border border-border bg-bg-secondary p-5 transition-shadow transition-colors duration-200 hover:bg-bg-tertiary hover:shadow-sm">
+                        <h3 class="text-base font-semibold text-text-primary font-mono">Usage limits</h3>
+                        <p class="mt-2 text-sm text-text-secondary">Set per-key policies for tokens, requests, and rate limits.</p>
+                    </div>
+                    <div class="rounded-xl border border-border bg-bg-secondary p-5 transition-shadow transition-colors duration-200 hover:bg-bg-tertiary hover:shadow-sm">
+                        <h3 class="text-base font-semibold text-text-primary font-mono">Distributed layer</h3>
+                        <p class="mt-2 text-sm text-text-secondary">Combine multiple ModelTunnel nodes into a shared model mesh.</p>
+                    </div>
+                    <div class="rounded-xl border border-border bg-bg-secondary p-5 transition-shadow transition-colors duration-200 hover:bg-bg-tertiary hover:shadow-sm">
+                        <h3 class="text-base font-semibold text-text-primary font-mono">Async-first</h3>
+                        <p class="mt-2 text-sm text-text-secondary">Queue work and poll job status for long-running tasks.</p>
+                    </div>
+                    <div class="rounded-xl border border-border bg-bg-secondary p-5 transition-shadow transition-colors duration-200 hover:bg-bg-tertiary hover:shadow-sm">
+                        <h3 class="text-base font-semibold text-text-primary font-mono">Unified OpenAI API</h3>
+                        <p class="mt-2 text-sm text-text-secondary">Drop-in OpenAI SDK support without rewriting clients.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mx-auto w-full max-w-6xl px-6 pb-24">
+                <div class="rounded-2xl border border-border bg-bg-secondary p-8">
+                    <div class="grid gap-6 md:grid-cols-3">
+                        <div>
+                            <div class="text-xs font-mono text-text-tertiary">Step 1</div>
+                            <h4 class="mt-2 text-base font-semibold text-text-primary">Connect models</h4>
+                            <p class="mt-2 text-sm text-text-secondary">Point to local Ollama/vLLM or add remote providers.</p>
+                        </div>
+                        <div>
+                            <div class="text-xs font-mono text-text-tertiary">Step 2</div>
+                            <h4 class="mt-2 text-base font-semibold text-text-primary">Define intents</h4>
+                            <p class="mt-2 text-sm text-text-secondary">Route requests with limits, priorities, and intents under one YAML file.</p>
+                        </div>
+                        <div>
+                            <div class="text-xs font-mono text-text-tertiary">Step 3</div>
+                            <h4 class="mt-2 text-base font-semibold text-text-primary">Expose unified API</h4>
+                            <p class="mt-2 text-sm text-text-secondary">Use a single OpenAI-compatible endpoint everywhere.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+
+        <footer class="border-t border-border bg-bg-secondary">
+            <div class="mx-auto w-full max-w-6xl px-6 py-6 text-xs text-text-tertiary flex items-center justify-between">
+                <span>modeltunnel</span>
+                <span>Local-first model gateway</span>
+            </div>
+        </footer>
+    </div>
+    <script>
+        function copyInstallCommand(button) {
+            const text = document.getElementById('install-command').textContent;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+            button.textContent = 'Copied';
+            setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+        }
+    </script>
+</body>
+</html>

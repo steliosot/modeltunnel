@@ -258,6 +258,7 @@ var upCmd = &cobra.Command{
 			subdomain, _ := cmd.Flags().GetString("subdomain")
 
 			tunnelClient = tunnel.NewLocalTunnelClient(srv.Addr(), subdomain)
+			srv.SetTunnelClient(tunnelClient)
 
 			// Set up status callback
 			tunnelClient.SetStatusCallback(func(connected bool, url string) {
@@ -290,7 +291,7 @@ var upCmd = &cobra.Command{
 			// Check if using localtunnel
 			if strings.Contains(tunnelURL, "loca.lt") {
 				fmt.Println("\n   🔐 First time setup:")
-				fmt.Println("      1. Open https://%s/admin in your browser", tunnelURL)
+				fmt.Printf("      1. Open https://%s/admin in your browser\n", tunnelURL)
 				fmt.Println("      2. You'll see a password page from localtunnel.me")
 				fmt.Println("      3. Click through or enter any password to continue")
 				fmt.Println("      4. Bookmark the URL for quick access later")

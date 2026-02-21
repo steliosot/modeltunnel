@@ -16,7 +16,7 @@ import requests
 
 # Configuration
 BASE_URL = "http://localhost:8080"
-ADMIN_KEY = "mt_sk_admin_89fbbec74f021f15cc3bd1532fe4bf4ae84d3f12d932898fc08f43abfa309519"
+ADMIN_KEY = os.environ.get("MODELTUNNEL_ADMIN_KEY", "mt_sk_example_admin")
 TEST_RESULTS = {
     "passed": 0,
     "failed": 0,
@@ -246,9 +246,9 @@ def main():
         time.sleep(3)
         wait_for_server(timeout=30)
     
-    # Get admin key from server output or use a known key
+    # Get admin key from environment (use placeholder by default)
     global ADMIN_KEY
-    ADMIN_KEY = "mt_sk_admin_89fbbec74f021f15cc3bd1532fe4bf4ae84d3f12d932898fc08f43abfa309519"
+    ADMIN_KEY = os.environ.get("MODELTUNNEL_ADMIN_KEY", "mt_sk_example_admin")
     
     # Run all tests
     log("\n" + "=" * 60, "INFO")

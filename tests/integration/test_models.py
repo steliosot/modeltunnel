@@ -13,7 +13,7 @@ sys.path.insert(0, '/Users/stelios/Desktop/share-model/tests')
 from run_all_tests import log, Colors
 
 BASE_URL = "http://localhost:8080"
-ADMIN_KEY = "mt_sk_admin_89fbbec74f021f15cc3bd1532fe4bf4ae84d3f12d932898fc08f43abfa309519"
+ADMIN_KEY = os.environ.get("MODELTUNNEL_ADMIN_KEY", "mt_sk_example_admin")
 
 def test_model_list_format():
     """Test that model list has correct format"""

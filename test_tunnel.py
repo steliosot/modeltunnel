@@ -1,9 +1,10 @@
+import os
 from openai import OpenAI
 import sys
 
 client = OpenAI(
-    base_url="https://introduced-mpg-evaluations-soldier.trycloudflare.com/v1",
-    api_key="mt_sk_admin_0043aea2fd65c19a7b31a132104584df47df6cc5f0f632d57b822766c3fd57a1"
+    base_url=os.environ.get("MODELTUNNEL_URL", "http://localhost:8080/v1"),
+    api_key=os.environ.get("MODELTUNNEL_API_KEY", "your-api-key-here")
 )
 
 def test_chat():

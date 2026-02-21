@@ -28,8 +28,23 @@ Thumbs.db
 # Config (don't commit personal configs)
 config.yaml
 modeltunnel.yaml
+
 # Build artifacts
 build/
 
 # Docker test
 docker_test.sh
+
+# Logs
+*.log
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Test artifacts
+test_report.json
+test_results.json

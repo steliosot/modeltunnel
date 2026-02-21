@@ -1,17 +1,14 @@
-# Docker configuration for Modeltunnel
-# This is the default config used inside Docker containers
 server:
-  host: 0.0.0.0
+  host: 127.0.0.1
   port: 8080
 
 upstreams:
   default:
     type: ollama
-    base_url: http://ollama:11434
-    model: llama3
+    base_url: http://127.0.0.1:11434
   vllm:
     type: vllm
-    base_url: http://vllm:8000
+    base_url: http://127.0.0.1:8000
 
 policies:
   default:
@@ -21,20 +18,28 @@ policies:
 intents:
   chat:
     priority:
+      - llama3
+      - mistral
       - phi
-      - tinyllama:latest
-      - mistral:latest
+      - tinyllama
     description: General conversation
     temperature: 0.7
     max_tokens: 1000
   code:
     priority:
       - deepseek-coder:6.7b
-      - mistral:latest
-      - phi3:latest
+      - codellama:7b
+      - mistral
     description: Programming
     temperature: 0.2
     max_tokens: 4096
+  plan:
+    priority:
+      - qwen2.5
+      - mistral
+      - llama3
+    description: Planning and reasoning
+    temperature: 0.3
+    max_tokens: 4000
 
 keys: []
-providers: []

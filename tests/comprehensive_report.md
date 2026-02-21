@@ -127,7 +127,7 @@ All features functional with 100% test pass rate. System is production-ready for
 - Provider ID: modeltunnel
 - Display Name: Local Mistral
 - Base URL: https://cruel-turkeys-lie.loca.lt/v1
-- API Key: mt_sk_opencode_ed851ff76e6be851737b3e994e9c7faafecae0046cd36864b2061baaa409094b
+- API Key: mt_sk_opencode_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 **Tests:**
 - Connectivity (tunnel accessible)
@@ -451,7 +451,7 @@ To connect OpenCode (or any OpenAI-compatible app):
 | Provider ID | `modeltunnel` |
 | Display Name | `Local Mistral` |
 | Base URL | `https://cruel-turkeys-lie.loca.lt/v1` |
-| API Key | `mt_sk_opencode_ed851ff76e6be851737b3e994e9c7faafecae0046cd36864b2061baaa409094b` |
+| API Key | `mt_sk_opencode_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
 | Model | `ollama/mistral:latest` |
 
 ---

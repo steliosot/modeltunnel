@@ -1,8 +1,9 @@
+import os
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://localhost:8080/v1",
-    api_key="mt_sk_student_d79859195c971619c8fc31fd6517c495aa54ad00aa9f50f6068a0a2e347f80cb"
+    base_url=os.environ.get("MODELTUNNEL_URL", "http://localhost:8080/v1"),
+    api_key=os.environ.get("MODELTUNNEL_API_KEY", "your-api-key-here")
 )
 
 # List available models

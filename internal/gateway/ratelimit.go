@@ -161,9 +161,14 @@ func (rl *RateLimiter) CheckRateLimit(key string) RateInfo {
 	b.count++
 
 	if b.tokens <= 0 {
-		retryAfter := int(window - now.Sub(b.lastReset))
-		if retryAfter < 0 {
-			retryAfter = 0
+		remaining := window - now.Sub(b.lastReset)
+		if remaining < 0 {
+			remaining = 0
+		}
+		// Retry-After is in seconds (RFC 9110). Round up so clients don't retry too early.
+		retryAfter := 0
+		if remaining > 0 {
+			retryAfter = int((remaining + time.Second - 1) / time.Second)
 		}
 		return RateInfo{
 			Allowed:      false,
@@ -234,8 +239,8 @@ func (rl *RateLimiter) UpdateLimit(limit int, window time.Duration) {
 // Middleware returns HTTP middleware for rate limiting
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Skip rate limiting for dashboard routes and chat completions (handled separately)
-		if strings.HasPrefix(r.URL.Path, "/admin") || r.URL.Path == "/health" || r.URL.Path == "/v1/chat/completions" {
+		// Skip rate limiting for dashboard routes, landing page, and chat completions (handled separately)
+		if strings.HasPrefix(r.URL.Path, "/admin") || r.URL.Path == "/health" || r.URL.Path == "/" || r.URL.Path == "" || r.URL.Path == "/index.html" || r.URL.Path == "/v1/chat/completions" {
 			next.ServeHTTP(w, r)
 			return
 		}

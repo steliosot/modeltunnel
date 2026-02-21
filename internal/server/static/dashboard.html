@@ -882,7 +882,7 @@
 </head>
 <body>
     <header class="header">
-        <div class="logo">modeltunnel<span>.dev</span></div>
+                <a class="logo" href="/" style="text-decoration: none; color: inherit;">modeltunnel<span>.dev</span></a>
         <div class="header-actions">
             <span class="status-badge online" id="server-status">● online</span>
         </div>
@@ -954,7 +954,10 @@
                                 <span style="display: inline-block; width: 6px; height: 6px; background-color: #16a34a; border-radius: 50%;"></span>
                                 Accessible from anywhere
                             </div>
-                            <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('public-url')" style="margin-top: 12px; font-size: 11px;">Copy Public URL</button>
+                            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('public-url')" style="font-size: 11px;">Copy Public URL</button>
+                                <button class="btn btn-sm btn-danger" onclick="stopTunnel()" id="stop-tunnel-btn" style="font-size: 11px;">Stop Public URL</button>
+                            </div>
                         </div>
                         <div id="public-url-inactive" style="background-color: var(--bg-tertiary); padding: 16px; border-radius: 6px; border: 1px solid var(--border-color);">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -965,8 +968,9 @@
                                 Not configured
                             </div>
                             <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
-                                Start with --tunnel flag to enable public access
+                                Start a public URL directly from the dashboard
                             </div>
+                            <button class="btn btn-sm btn-primary" onclick="startTunnel()" id="start-tunnel-btn" style="margin-top: 12px; font-size: 11px;">Start Public URL</button>
                         </div>
                     </div>
                 </div>
@@ -1081,13 +1085,13 @@
                 </div>
                 <div class="card-body">
                     <div class="info-box" style="margin-bottom: 16px; background: var(--bg-secondary); padding: 12px; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 13px;">
-                        <strong>Bring Your Own Key</strong><br>
-                        Add your OpenAI or Anthropic API keys to use their models alongside your local Ollama models. All requests go through Modeltunnel's unified API.
+                        <strong>Bring Your Own Endpoint</strong><br>
+                        Add OpenAI, Anthropic, or any OpenAI-compatible endpoint (including another ModelTunnel). All requests go through Modeltunnel's unified API.
                     </div>
                     <div id="providers-list">
                         <div class="empty-state" style="padding: 40px 20px;">
                             <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">No providers configured</div>
-                            <div style="font-size: 13px; color: var(--text-tertiary);">Click "Add Provider" to add your OpenAI or Anthropic API key</div>
+                            <div style="font-size: 13px; color: var(--text-tertiary);">Click "Add Provider" to add OpenAI, Anthropic, or an OpenAI-compatible endpoint</div>
                         </div>
                     </div>
                 </div>
@@ -2105,11 +2109,96 @@ policies:
       tinyllama:*:            # wildcard matching
         rate_limit: 200/min
 
-keys:
-  - name: alice
-    key: mt_sk_alice_xxx...
-    allowed_upstreams: ["default"]
-    policy: student-policy</pre>
+keys: []</pre>
+                        </div>
+
+                        <h3 class="docs-subsection-title">Minimal Setup (Ollama Only)</h3>
+                        <p class="docs-text">Use this if you just want a local Ollama instance with one default policy. Keys are created in the dashboard or CLI.</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>YAML</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">server:
+  host: 127.0.0.1
+  port: 8080
+
+upstreams:
+  default:
+    type: ollama
+    base_url: http://127.0.0.1:11434
+
+policies:
+  default:
+    rate_limit: 60/min
+    max_tokens: 4096
+
+keys: []</pre>
+                        </div>
+
+                        <h3 class="docs-subsection-title">Ollama + vLLM with Basic Intents</h3>
+                        <p class="docs-text">Use this when you run a local vLLM server alongside Ollama. Intents route requests to preferred models by priority.</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>YAML</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">server:
+  host: 127.0.0.1
+  port: 8080
+
+upstreams:
+  default:
+    type: ollama
+    base_url: http://127.0.0.1:11434
+  vllm:
+    type: vllm
+    base_url: http://127.0.0.1:8000
+
+policies:
+  default:
+    rate_limit: 60/min
+    max_tokens: 4096
+
+intents:
+  chat:
+    priority: ["llama3", "mistral", "phi", "tinyllama"]
+    description: General conversation
+    temperature: 0.7
+    max_tokens: 1000
+  code:
+    priority: ["deepseek-coder:6.7b", "codellama:7b", "mistral"]
+    description: Programming
+    temperature: 0.2
+    max_tokens: 4096
+  plan:
+    priority: ["qwen2.5", "mistral", "llama3"]
+    description: Planning and reasoning
+    temperature: 0.3
+    max_tokens: 4000
+
+keys: []</pre>
+                        </div>
+
+                        <h3 class="docs-subsection-title">Multiple Policies (Keys Created in UI)</h3>
+                        <p class="docs-text">Define policies here, then create keys in the dashboard and assign them to these policies.</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>YAML</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">policies:
+  default:
+    rate_limit: 60/min
+    max_tokens: 4096
+  vllm-fast:
+    rate_limit: 300/min
+    max_tokens: 4096
+  vllm-strict:
+    rate_limit: 30/min
+    max_tokens: 2048
+
+keys: []</pre>
                         </div>
                         
                         <h3 class="docs-subsection-title">Per-Model Rate Limiting</h3>
@@ -2335,8 +2424,27 @@ ollama/phi
 ollama/mistral:7b
 ollama/phi:2.7b</pre>
                         </div>
+
+                        <h3 class="docs-subsection-title">Distributed / Remote Providers</h3>
+                        <p class="docs-text">You can add a remote OpenAI-compatible endpoint (including another ModelTunnel) in <strong>Providers</strong>. Each provider gets an ID that becomes a model prefix.</p>
+
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Example</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># 1) Add provider in /admin → Providers
+#    Type: ModelTunnel (OpenAI-compatible)
+#    Base URL: http://10.0.0.42:8080/v1
+#    API key:  (use a key created on the remote instance)
+#    Provider ID: peer-nyc
+
+# 2) Call a remote model using the provider prefix
+peer-nyc/default/mistral:latest
+peer-nyc/vllm/microsoft/Phi-4-mini-instruct</pre>
+                        </div>
                         
-                        <h3 class="docs-subsection-title">Python Example</h3>
+                        <h3 class="docs-subsection-title">Python Examples</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Python</span>
@@ -2349,19 +2457,41 @@ client = OpenAI(
     api_key="your-api-key-here"
 )
 
-# Using mistral (expensive model - may have strict rate limits)
+# 1) List available models
+models = client.models.list()
+print([m.id for m in models.data])
+
+# 2) Basic chat (Ollama model)
 response = client.chat.completions.create(
     model="ollama/mistral:latest",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)
 
-# Using phi (faster model - may have generous rate limits)
+# 3) Intent-based routing
+# Use "auto" and pass an intent header
 response = client.chat.completions.create(
-    model="ollama/phi:latest",
-    messages=[{"role": "user", "content": "Hello!"}]
+    model="auto",
+    messages=[{"role": "user", "content": "Write a Python quicksort."}],
+    extra_headers={"X-Model-Intent": "code"}
 )
-print(response.choices[0].message.content)</pre>
+print(response.choices[0].message.content)
+
+# 4) vLLM model (if configured)
+response = client.chat.completions.create(
+    model="vllm/llama-3.1-8b-instruct",
+    messages=[{"role": "user", "content": "Summarize this in 1 sentence."}]
+)
+print(response.choices[0].message.content)
+
+# 5) Streaming response
+for chunk in client.chat.completions.create(
+    model="ollama/mistral:latest",
+    messages=[{"role": "user", "content": "Tell me a short story."}],
+    stream=True
+):
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")</pre>
                         </div>
                         
                         <h3 class="docs-subsection-title">cURL Example</h3>
@@ -3048,7 +3178,15 @@ http://localhost:8080/v1</pre>
                             <option value="">Select provider...</option>
                             <option value="openai">OpenAI</option>
                             <option value="anthropic">Anthropic</option>
+                            <option value="modeltunnel">ModelTunnel (OpenAI-compatible)</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Provider ID (optional)</label>
+                        <input type="text" id="provider-custom-id" class="form-input" placeholder="peer-nyc" maxlength="64">
+                        <small class="text-secondary" style="font-size: 12px; margin-top: 4px; display: block;">
+                            Used as the model prefix (e.g. <code class="docs-inline-code">peer-nyc/&lt;model&gt;</code>). Leave empty to auto-generate.
+                        </small>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Display Name <span class="text-danger">*</span></label>
@@ -3056,7 +3194,7 @@ http://localhost:8080/v1</pre>
                     </div>
                     <div class="form-group">
                         <label class="form-label">API Key <span class="text-danger">*</span></label>
-                        <input type="password" id="provider-api-key" class="form-input" placeholder="sk-..." required>
+                        <input type="password" id="provider-api-key" class="form-input" placeholder="sk-... or mt_sk_..." required>
                         <small class="text-secondary" style="font-size: 12px; margin-top: 4px; display: block;">
                             Your API key is encrypted and stored securely
                         </small>
@@ -3070,9 +3208,9 @@ http://localhost:8080/v1</pre>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Models (comma-separated)</label>
-                        <input type="text" id="provider-models" class="form-input" placeholder="gpt-4, gpt-3.5-turbo">
+                        <input type="text" id="provider-models" class="form-input" placeholder="(optional) leave empty to auto-discover">
                         <small class="text-secondary" style="font-size: 12px; margin-top: 4px; display: block;">
-                            Leave empty to use default models for this provider
+                            If empty, modeltunnel will try to fetch models from the provider
                         </small>
                     </div>
                     <div class="form-group">
@@ -3082,7 +3220,6 @@ http://localhost:8080/v1</pre>
                             <option value="100/min" selected>100/min</option>
                             <option value="500/min">500/min</option>
                             <option value="1000/min">1000/min</option>
-                            <option value="unlimited">Unlimited</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -3172,14 +3309,25 @@ http://localhost:8080/v1</pre>
         let reconnectAttempts = 0;
         const maxReconnectAttempts = 5;
 
+        function setActiveSection(sectionId) {
+            const target = document.getElementById(sectionId);
+            if (!target) return;
+
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+            const navItem = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+            if (navItem) {
+                navItem.classList.add('active');
+            }
+            target.classList.add('active');
+        }
+
         // Navigation
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', () => {
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                
-                item.classList.add('active');
-                document.getElementById(item.dataset.section).classList.add('active');
+                setActiveSection(item.dataset.section);
+                history.replaceState(null, '', `#${item.dataset.section}`);
             });
         });
 
@@ -3222,6 +3370,7 @@ http://localhost:8080/v1</pre>
                     tunnelUrl.textContent = data.url;
                     // Update quickstart URL to use public URL
                     updateQuickstartUrl(data.url);
+                    setTunnelButtons(false);
                 } else {
                     tunnelStat.textContent = '—';
                     tunnelStat.style.color = 'var(--text-tertiary)';
@@ -3229,9 +3378,75 @@ http://localhost:8080/v1</pre>
                     tunnelUrl.textContent = data.message || 'Not configured';
                     // Reset to local URL
                     updateQuickstartUrl(null);
+                    setTunnelButtons(true);
                 }
             } catch (error) {
                 console.error('Failed to load tunnel status:', error);
+            }
+        }
+
+        function setTunnelButtons(canStart) {
+            const startBtn = document.getElementById('start-tunnel-btn');
+            const stopBtn = document.getElementById('stop-tunnel-btn');
+            if (startBtn) {
+                startBtn.disabled = !canStart;
+                startBtn.style.opacity = canStart ? '1' : '0.6';
+            }
+            if (stopBtn) {
+                stopBtn.disabled = canStart;
+                stopBtn.style.opacity = canStart ? '0.6' : '1';
+            }
+        }
+
+        async function startTunnel() {
+            const btn = document.getElementById('start-tunnel-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Starting...';
+            }
+            try {
+                const response = await authFetch('/admin/api/tunnel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                if (!response) return;
+                if (!response.ok) {
+                    const error = await response.text();
+                    alert('Failed to start tunnel: ' + error);
+                }
+            } catch (error) {
+                alert('Failed to start tunnel: ' + error.message);
+            } finally {
+                if (btn) {
+                    btn.textContent = 'Start Public URL';
+                }
+                loadTunnelStatus();
+            }
+        }
+
+        async function stopTunnel() {
+            const btn = document.getElementById('stop-tunnel-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Stopping...';
+            }
+            try {
+                const response = await authFetch('/admin/api/tunnel', {
+                    method: 'DELETE'
+                });
+                if (!response) return;
+                if (!response.ok) {
+                    const error = await response.text();
+                    alert('Failed to stop tunnel: ' + error);
+                }
+            } catch (error) {
+                alert('Failed to stop tunnel: ' + error.message);
+            } finally {
+                if (btn) {
+                    btn.textContent = 'Stop Public URL';
+                }
+                loadTunnelStatus();
             }
         }
 
@@ -3628,6 +3843,7 @@ model: ${model}`;
             document.getElementById('provider-modal-title').textContent = 'Add External Provider';
             document.getElementById('provider-form').reset();
             document.getElementById('provider-id').value = '';
+            document.getElementById('provider-custom-id').disabled = false;
             document.getElementById('provider-save-btn').textContent = 'Add Provider';
             document.getElementById('provider-test-result').style.display = 'none';
         }
@@ -3642,11 +3858,14 @@ model: ${model}`;
             const baseUrlInput = document.getElementById('provider-base-url');
 
             if (type === 'openai') {
-                modelsInput.placeholder = 'gpt-4, gpt-3.5-turbo';
+                modelsInput.placeholder = 'gpt-4, gpt-4o-mini, gpt-3.5-turbo';
                 baseUrlInput.placeholder = 'https://api.openai.com/v1';
             } else if (type === 'anthropic') {
                 modelsInput.placeholder = 'claude-3-opus, claude-3-sonnet';
                 baseUrlInput.placeholder = 'https://api.anthropic.com/v1';
+            } else if (type === 'modeltunnel') {
+                modelsInput.placeholder = '(optional) leave empty to auto-discover';
+                baseUrlInput.placeholder = 'http://host:8080/v1';
             }
         }
 
@@ -3677,7 +3896,7 @@ model: ${model}`;
                 container.innerHTML = `
                     <div class="empty-state" style="padding: 40px 20px;">
                         <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">No providers configured</div>
-                        <div style="font-size: 13px; color: var(--text-tertiary);">Click "Add Provider" to add your OpenAI or Anthropic API key</div>
+                        <div style="font-size: 13px; color: var(--text-tertiary);">Click "Add Provider" to add OpenAI, Anthropic, or an OpenAI-compatible endpoint</div>
                     </div>
                 `;
                 return;
@@ -3685,7 +3904,8 @@ model: ${model}`;
 
             const typeNames = {
                 'openai': 'OpenAI',
-                'anthropic': 'Anthropic'
+                'anthropic': 'Anthropic',
+                'modeltunnel': 'ModelTunnel'
             };
 
             container.innerHTML = `
@@ -3698,6 +3918,9 @@ model: ${model}`;
                                         <div style="font-weight: 600; font-size: 16px;">${provider.name}</div>
                                         <div style="font-size: 13px; color: var(--text-secondary);">
                                             ${typeNames[provider.type] || provider.type} • ${provider.api_key_masked}
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px; font-family: var(--mono-font);">
+                                            Prefix: ${provider.id}/
                                         </div>
                                     </div>
                                     <div style="text-align: right;">
@@ -3747,20 +3970,31 @@ model: ${model}`;
             resultDiv.innerHTML = '<div class="alert alert-info">Testing connection...</div>';
 
             try {
-                // For now, just validate that the key format looks correct
-                // In production, you'd make an actual API call
-                let isValid = false;
-                if (type === 'openai' && apiKey.startsWith('sk-')) {
-                    isValid = true;
-                } else if (type === 'anthropic' && apiKey.startsWith('sk-ant-')) {
-                    isValid = true;
+                const response = await authFetch('/admin/api/providers/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type,
+                        api_key: apiKey,
+                        base_url: baseUrl || undefined
+                    })
+                });
+                if (!response) return;
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="alert alert-error">✗ Connection failed: ${text}</div>`;
+                    return;
                 }
 
-                if (isValid) {
-                    resultDiv.innerHTML = '<div class="alert alert-success">✓ API key format looks valid</div>';
-                } else {
-                    resultDiv.innerHTML = '<div class="alert alert-warning">⚠ API key format may be invalid. Please check your key.</div>';
-                }
+                const data = await response.json();
+                const preview = (data.models || []).slice(0, 5).join(', ');
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        ✓ Connected. Found <strong>${data.model_count}</strong> models.
+                        ${preview ? `<div style="margin-top: 6px; font-size: 12px; color: var(--text-secondary);">Example: ${preview}</div>` : ''}
+                    </div>
+                `;
             } catch (error) {
                 resultDiv.innerHTML = `<div class="alert alert-error">✗ Error: ${error.message}</div>`;
             }
@@ -3769,6 +4003,7 @@ model: ${model}`;
         async function saveProvider() {
             const id = document.getElementById('provider-id').value;
             const type = document.getElementById('provider-type').value;
+            const customId = document.getElementById('provider-custom-id').value;
             const name = document.getElementById('provider-name').value;
             const apiKey = document.getElementById('provider-api-key').value;
             const baseUrl = document.getElementById('provider-base-url').value;
@@ -3785,6 +4020,7 @@ model: ${model}`;
             const models = modelsStr.split(',').map(m => m.trim()).filter(m => m);
 
             const providerData = {
+                id: (!id && customId) ? customId : undefined,
                 name,
                 type,
                 api_key: apiKey,
@@ -3792,18 +4028,21 @@ model: ${model}`;
                 models: models.length > 0 ? models : undefined,
                 rate_limit: rateLimit,
                 priority,
-                track_costs: trackCosts
+                track_costs: trackCosts,
+                is_active: true
             };
 
             try {
                 const url = id ? `/admin/api/providers/${id}` : '/admin/api/providers';
                 const method = id ? 'PUT' : 'POST';
 
-                const response = await fetch(url, {
+                const response = await authFetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(providerData)
                 });
+
+                if (!response) return;
 
                 if (response.ok) {
                     closeProviderModal();
@@ -3819,12 +4058,15 @@ model: ${model}`;
 
         async function editProvider(id) {
             try {
-                const response = await fetch(`/admin/api/providers/${id}`);
+                const response = await authFetch(`/admin/api/providers/${id}`);
+                if (!response) return;
                 if (!response.ok) throw new Error('Failed to fetch provider');
                 const provider = await response.json();
 
                 document.getElementById('provider-id').value = provider.id;
                 document.getElementById('provider-type').value = provider.type;
+                document.getElementById('provider-custom-id').value = provider.id;
+                document.getElementById('provider-custom-id').disabled = true;
                 document.getElementById('provider-name').value = provider.name;
                 document.getElementById('provider-api-key').value = '';
                 document.getElementById('provider-base-url').value = provider.base_url || '';
@@ -3846,7 +4088,8 @@ model: ${model}`;
             if (!confirm('Are you sure you want to delete this provider?')) return;
 
             try {
-                const response = await fetch(`/admin/api/providers/${id}`, { method: 'DELETE' });
+                const response = await authFetch(`/admin/api/providers/${id}`, { method: 'DELETE' });
+                if (!response) return;
                 if (response.ok) {
                     loadProviders();
                 } else {
@@ -4611,6 +4854,18 @@ main();`;
              
             // Update code samples after data loads
             setTimeout(updateCodeSamples, 1000);
+
+            // Handle deep-linking to sections (e.g., /admin#docs)
+            if (window.location.hash) {
+                const targetId = window.location.hash.substring(1);
+                setActiveSection(targetId);
+                const target = document.getElementById(targetId);
+                if (target) {
+                    setTimeout(() => {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 200);
+                }
+            }
         });
 
         // Close modal on overlay click

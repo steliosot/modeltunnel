@@ -17,6 +17,13 @@ func NewProvider(providerType, id, name, apiKey, baseURL string) (ExternalProvid
 		}
 		return p, nil
 
+	case "modeltunnel":
+		p := NewModelTunnelProvider(id, name, apiKey)
+		if baseURL != "" {
+			p.baseURL = baseURL
+		}
+		return p, nil
+
 	case "anthropic":
 		p := NewAnthropicProvider(id, name, apiKey)
 		if baseURL != "" {
@@ -38,6 +45,12 @@ func ProviderFromConfig(config *ProviderConfig) (ExternalProvider, error) {
 func SupportedProviders() []map[string]string {
 	return []map[string]string{
 		{
+			"type":        "modeltunnel",
+			"name":        "ModelTunnel",
+			"description": "Any OpenAI-compatible endpoint (including another ModelTunnel)",
+			"default_url": "http://host:8080/v1",
+		},
+		{
 			"type":        "openai",
 			"name":        "OpenAI",
 			"description": "GPT-4, GPT-3.5, and other OpenAI models",
@@ -55,6 +68,8 @@ func SupportedProviders() []map[string]string {
 // DefaultModels returns the default models for a provider type
 func DefaultModels(providerType string) []string {
 	switch providerType {
+	case "modeltunnel":
+		return []string{}
 	case "openai":
 		return []string{
 			"gpt-4",

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/modeltunnel/modeltunnel/internal/upstream"
@@ -105,8 +106,15 @@ func (w *Worker) processJob(jobID string) {
 
 	// Get upstream
 	upstreamName := "default"
-	if job.Request.Model != "" {
-		// TODO: Parse upstream from model name
+	if job.Request != nil && job.Request.Model != "" {
+		// Allow specifying upstream as "upstream/model" like the main API.
+		if strings.Contains(job.Request.Model, "/") {
+			parts := strings.SplitN(job.Request.Model, "/", 2)
+			if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
+				upstreamName = parts[0]
+				job.Request.Model = parts[1]
+			}
+		}
 	}
 
 	up, ok := w.upstreams.Get(upstreamName)

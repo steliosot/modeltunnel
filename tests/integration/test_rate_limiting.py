@@ -25,7 +25,10 @@ def test_per_model_rate_limits():
     log("Testing per-model rate limiting...", "INFO")
     
     # Use student key which has per-model limits configured
-    student_key = "mt_sk_admin_89fbbec74f021f15cc3bd1532fe4bf4ae84d3f12d932898fc08f43abfa309519"
+    student_key = os.environ.get(
+        "MODELTUNNEL_STUDENT_KEY",
+        os.environ.get("MODELTUNNEL_ADMIN_KEY", "mt_sk_example_admin")
+    )
     headers = {
         "Authorization": f"Bearer {student_key}",
         "Content-Type": "application/json"
@@ -136,7 +139,10 @@ def test_rate_limit_reset():
     log("Testing rate limit reset (this will take ~60 seconds)...", "INFO")
     
     # Use student key with mistral (5/min limit)
-    student_key = "mt_sk_admin_89fbbec74f021f15cc3bd1532fe4bf4ae84d3f12d932898fc08f43abfa309519"
+    student_key = os.environ.get(
+        "MODELTUNNEL_STUDENT_KEY",
+        os.environ.get("MODELTUNNEL_ADMIN_KEY", "mt_sk_example_admin")
+    )
     headers = {
         "Authorization": f"Bearer {student_key}",
         "Content-Type": "application/json"

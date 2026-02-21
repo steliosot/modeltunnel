@@ -23,6 +23,7 @@ import (
 	"github.com/modeltunnel/modeltunnel/internal/network"
 	"github.com/modeltunnel/modeltunnel/internal/providers"
 	"github.com/modeltunnel/modeltunnel/internal/router"
+	"github.com/modeltunnel/modeltunnel/internal/tunnel"
 	"github.com/modeltunnel/modeltunnel/internal/upstream"
 	"github.com/modeltunnel/modeltunnel/pkg/openai"
 	"gopkg.in/yaml.v3"
@@ -30,6 +31,9 @@ import (
 
 //go:embed static/dashboard.html
 var dashboardHTML string
+
+//go:embed static/landing.html
+var landingHTML string
 
 // LogEntry represents a request log entry
 type LogEntry struct {
@@ -179,7 +183,14 @@ type Server struct {
 	configPath    string
 	mu            sync.RWMutex
 	tunnelStatus  *TunnelStatus
+	tunnelClient  tunnelClient
 	modelManager  *models.Manager
+}
+
+type tunnelClient interface {
+	Start() (string, error)
+	Stop()
+	SetStatusCallback(func(connected bool, url string))
 }
 
 // TunnelStatus holds the current tunnel connection status
@@ -220,6 +231,7 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 	}
 
 	// Setup routes
+	s.mux.HandleFunc("/", s.handleLanding)
 	s.mux.HandleFunc("/v1/models", s.handleModels)
 	s.mux.HandleFunc("/v1/chat/completions", s.handleChatCompletions)
 	s.mux.HandleFunc("/v1/async", s.handleAsyncSubmit)
@@ -242,6 +254,7 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 	s.mux.HandleFunc("/admin/api/providers", s.adminAuth(s.handleAdminProviders))
 	s.mux.HandleFunc("/admin/api/providers/", s.adminAuth(s.handleAdminProviderDetail))
 	s.mux.HandleFunc("/admin/api/providers/types", s.adminAuth(s.handleAdminProviderTypes))
+	s.mux.HandleFunc("/admin/api/providers/test", s.adminAuth(s.handleAdminProviderTest))
 
 	// Network endpoints
 	s.mux.HandleFunc("/admin/api/network", s.adminAuth(s.handleNetwork))
@@ -671,6 +684,15 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) handleLanding(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		s.writeError(w, http.StatusNotFound, "not found")
+		return
+	}
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(landingHTML))
+}
+
 // Dashboard handlers
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
@@ -728,6 +750,7 @@ func (s *Server) createKey(w http.ResponseWriter, r *http.Request) {
 		Name          string   `json:"name"`
 		RateLimit     string   `json:"rate_limit"`
 		AllowedModels []string `json:"allowed_models"`
+		Upstreams     []string `json:"allowed_upstreams"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -742,6 +765,9 @@ func (s *Server) createKey(w http.ResponseWriter, r *http.Request) {
 
 	// Convert models to upstreams format
 	allowedUpstreams := []string{}
+	if len(req.Upstreams) > 0 {
+		allowedUpstreams = req.Upstreams
+	}
 	if len(req.AllowedModels) > 0 {
 		// For now, allow all upstreams if models specified
 		// In the future, we could map models to specific upstreams
@@ -755,6 +781,8 @@ func (s *Server) createKey(w http.ResponseWriter, r *http.Request) {
 			RateLimit: req.RateLimit,
 			MaxTokens: 4096,
 		}
+		// Persist policy change
+		_ = s.config.Save(s.configPath)
 	}
 
 	key := s.keystore.Create(req.Name, allowedUpstreams, policy)
@@ -811,22 +839,68 @@ func (s *Server) handleAdminLogs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAdminTunnel(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	switch r.Method {
+	case http.MethodGet:
+		s.mu.RLock()
+		status := s.tunnelStatus
+		s.mu.RUnlock()
+
+		if status == nil {
+			// No tunnel started at all
+			s.writeJSON(w, http.StatusOK, TunnelStatus{Connected: false})
+			return
+		}
+
+		s.writeJSON(w, http.StatusOK, status)
+		return
+
+	case http.MethodPost:
+		var req struct {
+			Subdomain string `json:"subdomain"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+
+		s.mu.Lock()
+		if s.tunnelClient == nil {
+			s.tunnelClient = tunnel.NewLocalTunnelClient(s.Addr(), req.Subdomain)
+			s.tunnelClient.SetStatusCallback(func(connected bool, url string) {
+				s.SetTunnelStatus(connected, url)
+			})
+		}
+		existing := s.tunnelStatus
+		s.mu.Unlock()
+
+		if existing != nil && existing.Connected {
+			s.writeJSON(w, http.StatusOK, existing)
+			return
+		}
+
+		publicURL, err := s.tunnelClient.Start()
+		if err != nil {
+			s.SetTunnelStatus(false, "", err.Error())
+			s.writeError(w, http.StatusBadGateway, err.Error())
+			return
+		}
+		s.SetTunnelStatus(true, publicURL)
+		s.writeJSON(w, http.StatusOK, TunnelStatus{Connected: true, URL: publicURL})
+		return
+
+	case http.MethodDelete:
+		s.mu.Lock()
+		client := s.tunnelClient
+		s.mu.Unlock()
+
+		if client != nil {
+			client.Stop()
+		}
+		s.SetTunnelStatus(false, "", "stopped")
+		s.writeJSON(w, http.StatusOK, TunnelStatus{Connected: false, Message: "stopped"})
+		return
+
+	default:
 		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
-
-	s.mu.RLock()
-	status := s.tunnelStatus
-	s.mu.RUnlock()
-
-	if status == nil {
-		// No tunnel started at all
-		s.writeJSON(w, http.StatusOK, TunnelStatus{Connected: false})
-		return
-	}
-
-	s.writeJSON(w, http.StatusOK, status)
 }
 
 // SetTunnelStatus updates the tunnel connection status
@@ -842,6 +916,12 @@ func (s *Server) SetTunnelStatus(connected bool, url string, message ...string) 
 		URL:       url,
 		Message:   msg,
 	}
+}
+
+func (s *Server) SetTunnelClient(client tunnelClient) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.tunnelClient = client
 }
 
 func (s *Server) handleAdminConfig(w http.ResponseWriter, r *http.Request) {
@@ -1144,6 +1224,11 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		if r.URL.Path == "" || r.URL.Path == "/" || r.URL.Path == "/index.html" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
 			s.writeError(w, http.StatusUnauthorized, "missing authorization header")
@@ -1281,13 +1366,16 @@ func (s *Server) handleAdminProviders(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		var req struct {
-			Name      string   `json:"name"`
-			Type      string   `json:"type"`
-			APIKey    string   `json:"api_key"`
-			BaseURL   string   `json:"base_url"`
-			Models    []string `json:"models"`
-			RateLimit string   `json:"rate_limit"`
-			Priority  int      `json:"priority"`
+			ID         string   `json:"id"`
+			Name       string   `json:"name"`
+			Type       string   `json:"type"`
+			APIKey     string   `json:"api_key"`
+			BaseURL    string   `json:"base_url"`
+			Models     []string `json:"models"`
+			RateLimit  string   `json:"rate_limit"`
+			Priority   int      `json:"priority"`
+			TrackCosts *bool    `json:"track_costs"`
+			IsActive   *bool    `json:"is_active"`
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -1295,8 +1383,29 @@ func (s *Server) handleAdminProviders(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Generate ID
-		id := fmt.Sprintf("%s-%d", req.Type, time.Now().UnixNano())
+		id := req.ID
+		if id == "" {
+			// Generate ID
+			id = fmt.Sprintf("%s-%d", req.Type, time.Now().UnixNano())
+		} else {
+			if !isSafeProviderID(id) {
+				s.writeError(w, http.StatusBadRequest, "invalid provider id (use letters, numbers, '-', '_' only)")
+				return
+			}
+			// Prevent collisions with upstream names
+			for _, up := range s.upstreams.List() {
+				if up == id {
+					s.writeError(w, http.StatusBadRequest, "provider id conflicts with an upstream name")
+					return
+				}
+			}
+			if s.providerStore != nil {
+				if _, err := s.providerStore.Get(id); err == nil {
+					s.writeError(w, http.StatusBadRequest, "provider id already exists")
+					return
+				}
+			}
+		}
 
 		provider := &providers.ProviderConfig{
 			ID:         id,
@@ -1310,6 +1419,32 @@ func (s *Server) handleAdminProviders(w http.ResponseWriter, r *http.Request) {
 			IsActive:   true,
 			TrackCosts: true,
 			CreatedAt:  time.Now(),
+		}
+		// Apply optional flags (default to true)
+		if req.TrackCosts != nil {
+			provider.TrackCosts = *req.TrackCosts
+		}
+		if req.IsActive != nil {
+			provider.IsActive = *req.IsActive
+		}
+
+		// Auto-discover models if not provided
+		if len(provider.Models) == 0 {
+			p, err := providers.ProviderFromConfig(provider)
+			if err == nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+				defer cancel()
+				models, err := p.ListModels(ctx)
+				if err == nil {
+					ids := make([]string, 0, len(models))
+					for _, m := range models {
+						if m.ID != "" {
+							ids = append(ids, m.ID)
+						}
+					}
+					provider.Models = ids
+				}
+			}
 		}
 
 		if err := s.providerStore.Create(provider); err != nil {
@@ -1348,20 +1483,60 @@ func (s *Server) handleAdminProviderDetail(w http.ResponseWriter, r *http.Reques
 		s.writeJSON(w, http.StatusOK, provider)
 
 	case http.MethodPut:
-		var req providers.ProviderConfig
+		var req struct {
+			Name       string   `json:"name"`
+			Type       string   `json:"type"`
+			APIKey     string   `json:"api_key"`
+			BaseURL    string   `json:"base_url"`
+			Models     []string `json:"models"`
+			RateLimit  string   `json:"rate_limit"`
+			Priority   int      `json:"priority"`
+			TrackCosts bool     `json:"track_costs"`
+			IsActive   bool     `json:"is_active"`
+		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			s.writeError(w, http.StatusBadRequest, "invalid request body")
 			return
 		}
-		req.ID = id
+		provider := &providers.ProviderConfig{
+			ID:         id,
+			Name:       req.Name,
+			Type:       req.Type,
+			APIKey:     req.APIKey,
+			BaseURL:    req.BaseURL,
+			Models:     req.Models,
+			RateLimit:  req.RateLimit,
+			Priority:   req.Priority,
+			TrackCosts: req.TrackCosts,
+			IsActive:   req.IsActive,
+		}
 
-		if err := s.providerStore.Update(&req); err != nil {
+		// Auto-discover models if not provided
+		if len(provider.Models) == 0 {
+			p, err := providers.ProviderFromConfig(provider)
+			if err == nil {
+				ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+				defer cancel()
+				models, err := p.ListModels(ctx)
+				if err == nil {
+					ids := make([]string, 0, len(models))
+					for _, m := range models {
+						if m.ID != "" {
+							ids = append(ids, m.ID)
+						}
+					}
+					provider.Models = ids
+				}
+			}
+		}
+
+		if err := s.providerStore.Update(provider); err != nil {
 			s.writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to update provider: %v", err))
 			return
 		}
 
-		provider, _ := s.providerStore.Get(id)
-		s.writeJSON(w, http.StatusOK, provider)
+		updated, _ := s.providerStore.Get(id)
+		s.writeJSON(w, http.StatusOK, updated)
 
 	case http.MethodDelete:
 		if err := s.providerStore.Delete(id); err != nil {
@@ -1384,6 +1559,66 @@ func (s *Server) handleAdminProviderTypes(w http.ResponseWriter, r *http.Request
 
 	types := providers.SupportedProviders()
 	s.writeJSON(w, http.StatusOK, types)
+}
+
+func (s *Server) handleAdminProviderTest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	var req struct {
+		Type    string `json:"type"`
+		APIKey  string `json:"api_key"`
+		BaseURL string `json:"base_url"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.Type == "" || req.APIKey == "" {
+		s.writeError(w, http.StatusBadRequest, "type and api_key are required")
+		return
+	}
+
+	provider, err := providers.NewProvider(req.Type, "test", "test", req.APIKey, req.BaseURL)
+	if err != nil {
+		s.writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	models, err := provider.ListModels(ctx)
+	if err != nil {
+		s.writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Return a small preview
+	preview := []string{}
+	for i := 0; i < len(models) && i < 10; i++ {
+		preview = append(preview, models[i].ID)
+	}
+
+	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+		"ok":          true,
+		"model_count": len(models),
+		"models":      preview,
+	})
+}
+
+func isSafeProviderID(id string) bool {
+	if len(id) < 2 || len(id) > 64 {
+		return false
+	}
+	for _, ch := range id {
+		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '_' {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 // Addr returns the server address
