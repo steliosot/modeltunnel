@@ -1124,34 +1124,30 @@
 
                     <!-- Installed Models -->
                     <div style="margin-bottom: 24px;">
-                        <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Installed Ollama Models</h3>
-                        <p class="text-secondary" style="margin-bottom: 16px; font-size: 12px;">Locally installed Ollama models. vLLM models appear under Recommended Models below.</p>
+                        <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Installed Models</h3>
+                        <p class="text-secondary" style="margin-bottom: 16px; font-size: 12px;">Models available from your backend.</p>
                         <div id="installed-local-models-list"></div>
                     </div>
 
                     <!-- Recommended Models -->
                     <div>
                         <h3 style="font-size: 14px; font-weight: 500; margin-bottom: 12px;">Recommended Models</h3>
-                        <p class="text-secondary" style="margin-bottom: 16px; font-size: 12px;">Click on a model to install it</p>
-                        
-                        <!-- vLLM (OpenAI-compatible server) -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">vLLM Models</h4>
-                        <div id="local-recommended-vllm" style="margin-bottom: 16px;"></div>
-                        
+                        <p class="text-secondary" style="margin-bottom: 16px; font-size: 12px;">Popular models for your backend</p>
+
                         <!-- General Purpose -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">General Purpose (Ollama)</h4>
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">General Purpose</h4>
                         <div id="local-recommended-general" style="margin-bottom: 16px;"></div>
-                        
+
                         <!-- Coding -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Coding (Ollama)</h4>
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">Coding</h4>
                         <div id="local-recommended-coding" style="margin-bottom: 16px;"></div>
-                        
+
                         <!-- Vision -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Vision (Ollama)</h4>
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">Vision</h4>
                         <div id="local-recommended-vision" style="margin-bottom: 16px;"></div>
-                        
+
                         <!-- Reasoning -->
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">Reasoning (Ollama)</h4>
+                        <h4 style="font-size: 13px; margin-bottom: 8px;">Reasoning</h4>
                         <div id="local-recommended-reasoning" style="margin-bottom: 16px;"></div>
                     </div>
                 
@@ -1514,13 +1510,13 @@ main();</pre>
                 
                 <div class="docs-content">
                     <h1 class="docs-heading">Documentation</h1>
-                    <p class="docs-lead">Complete guide to installing Modeltunnel and connecting it to your backend. Bring your own Ollama, vLLM, or any OpenAI-compatible endpoint.</p>
-                    
+                    <p class="docs-lead">Complete guide to installing and using Modeltunnel. Connects to any OpenAI-compatible backend.</p>
+
                     <section id="docs-installation" class="docs-section">
                         <h2 class="docs-section-title">Installation</h2>
 
                         <h3 class="docs-subsection-title">One-Line Installer (Recommended)</h3>
-                        <p class="docs-text">Interactive installer for Modeltunnel. <strong>Bring your own backend</strong> - install Ollama or vLLM separately:</p>
+                        <p class="docs-text">Interactive installer that installs Modeltunnel:</p>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
@@ -1541,21 +1537,14 @@ main();</pre>
                         <p class="docs-text"><strong>What this does:</strong></p>
                         <ul class="docs-list">
                             <li>Check your system (OS, architecture, dependencies)</li>
-                            <li>Install Modeltunnel only</li>
+                            <li>Install Modeltunnel</li>
                             <li>Configure ports and directories</li>
                             <li>Set up systemd service (Linux)</li>
                         </ul>
 
                         <div class="alert alert-error" style="margin: 16px 0;">
-                            <strong>⚠️ Important:</strong> The installer<strong> does NOT</strong> install Ollama or vLLM. You must install and run your own backend separately, then configure it in <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code>.
+                            <strong>⚠️ Important:</strong> Modeltunnel connects to your existing backend. Before installation, ensure your backend (Ollama, vLLM, or other OpenAI-compatible endpoint) is installed and running.
                         </div>
-
-                        <p class="docs-text"><strong>Before installing Modeltunnel:</strong></p>
-                        <ul class="docs-list">
-                            <li><strong>Ollama:</strong> Install from <a href="https://ollama.com" target="_blank" class="docs-link">ollama.com</a> and run <code class="docs-inline-code">ollama serve</code></li>
-                            <li><strong>vLLM:</strong> Run <code class="docs-inline-code">pip install vllm</code> and <code class="docs-inline-code">vllm serve --port 8000</code></li>
-                            <li><strong>Other:</strong> Any OpenAI-compatible endpoint (e.g., LM Studio, LocalAI, Text-Generation-WebUI)</li>
-                        </ul>
 
                         <p class="docs-text"><strong>Supports:</strong> Ubuntu, Debian, CentOS, macOS (Intel & Apple Silicon)</p>
 
@@ -1582,7 +1571,7 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
 
                         <h3 class="docs-subsection-title">Prerequisites</h3>
                         <ul class="docs-list">
-                            <li><strong>A running backend:</strong> Ollama, vLLM, or any OpenAI-compatible endpoint</li>
+                            <li><strong>A running backend:</strong> Any OpenAI-compatible endpoint</li>
                             <li>Go 1.21+ (if building from source)</li>
                             <li>Optional: ngrok or localtunnel for public URLs</li>
                         </ul>
@@ -1592,24 +1581,20 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                             <div class="docs-step">
                                 <div class="docs-step-number">1</div>
                                 <div class="docs-step-content">
-                                    <h4>Install and Run Your Backend</h4>
-                                    <p class="docs-text">Choose one of these options:</p>
-                                    <ul class="docs-list">
-                                        <li><strong>Ollama:</strong> <code class="docs-inline-code">brew install ollama &amp;&amp; ollama serve</code></li>
-                                        <li><strong>vLLM:</strong> <code class="docs-inline-code">pip install vllm &amp;&amp; vllm serve --port 8000</code></li>
-                                        <li><strong>Other:</strong> Run your OpenAI-compatible endpoint</li>
-                                    </ul>
+                                    <h4>Configure Your Backend URL</h4>
+                                    <p class="docs-text">Run your backend (Ollama, vLLM, etc.) and note its URL.</p>
+                                    <p class="docs-text" style="font-size: 13px; color: var(--text-tertiary);">See your backend documentation for setup instructions.</p>
                                 </div>
                             </div>
                             <div class="docs-step">
                                 <div class="docs-step-number">2</div>
                                 <div class="docs-step-content">
                                     <h4>Configure Modeltunnel</h4>
-                                    <p class="docs-text">Edit <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code> to add your backend:</p>
+                                    <p class="docs-text">Edit <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code>:</p>
                                     <div class="docs-code-block">
                                         <pre class="docs-code">upstreams:
   default:
-    type: ollama  # or vLLM, or your backend type
+    type: ollama  # or your backend type
     base_url: http://127.0.0.1:11434  # Your backend URL</pre>
                                     </div>
                                 </div>
@@ -1621,7 +1606,7 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                                     <div class="docs-code-block">
                                         <pre class="docs-code">modeltunnel up</pre>
                                     </div>
-                                    <p class="docs-text">Then open <code class="docs-inline-code">http://localhost:8080/admin</code> to create API keys and manage providers.</p>
+                                    <p class="docs-text">Then open <code class="docs-inline-code">http://localhost:8080/admin</code> to create API keys.</p>
                                 </div>
                             </div>
                         </div>
@@ -1673,13 +1658,9 @@ sudo ./update.sh</pre>
 
                     <section id="docs-docker" class="docs-section">
                         <h2 class="docs-section-title">Docker Deployment</h2>
-                        <p class="docs-text">Run Modeltunnel in Docker. Perfect for VM deployment with public IP access. <strong>Bring your own backend</strong> - Modeltunnel connects to external Ollama, vLLM, or any OpenAI-compatible endpoint.</p>
+                        <p class="docs-text">Run Modeltunnel in Docker. Connects to any external OpenAI-compatible backend.</p>
 
-                        <div class="alert alert-error" style="margin: 16px 0;">
-                            <strong>⚠️ Important:</strong> Docker deployment is <strong>Modeltunnel-only</strong>. Run your backend (Ollama/vLLM/etc.) separately, then configure Modeltunnel to connect to it.
-                        </div>
-
-                        <h3 class="docs-subsection-title">Quick Start (Standalone)</h3>
+                        <h3 class="docs-subsection-title">Quick Start</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
@@ -1690,23 +1671,22 @@ sudo ./update.sh</pre>
   ghcr.io/steliosot/modeltunnel:latest up</pre>
                         </div>
 
-                        <h3 class="docs-subsection-title">Connecting to External Backend</h3>
-                        <p class="docs-text">Configure <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code> to connect to your backend:</p>
+                        <h3 class="docs-subsection-title">Connecting to Backend</h3>
+                        <p class="docs-text">Configure your backend URL in <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code>:</p>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>config.yaml</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code"># For Ollama running on same machine
-upstreams:
+                            <pre class="docs-code">upstreams:
   default:
-    type: ollama
+    type: ollama  # or your backend type
     base_url: http://host.docker.internal:11434</pre>
                         </div>
 
-                        <p class="docs-text"><strong>Note:</strong> Use <code class="docs-inline-code">host.docker.internal</code> to access services running on the Docker host machine.</p>
+                        <p class="docs-text"><strong>Note:</strong> Use <code class="docs-inline-code">host.docker.internal</code> to access services running on the Docker host.</p>
 
-                        <h3 class="docs-subsection-title">Docker Compose Example</h3>
+                        <h3 class="docs-subsection-title">Docker Compose</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>docker-compose.yml</span>
@@ -2068,10 +2048,10 @@ modeltunnel up</pre>
                     
                     <section id="docs-configuration" class="docs-section">
                         <h2 class="docs-section-title">Configuration</h2>
-                        <p class="docs-text">Modeltunnel uses a YAML configuration file located at <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code>. You must configure your backend URL(s) here.</p>
+                        <p class="docs-text">Modeltunnel uses a YAML configuration file located at <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code>. Configure your backend URL(s) here.</p>
 
                         <div class="alert alert-error" style="margin: 16px 0;">
-                            <strong>⚠️ Important:</strong> Configure your backend URL(s) in the config file. Install and run Ollama, vLLM, or any OpenAI-compatible endpoint separately before starting Modeltunnel.
+                            <strong>⚠️ Important:</strong> Configure your backend URL(s) in the config file. Run your backend separately before starting Modeltunnel.
                         </div>
 
                         <h3 class="docs-subsection-title">Example Configuration</h3>
@@ -2086,74 +2066,8 @@ modeltunnel up</pre>
 
 upstreams:
   default:
-    type: ollama
+    type: ollama  # or your backend type
     base_url: http://127.0.0.1:11434
-
-policies:
-  default:
-    rate_limit: 60/min
-    max_tokens: 4096
-  student-policy:
-    rate_limit: 60/min        # default for all models
-    max_tokens: 4096
-    models:                   # model-specific overrides
-      mistral:
-        rate_limit: 5/min     # stricter limit for expensive model
-        max_tokens: 2048
-      phi:
-        rate_limit: 100/min   # generous limit for fast model
-        max_tokens: 1024
-      tinyllama:*:            # wildcard matching
-        rate_limit: 200/min
-
-# Keys are created ONLY in the UI dashboard.
-# Never store API keys in this file - use `keys: []` (empty)!
-keys: []</pre>
-                        </div>
-
-                        <h3 class="docs-subsection-title">Minimal Setup</h3>
-                        <p class="docs-text">Use this for a local backend with one default policy. Create API keys in the dashboard at <code class="docs-inline-code">http://localhost:8080/admin</code>.</p>
-                        <div class="docs-code-block">
-                            <div class="docs-code-header">
-                                <span>YAML</span>
-                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
-                            </div>
-                            <pre class="docs-code">server:
-  host: 127.0.0.1
-  port: 8080
-
-upstreams:
-  default:
-    type: ollama
-    base_url: http://127.0.0.1:11434
-
-policies:
-  default:
-    rate_limit: 60/min
-    max_tokens: 4096
-
-# Keys are created ONLY in the UI dashboard
-keys: []</pre>
-                        </div>
-
-                        <h3 class="docs-subsection-title">Multiple Backends with Intents</h3>
-                        <p class="docs-text">Use this when running multiple backends (Ollama + vLLM). Intents route requests to preferred models by priority.</p>
-                        <div class="docs-code-block">
-                            <div class="docs-code-header">
-                                <span>YAML</span>
-                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
-                            </div>
-                            <pre class="docs-code">server:
-  host: 127.0.0.1
-  port: 8080
-
-upstreams:
-  default:
-    type: ollama
-    base_url: http://127.0.0.1:11434
-  vllm:
-    type: vllm
-    base_url: http://127.0.0.1:8000
 
 policies:
   default:
@@ -2161,42 +2075,90 @@ policies:
     max_tokens: 4096
 
 intents:
+  code:
+    priority: ["mistral", "phi"]
+    temperature: 0.2
+    max_tokens: 2000
   chat:
-    priority: ["llama3", "mistral", "phi", "tinyllama"]
-    description: General conversation
+    priority: ["phi", "tinyllama"]
     temperature: 0.7
     max_tokens: 1000
-  code:
-    priority: ["deepseek-coder:6.7b", "codellama:7b", "mistral"]
-    description: Programming
-    temperature: 0.2
-    max_tokens: 4096
-  plan:
-    priority: ["qwen2.5", "mistral", "llama3"]
-    description: Planning and reasoning
-    temperature: 0.3
-    max_tokens: 4000
 
 keys: []</pre>
                         </div>
 
-                        <h3 class="docs-subsection-title">Multiple Policies (Keys Created in UI)</h3>
-                        <p class="docs-text">Define policies here, then create keys in the dashboard and assign them to these policies.</p>
+                        <h3 class="docs-subsection-title">Minimal Setup</h3>
+                        <p class="docs-text">Simple config for one backend. Create API keys in the dashboard.</p>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>YAML</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code">policies:
+                            <pre class="docs-code">server:
+  host: 127.0.0.1
+  port: 8080
+
+upstreams:
+  default:
+    type: ollama
+    base_url: http://127.0.0.1:11434
+
+policies:
   default:
     rate_limit: 60/min
     max_tokens: 4096
-  vllm-fast:
-    rate_limit: 300/min
+
+keys: []</pre>
+                        </div>
+
+                        <h3 class="docs-subsection-title">Multiple Backends with Intents</h3>
+                        <p class="docs-text">Route requests to different backends by intent.</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>YAML</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">upstreams:
+  default:
+    type: ollama
+    base_url: http://127.0.0.1:11434
+  vllm:
+    type: vllm
+    base_url: http://127.0.0.1:8000
+
+intents:
+  chat:
+    priority: ["default/mistral", "phi"]
+    description: General conversation
+    temperature: 0.7
+    max_tokens: 1000
+  code:
+    priority: ["vllm/coding-model", "default/codellama"]
+    description: Programming
+    temperature: 0.2
     max_tokens: 4096
-  vllm-strict:
-    rate_limit: 30/min
-    max_tokens: 2048
+
+keys: []</pre>
+                        </div>
+
+                        <h3 class="docs-subsection-title">Per-Model Rate Limiting</h3>
+                        <p class="docs-text">Configure different limits for each model.</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>Model-Specific Configuration</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">policies:
+  student:
+    rate_limit: 60/min
+    max_tokens: 4096
+    models:
+      mistral:
+        rate_limit: 5/min
+        max_tokens: 2048
+      phi:
+        rate_limit: 100/min
+        max_tokens: 1024
 
 keys: []</pre>
                         </div>
@@ -2412,35 +2374,30 @@ ollama/tinyllama:latest
 ollama/qwen2.5:latest
 ollama/deepseek-r1:latest
 
-# Without tag (uses latest)
-ollama/mistral
-ollama/phi
-
-# With specific version
-ollama/mistral:7b
-ollama/phi:2.7b</pre>
+# Model names use the format: upstream/model:tag
+# Examples:
+ollama/model-name:latest
+default/model-name
+vllm/model-name</pre>
                         </div>
 
-                        <h3 class="docs-subsection-title">Distributed / Remote Providers</h3>
-                        <p class="docs-text">You can add a remote OpenAI-compatible endpoint (including another ModelTunnel) in <strong>Providers</strong>. Each provider gets an ID that becomes a model prefix.</p>
+                        <h3 class="docs-subsection-title">Remote Providers</h3>
+                        <p class="docs-text">Add remote OpenAI-compatible endpoints in <strong>Providers</strong>. Each provider gets an ID that becomes a model prefix.</p>
 
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Example</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code"># 1) Add provider in /admin → Providers
-#    Type: ModelTunnel (OpenAI-compatible)
-#    Base URL: http://10.0.0.42:8080/v1
-#    API key:  (use a key created on the remote instance)
-#    Provider ID: peer-nyc
+                            <pre class="docs-code"># Add provider in /admin → Providers
+# Type: ModelTunnel (OpenAI-compatible)
+# Provider ID: peer-nyc
 
-# 2) Call a remote model using the provider prefix
-peer-nyc/default/mistral:latest
-peer-nyc/vllm/microsoft/Phi-4-mini-instruct</pre>
+# Use provider prefix in model names:
+peer-nyc/your-model-name</pre>
                         </div>
-                        
-                        <h3 class="docs-subsection-title">Python Examples</h3>
+
+                        <h3 class="docs-subsection-title">Python Example</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Python</span>
@@ -2453,87 +2410,49 @@ client = OpenAI(
     api_key="your-api-key-here"
 )
 
-# 1) List available models
+# List available models
 models = client.models.list()
 print([m.id for m in models.data])
 
-# 2) Basic chat (Ollama model)
+# Basic chat
 response = client.chat.completions.create(
-    model="ollama/mistral:latest",
+    model="ollama/model-name",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)
 
-# 3) Intent-based routing
-# Use "auto" and pass an intent header
+# Intent-based routing
 response = client.chat.completions.create(
     model="auto",
     messages=[{"role": "user", "content": "Write a Python quicksort."}],
     extra_headers={"X-Model-Intent": "code"}
 )
-print(response.choices[0].message.content)
 
-# 4) vLLM model (if configured)
-response = client.chat.completions.create(
-    model="vllm/llama-3.1-8b-instruct",
-    messages=[{"role": "user", "content": "Summarize this in 1 sentence."}]
-)
-print(response.choices[0].message.content)
-
-# 5) Streaming response
+# Streaming response
 for chunk in client.chat.completions.create(
-    model="ollama/mistral:latest",
+    model="ollama/model-name",
     messages=[{"role": "user", "content": "Tell me a short story."}],
     stream=True
 ):
     if chunk.choices[0].delta.content:
         print(chunk.choices[0].delta.content, end="")</pre>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">cURL Example</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>cURL</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code"># Chat with mistral
-curl http://localhost:8080/v1/chat/completions \
+                            <pre class="docs-code">curl http://localhost:8080/v1/chat/completions \
   -H "Authorization: Bearer your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "ollama/mistral:latest",
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'
-
-# Chat with phi
-curl http://localhost:8080/v1/chat/completions \
-  -H "Authorization: Bearer your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "ollama/phi:latest",
+    "model": "ollama/model-name",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'</pre>
                         </div>
-                        
-                        <h3 class="docs-subsection-title">Per-Model Rate Limiting</h3>
-                        <p class="docs-text">When per-model rate limits are configured, you'll receive different rate limit headers depending on which model you use. If you exceed the limit for a specific model, you'll get a 429 error.</p>
-                        
-                        <div class="docs-code-block">
-                            <div class="docs-code-header">
-                                <span>Rate Limit Headers</span>
-                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
-                            </div>
-                            <pre class="docs-code"># Example response headers for mistral (5/min limit)
-X-RateLimit-Limit: 5
-X-RateLimit-Remaining: 3
-X-RateLimit-Reset: 1770655818
 
-# Example response headers for phi (100/min limit)
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 95
-X-RateLimit-Reset: 1770655818</pre>
-                        </div>
-                        
                         <h3 class="docs-subsection-title">Endpoints</h3>
                         <table class="docs-table">
                             <thead>
@@ -3015,7 +2934,7 @@ modeltunnel up --tunnel</pre>
                                             </tr>
                                             <tr>
                                                 <td><code class="docs-inline-code">Display name</code></td>
-                                                <td><code class="docs-inline-code">Local Mistral</code></td>
+                                                <td><code class="docs-inline-code">Your Backend</code></td>
                                             </tr>
                                             <tr>
                                                 <td><code class="docs-inline-code">Base URL</code></td>
@@ -3027,11 +2946,11 @@ modeltunnel up --tunnel</pre>
                                             </tr>
                                             <tr>
                                                 <td><code class="docs-inline-code">Models → ID</code></td>
-                                                <td><code class="docs-inline-code">ollama/mistral:latest</code></td>
+                                                <td><code class="docs-inline-code">your-model-name</code></td>
                                             </tr>
                                             <tr>
                                                 <td><code class="docs-inline-code">Models → Name</code></td>
-                                                <td><code class="docs-inline-code">Mistral (Local)</code></td>
+                                                <td><code class="docs-inline-code">Model Display Name</code></td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -3040,7 +2959,7 @@ modeltunnel up --tunnel</pre>
                         </div>
 
                         <h3 class="docs-subsection-title">Test the Connection</h3>
-                        <p class="docs-text">In OpenCode, type a simple message like "Hi from OpenCode!" or "Are you working?" - you should get a response from your local Mistral model!</p>
+                        <p class="docs-text">In OpenCode, type a simple message like "Hello from OpenCode!" - you should get a response from your backend model.</p>
 
                         <h3 class="docs-subsection-title">Local Only (Same Machine)</h3>
                         <p class="docs-text">If OpenCode is on the same machine, you don't need the tunnel:</p>
@@ -3051,7 +2970,7 @@ modeltunnel up
 # Use this Base URL in OpenCode:
 http://localhost:8080/v1</pre>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">Troubleshooting</h3>
                         <table class="docs-table" style="font-size: 13px;">
                             <thead>
@@ -4253,35 +4172,29 @@ alert('Failed to delete model: ' + error.message);
             }
         }
 
-        // Show vLLM load command
-        function showVLLMCommand(modelName) {
-            const command = `pip install vllm
-vllm serve ${modelName} --port 8000 --dtype auto`;
-            
-            alert(`To load this vLLM model, run:\n\n${command}\n\n1. Install vLLM: pip install vllm\n2. Start the server with your model: vllm serve ${modelName} --port 8000 --dtype auto\n3. The model will be available at http://localhost:8000`);
+        // Show backend command
+        function showBackendCommand(modelName) {
+            alert(`Load this model in your backend:\n\n${modelName}\n\nCheck your backend documentation for installation.`);
         }
 
         // Refresh local models list
         function refreshLocalModels() {
             document.getElementById('installed-local-models-list').innerHTML = `
                 <p style="color: var(--text-secondary); font-size: 13px;">
-                    Loading local models...
+                    Loading models...
                 </p>
             `;
             loadLocalModels();
         }
 
-        // Load and display local models
-// Load and display local models
+        // Load and display models
         async function loadLocalModels() {
             try {
                 const response = await authFetch('/admin/api/models');
                 const data = await response.json();
-                
+
                 const allModels = data.data || [];
-                const ollamaModels = allModels.filter(m => m.id && m.owned_by === 'ollama');
-                const vllmModels = allModels.filter(m => m.id && m.owned_by === 'vllm');
-                
+
                 const container = document.getElementById('installed-local-models-list');
                 
                 if (ollamaModels.length === 0 && vllmModels.length === 0) {
@@ -4294,10 +4207,9 @@ vllm serve ${modelName} --port 8000 --dtype auto`;
                 }
 
                 let html = '';
-                
-                // Ollama models
-                if (ollamaModels.length > 0) {
-                    html += ollamaModels.map(model => {
+
+                if (allModels.length > 0) {
+                    html += allModels.map(model => {
                         const modelId = model.id || model.name || 'unknown';
                         const shortName = modelId.includes('/') ? modelId.split('/')[1] : modelId;
                         let size = '-';
@@ -4310,15 +4222,15 @@ vllm serve ${modelName} --port 8000 --dtype auto`;
                             }
                         }
                         const recommended = findRecommendedModel(shortName);
-                        
-                        let badges = [`<span style="background: #fef3c7; color: #854d0e; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">OLLAMA</span>`];
+
+                        let badges = [];
                         if (model.intents && model.intents.length > 0) {
                             model.intents.forEach(intent => {
                                 badges.push(`<span style="background: #fef3c7; color: #854d0e; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">${intent}</span>`);
                             });
                         }
                         const badgesHtml = badges.length > 0 ? '<div style="margin-top: 4px; display: flex; flex-wrap: wrap;">' + badges.join('') + '</div>' : '';
-                        
+
                         return `
                             <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
                                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
@@ -4339,46 +4251,13 @@ vllm serve ${modelName} --port 8000 --dtype auto`;
                         `;
                     }).join('');
                 }
-                
-                // vLLM models
-                if (vllmModels.length > 0) {
-                    html += `
-                        <div style="margin-top: 24px; margin-bottom: 12px;">
-                            <h3 style="font-size: 13px; font-weight: 500;">vLLM Models</h3>
-                        </div>
-                    `;
-                    html += vllmModels.map(model => {
-                        const modelId = model.id || model.name || 'unknown';
-                        const shortName = modelId.includes('/') ? modelId.split('/')[1] : modelId;
-                        const recommended = findRecommendedModel(shortName);
-                        const size = recommended && recommended.size ? recommended.size : '-';
-                        
-                        return `
-                            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                                    <div>
-                                        <div style="font-family: var(--mono-font); font-size: 12px; font-weight: 500;">${shortName}</div>
-                                        <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">
-                                            ${size}
-                                            ${recommended ? ' │ ' + recommended.context + ' │ ' + recommended.description : ''}
-                                            Status: Ready
-                                        </div>
-                                        <div style="margin-top: 4px; display: flex; flex-wrap: wrap;">
-                                            <span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; display: inline-block;">VLLM</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-                
+
                 container.innerHTML = html;
             } catch (error) {
-                console.error('Failed to load local models:', error);
+                console.error('Failed to load models:', error);
                 document.getElementById('installed-local-models-list').innerHTML = `
                     <p style="color: var(--text-secondary); font-size: 13px;">
-                        Failed to load local models.
+                        Failed to load models.
                     </p>
                 `;
             }
@@ -4386,7 +4265,6 @@ vllm serve ${modelName} --port 8000 --dtype auto`;
 
         // Update local recommended models
         function updateLocalRecommendedModels() {
-            updateRecommendedModels('local-recommended-vllm', 'vllm');
             updateRecommendedModels('local-recommended-general', 'general');
             updateRecommendedModels('local-recommended-coding', 'coding');
             updateRecommendedModels('local-recommended-vision', 'vision');
@@ -4435,10 +4313,8 @@ vllm serve ${modelName} --port 8000 --dtype auto`;
                 {name: 'qwen2.5-math:7b', size: '4.3GB', context: '32K', description: 'Math problem solving'},
                 {name: 'deepseek-r1:14b', size: '9.0GB', context: '32K', description: 'Advanced reasoning, multi-step'},
                 {name: 'command-r:latest', size: '4.1GB', context: '128K', description: 'Cohere, long context'}
-            ],
-            vllm: [
-                {name: 'meta-llama/Llama-3.1-8B-Instruct', size: '16GB', context: '131K', description: 'Meta, long context'},
-                {name: 'microsoft/Phi-4-mini-instruct', size: '2.3GB', context: '128K', description: 'Microsoft, efficient'},
+            ]
+        };
                 {name: 'Qwen/Qwen2.5-7B-Instruct', size: '14GB', context: '32K', description: 'Alibaba, multilingual'},
                 {name: 'mistralai/Mistral-7B-Instruct-v0.3', size: '15GB', context: '32K', description: 'MistralAI, fast'},
                 {name: 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', size: '14GB', context: '32K', description: 'DeepSeek reasoning'},
@@ -4462,7 +4338,7 @@ vllm serve ${modelName} --port 8000 --dtype auto`;
                                 </div>
                             </div>
                             ${isVLLM ? `
-                                <button class="btn btn-secondary btn-sm" onclick="showVLLMCommand('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
+                                <button class="btn btn-secondary btn-sm" onclick="showBackendCommand('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
                                     How to load
                                 </button>
                             ` : `
@@ -4495,7 +4371,7 @@ vllm serve ${modelName} --port 8000 --dtype auto`;
                             </div>
                         </div>
                         ${isVLLM ? `
-                            <button class="btn btn-secondary btn-sm" onclick="showVLLMCommand('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
+                            <button class="btn btn-secondary btn-sm" onclick="showBackendCommand('${model.name}')" style="font-size: 11px; padding: 4px 12px;">
                                 How to load
                             </button>
                         ` : `
