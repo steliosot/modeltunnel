@@ -10,7 +10,7 @@ Complete guide to connect AI apps like **OpenCode**, **Cursor**, **Continue.dev*
 
 ```bash
 # Start server with public URL (accessible from anywhere)
-./build/modeltunnel up --ollama --model mistral --tunnel
+./build/modeltunnel up --tunnel
 ```
 
 **Output:**
@@ -95,7 +95,7 @@ If OpenCode is on the same machine, you don't need the tunnel:
 
 ```bash
 # 1. Start tunnel
-./build/modeltunnel up --ollama --model mistral --tunnel
+./build/modeltunnel up --tunnel
 
 # Output: 🌐 Public URL: https://slick-trains-type.loca.lt/v1
 
@@ -185,7 +185,7 @@ This tells Modeltunnel to auto-select the best model for your task!
 
 ```bash
 # Start with public tunnel
-./build/modeltunnel up --ollama --model mistral --tunnel
+./build/modeltunnel up --tunnel
 
 # Create key for OpenCode
 ./build/modeltunnel key create opencode --models mistral --rate 100/min

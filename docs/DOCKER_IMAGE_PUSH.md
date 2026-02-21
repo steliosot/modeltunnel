@@ -60,7 +60,7 @@ docker pull ghcr.io/steliosot/modeltunnel:latest
 
 docker run -d -p 8080:8080 \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral
+  ghcr.io/steliosot/modeltunnel:latest up
 ```
 
 ## Troubleshooting

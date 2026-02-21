@@ -117,7 +117,7 @@ docker pull ghcr.io/steliosot/modeltunnel:latest
 # Run with Ollama
 docker run -d -p 8080:8080 \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral
+  ghcr.io/steliosot/modeltunnel:latest up
 
 # Health check
 curl http://localhost:8080/health
@@ -137,13 +137,13 @@ docker run -d -p 8080:8080 \
 docker run -d --name modeltunnel \
   -p 8080:8080 \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral
+  ghcr.io/steliosot/modeltunnel:latest up
 
 # Secondary service with tunnel
 docker run -d --name modeltunnel-tunnel \
   -p 8081:8080 \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --model phi --tunnel
+  ghcr.io/steliosot/modeltunnel:latest up --tunnel
 ```
 
 ---
@@ -299,7 +299,7 @@ yarn add axios
 
 Make sure Modeltunnel server is running:
 ```bash
-modeltunnel up --ollama --model mistral
+modeltunnel up
 ```
 
 ---

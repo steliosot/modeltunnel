@@ -1514,13 +1514,13 @@ main();</pre>
                 
                 <div class="docs-content">
                     <h1 class="docs-heading">Documentation</h1>
-                    <p class="docs-lead">Complete guide to installing, configuring, and using modeltunnel to expose your local models with an OpenAI-compatible API.</p>
+                    <p class="docs-lead">Complete guide to installing Modeltunnel and connecting it to your backend. Bring your own Ollama, vLLM, or any OpenAI-compatible endpoint.</p>
                     
                     <section id="docs-installation" class="docs-section">
                         <h2 class="docs-section-title">Installation</h2>
-                        
+
                         <h3 class="docs-subsection-title">One-Line Installer (Recommended)</h3>
-                        <p class="docs-text">Interactive wizard that installs Ollama + Modeltunnel with a guided setup:</p>
+                        <p class="docs-text">Interactive installer for Modeltunnel. <strong>Bring your own backend</strong> - install Ollama or vLLM separately:</p>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
@@ -1528,7 +1528,7 @@ main();</pre>
                             </div>
                             <pre class="docs-code">curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash</pre>
                         </div>
-                        
+
                         <p class="docs-text">For non-interactive / server installation:</p>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
@@ -1537,26 +1537,27 @@ main();</pre>
                             </div>
                             <pre class="docs-code">curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash -s -- --silent</pre>
                         </div>
-                        
-                        <p class="docs-text">This will:</p>
+
+                        <p class="docs-text"><strong>What this does:</strong></p>
                         <ul class="docs-list">
                             <li>Check your system (OS, architecture, dependencies)</li>
-                            <li>Install Ollama (optional - you can skip if already installed)</li>
-                            <li>Install Modeltunnel</li>
+                            <li>Install Modeltunnel only</li>
                             <li>Configure ports and directories</li>
-                            <li>Install recommended AI models</li>
                             <li>Set up systemd service (Linux)</li>
                         </ul>
-                        
-                        <p class="docs-text"><strong>Supports:</strong> Ubuntu, Debian, CentOS, macOS (Intel & Apple Silicon)</p>
-                        
-                        <p class="docs-text"><strong>Installer options:</strong></p>
+
+                        <div class="alert alert-error" style="margin: 16px 0;">
+                            <strong>⚠️ Important:</strong> The installer<strong> does NOT</strong> install Ollama or vLLM. You must install and run your own backend separately, then configure it in <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code>.
+                        </div>
+
+                        <p class="docs-text"><strong>Before installing Modeltunnel:</strong></p>
                         <ul class="docs-list">
-                            <li><code class="docs-inline-code">--silent</code> - Non-interactive mode (installs modeltunnel only)</li>
-                            <li><code class="docs-inline-code">--with-ollama</code> - Also install Ollama</li>
-                            <li><code class="docs-inline-code">--install-dir</code> - Installation directory (default: /usr/local/bin)</li>
-                            <li><code class="docs-inline-code">--help</code> - Show all options</li>
+                            <li><strong>Ollama:</strong> Install from <a href="https://ollama.com" target="_blank" class="docs-link">ollama.com</a> and run <code class="docs-inline-code">ollama serve</code></li>
+                            <li><strong>vLLM:</strong> Run <code class="docs-inline-code">pip install vllm</code> and <code class="docs-inline-code">vllm serve --port 8000</code></li>
+                            <li><strong>Other:</strong> Any OpenAI-compatible endpoint (e.g., LM Studio, LocalAI, Text-Generation-WebUI)</li>
                         </ul>
+
+                        <p class="docs-text"><strong>Supports:</strong> Ubuntu, Debian, CentOS, macOS (Intel & Apple Silicon)</p>
 
                         <h3 class="docs-subsection-title">Using Homebrew (macOS/Linux)</h3>
 <div class="docs-code-block">
@@ -1578,22 +1579,61 @@ brew install modeltunnel</pre>
 cd modeltunnel
 go build -o modeltunnel ./cmd/modeltunnel</pre>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">Prerequisites</h3>
                         <ul class="docs-list">
-                            <li>Ollama installed and running (or other supported upstream)</li>
+                            <li><strong>A running backend:</strong> Ollama, vLLM, or any OpenAI-compatible endpoint</li>
                             <li>Go 1.21+ (if building from source)</li>
                             <li>Optional: ngrok or localtunnel for public URLs</li>
                         </ul>
+
+                        <h3 class="docs-subsection-title">Quick Setup After Installation</h3>
+                        <div class="docs-steps">
+                            <div class="docs-step">
+                                <div class="docs-step-number">1</div>
+                                <div class="docs-step-content">
+                                    <h4>Install and Run Your Backend</h4>
+                                    <p class="docs-text">Choose one of these options:</p>
+                                    <ul class="docs-list">
+                                        <li><strong>Ollama:</strong> <code class="docs-inline-code">brew install ollama &amp;&amp; ollama serve</code></li>
+                                        <li><strong>vLLM:</strong> <code class="docs-inline-code">pip install vllm &amp;&amp; vllm serve --port 8000</code></li>
+                                        <li><strong>Other:</strong> Run your OpenAI-compatible endpoint</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="docs-step">
+                                <div class="docs-step-number">2</div>
+                                <div class="docs-step-content">
+                                    <h4>Configure Modeltunnel</h4>
+                                    <p class="docs-text">Edit <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code> to add your backend:</p>
+                                    <div class="docs-code-block">
+                                        <pre class="docs-code">upstreams:
+  default:
+    type: ollama  # or vLLM, or your backend type
+    base_url: http://127.0.0.1:11434  # Your backend URL</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="docs-step">
+                                <div class="docs-step-number">3</div>
+                                <div class="docs-step-content">
+                                    <h4>Start Modeltunnel</h4>
+                                    <div class="docs-code-block">
+                                        <pre class="docs-code">modeltunnel up</pre>
+                                    </div>
+                                    <p class="docs-text">Then open <code class="docs-inline-code">http://localhost:8080/admin</code> to create API keys and manage providers.</p>
+                                </div>
+                            </div>
+                        </div>
                     </section>
                     
                     <section id="docs-update" class="docs-section">
                         <h2 class="docs-section-title">Updating Modeltunnel</h2>
                         <p class="docs-text">Safely update Modeltunnel while preserving your configuration, API keys, and tunnel settings.</p>
-                        
+
                         <h3 class="docs-subsection-title">One-Command Update</h3>
                         <p class="docs-text">Run this single command to update to the latest version:</p>
-                        
+
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
@@ -1601,19 +1641,19 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                             </div>
                             <pre class="docs-code">curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/update.sh | sudo bash</pre>
                         </div>
-                        
+
                         <h4 class="docs-subsection-title">What Gets Preserved</h4>
                         <ul class="docs-list">
                             <li><code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code> - Your server configuration</li>
                             <li><code class="docs-inline-code">~/.config/modeltunnel/keys.db</code> - All your API keys</li>
                             <li><code class="docs-inline-code">~/.config/modeltunnel/tunnel.url</code> - Your tunnel settings</li>
                         </ul>
-                        
+
                         <h4 class="docs-subsection-title">What Gets Updated</h4>
                         <ul class="docs-list">
                             <li><code class="docs-inline-code">/usr/local/bin/modeltunnel</code> - The binary only</li>
                         </ul>
-                        
+
                         <h3 class="docs-subsection-title">Manual Update Steps</h3>
                         <p class="docs-text">If you prefer manual control:</p>
                         <div class="docs-code-block">
@@ -1630,149 +1670,100 @@ chmod +x update.sh
 # 3. Run the update
 sudo ./update.sh</pre>
                         </div>
-                    
+
                     <section id="docs-docker" class="docs-section">
-                        <h2 class="docs-section-title">Docker & VM Deployment</h2>
-                        <p class="docs-text">Run Modeltunnel with Ollama and vLLM in Docker. Perfect for VM deployment with public IP access.</p>
-                        
-                        <h3 class="docs-subsection-title">🚀 Quick Start (Recommended for VMs)</h3>
-                        <p class="docs-text">Get Ollama + vLLM + Modeltunnel running on any VM:</p>
-                        
+                        <h2 class="docs-section-title">Docker Deployment</h2>
+                        <p class="docs-text">Run Modeltunnel in Docker. Perfect for VM deployment with public IP access. <strong>Bring your own backend</strong> - Modeltunnel connects to external Ollama, vLLM, or any OpenAI-compatible endpoint.</p>
+
+                        <div class="alert alert-error" style="margin: 16px 0;">
+                            <strong>⚠️ Important:</strong> Docker deployment is <strong>Modeltunnel-only</strong>. Run your backend (Ollama/vLLM/etc.) separately, then configure Modeltunnel to connect to it.
+                        </div>
+
+                        <h3 class="docs-subsection-title">Quick Start (Standalone)</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code">git clone https://github.com/steliosot/modeltunnel.git
-cd modeltunnel
-
-# Start all services
-docker compose up -d
-
-# Check logs
-docker compose logs -f</pre>
+                            <pre class="docs-code">docker run -d -p 8080:8080 \
+  -v ~/.config/modeltunnel:/root/.config/modeltunnel \
+  ghcr.io/steliosot/modeltunnel:latest up</pre>
                         </div>
-                        
-                        <p class="docs-text"><strong>What you get:</strong></p>
-                        <ul class="docs-list">
-                            <li><strong>Ollama</strong> on port 11434 - Pull and run Ollama models</li>
-                            <li><strong>vLLM</strong> on port 8000 - Run HuggingFace models with OpenAI API</li>
-                            <li><strong>Modeltunnel</strong> on port 8080 - Unified API and dashboard</li>
-                            <li><strong>Persistent storage</strong> - Models survive container restarts</li>
-                            <li><strong>Auto-restart</strong> - Services restart on failure</li>
-                        </ul>
-                        
-                        <h4 class="docs-subsection-title">Access Dashboard</h4>
+
+                        <h3 class="docs-subsection-title">Connecting to External Backend</h3>
+                        <p class="docs-text">Configure <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code> to connect to your backend:</p>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>config.yaml</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code"># For Ollama running on same machine
+upstreams:
+  default:
+    type: ollama
+    base_url: http://host.docker.internal:11434</pre>
+                        </div>
+
+                        <p class="docs-text"><strong>Note:</strong> Use <code class="docs-inline-code">host.docker.internal</code> to access services running on the Docker host machine.</p>
+
+                        <h3 class="docs-subsection-title">Docker Compose Example</h3>
+                        <div class="docs-code-block">
+                            <div class="docs-code-header">
+                                <span>docker-compose.yml</span>
+                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre class="docs-code">services:
+  modeltunnel:
+    image: ghcr.io/steliosot/modeltunnel:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ~/.config/modeltunnel:/root/.config/modeltunnel
+    command: ["up"]
+    restart: unless-stopped</pre>
+                        </div>
+
+                        <h3 class="docs-subsection-title">Access Dashboard</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Browser</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code">http://YOUR_VM_PUBLIC_IP:8080/admin</pre>
+                            <pre class="docs-code">http://YOUR_DOCKER_HOST:8080/admin</pre>
                         </div>
-                        
-                        <h4 class="docs-subsection-title">Pull Models</h4>
-                        
-                        <p class="docs-text"><strong>Option 1: Via Dashboard (Recommended)</strong></p>
-                        <p class="docs-text">Open the dashboard → Click "Local Models" → Click "Pull" on recommended models</p>
-                        
-                        <p class="docs-text"><strong>Option 2: Via Command Line</strong></p>
-                        <div class="docs-code-block">
-                            <div class="docs-code-header">
-                                <span>Terminal</span>
-                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
-                            </div>
-                            <pre class="docs-code"># Pull Ollama models
-docker exec -it modeltunnel-ollama ollama pull mistral
-docker exec -it modeltunnel-ollama ollama pull deepseek-r1
 
-# vLLM models are auto-loaded from HuggingFace
-# Change model in docker-compose.yml:
-#   --model Qwen/Qwen2.5-7B-Instruct</pre>
-                        </div>
-                        
-                        <h4 class="docs-subsection-title">Test the API</h4>
-                        <div class="docs-code-block">
-                            <div class="docs-code-header">
-                                <span>Terminal</span>
-                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
-                            </div>
-                            <pre class="docs-code"># Create API key
-docker exec modeltunnel-app ./modeltunnel key create test
-
-# Test Ollama model
-curl http://YOUR_VM_IP:8080/v1/chat/completions \
-  -H "Authorization: Bearer mt_sk_test_xxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"model": "default/mistral", "messages": [{"role": "user", "content": "Hello!"}]}'
-
-# Test vLLM model
-curl http://YOUR_VM_IP:8080/v1/chat/completions \
-  -H "Authorization: Bearer mt_sk_test_xxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"model": "vllm/microsoft/Phi-4-mini-instruct", "messages": [{"role": "user", "content": "Hello!"}]}'</pre>
-                        </div>
-                        
-                        <h4 class="docs-subsection-title">Resource Management</h4>
-                        <p class="docs-text">Default limits (adjust in docker-compose.yml):</p>
-                        <table class="docs-table">
-                            <thead>
-                                <tr>
-                                    <th>Service</th>
-                                    <th>CPU Limit</th>
-                                    <th>Memory Limit</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Ollama</td>
-                                    <td>4 cores</td>
-                                    <td>8 GB</td>
-                                </tr>
-                                <tr>
-                                    <td>vLLM</td>
-                                    <td>4 cores</td>
-                                    <td>16 GB</td>
-                                </tr>
-                                <tr>
-                                    <td>Modeltunnel</td>
-                                    <td>1 core</td>
-                                    <td>512 MB</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        
-                        <h4 class="docs-subsection-title">Common Commands</h4>
+                        <h3 class="docs-subsection-title">Common Commands</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
                             <pre class="docs-code"># View logs
-docker compose logs -f modeltunnel
-docker compose logs -f ollama
-docker compose logs -f vllm
+docker logs -f modeltunnel_container
 
-# Stop all services
-docker compose down
+# Stop container
+docker stop modeltunnel_container
 
-# Stop and remove volumes (deletes models)
-docker compose down -v
-
-# Restart a specific service
-docker compose restart vllm
+# Start container
+docker start modeltunnel_container
 
 # Update to latest version
-docker compose pull
-docker compose up -d</pre>
+docker pull ghcr.io/steliosot/modeltunnel:latest
+docker stop modeltunnel_container
+docker run -d --name modeltunnel_new --restart unless-stopped \
+  -p 8080:8080 \
+  -v ~/.config/modeltunnel:/root/.config/modeltunnel \
+  ghcr.io/steliosot/modeltunnel:latest up
+docker rm modeltunnel_container
+docker rename modeltunnel_new modeltunnel_container</pre>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">🔒 Security for Public VMs</h3>
-                        <p class="docs-text">When exposing to the public internet, add authentication:</p>
-                        
+                        <p class="docs-text">When exposing to the public internet, add authentication in your config:</p>
+
                         <div class="docs-code-block">
                             <div class="docs-code-header">
-                                <span>config.docker.yaml</span>
+                                <span>config.yaml</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
                             <pre class="docs-code">server:
@@ -1783,28 +1774,7 @@ docker compose up -d</pre>
     username: admin
     password: your-secure-password-here</pre>
                         </div>
-                        
-                        <p class="docs-text">Then restart: <code class="docs-inline-code">docker compose restart modeltunnel</code></p>
-                        
-                        <h3 class="docs-subsection-title">Pre-Built Image (Standalone)</h3>
-                        <div class="docs-code-block">
-                            <div class="docs-code-header">
-                                <span>Terminal</span>
-                                <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
-                            </div>
-                            <pre class="docs-code">docker pull ghcr.io/steliosot/modeltunnel:latest
 
-# Run with local Ollama
-docker run -d -p 8080:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama
-
-# Run with public tunnel
-docker run -d -p 8080:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --tunnel</pre>
-                        </div>
-                        
                         <h3 class="docs-subsection-title">Build from Source</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
@@ -1812,33 +1782,11 @@ docker run -d -p 8080:8080 \
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
                             <pre class="docs-code">docker build -t modeltunnel:latest .
-docker run -d -p 8080:8080 modeltunnel:latest up --ollama</pre>
+docker run -d -p 8080:8080 \
+  -v ~/.config/modeltunnel:/root/.config/modeltunnel \
+  modeltunnel:latest up</pre>
                         </div>
-                        
-                        <h3 class="docs-subsection-title">Volumes</h3>
-                        <table class="docs-table">
-                            <thead>
-                                <tr>
-                                    <th>Path</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><code class="docs-inline-code">ollama_data</code></td>
-                                    <td>Ollama models storage</td>
-                                </tr>
-                                <tr>
-                                    <td><code class="docs-inline-code">vllm_data</code></td>
-                                    <td>vLLM/HuggingFace models cache</td>
-                                </tr>
-                                <tr>
-                                    <td><code class="docs-inline-code">config_data</code></td>
-                                    <td>Modeltunnel config and keys database</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        
+
                         <h3 class="docs-subsection-title">Image Details</h3>
                         <ul class="docs-list">
                             <li>Base image: Alpine 3.19</li>
@@ -1851,50 +1799,70 @@ docker run -d -p 8080:8080 modeltunnel:latest up --ollama</pre>
                     <section id="docs-quickstart" class="docs-section">
                         <h2 class="docs-section-title">Quick Start</h2>
                         <p class="docs-text">Get up and running in minutes with these simple steps:</p>
-                        
+
                         <div class="docs-steps">
                             <div class="docs-step">
                                 <div class="docs-step-number">1</div>
                                 <div class="docs-step-content">
-                                    <h4>Initialize Configuration</h4>
-                                    <p>Create the default configuration file:</p>
+                                    <h4>Install and Run Your Backend</h4>
+                                    <p><strong>Option A: Ollama</strong></p>
                                     <div class="docs-code-block">
-                                        <pre class="docs-code">./modeltunnel init</pre>
+                                        <pre class="docs-code">brew install ollama  # macOS
+ollama serve
+ollama pull mistral  # Download a model</pre>
+                                    </div>
+                                    <p><strong>Option B: vLLM</strong></p>
+                                    <div class="docs-code-block">
+                                        <pre class="docs-code">pip install vllm
+vllm serve --model mistralai/Mistral-7B-Instruct-v0.2 --port 8000</pre>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="docs-step">
                                 <div class="docs-step-number">2</div>
                                 <div class="docs-step-content">
-                                    <h4>Start the Server</h4>
-                                    <p>Launch with Ollama support:</p>
+                                    <h4>Initialize Modeltunnel</h4>
                                     <div class="docs-code-block">
-                                        <pre class="docs-code">./modeltunnel up --ollama --model mistral</pre>
+                                        <pre class="docs-code">modeltunnel init</pre>
+                                    </div>
+                                    <p>Then edit <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code> to add your backend:</p>
+                                    <div class="docs-code-block">
+                                        <pre class="docs-code">upstreams:
+  default:
+    type: ollama
+    base_url: http://127.0.0.1:11434</pre>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="docs-step">
                                 <div class="docs-step-number">3</div>
                                 <div class="docs-step-content">
-                                    <h4>Create API Keys</h4>
-                                    <p>Generate keys for your team members:</p>
+                                    <h4>Start Modeltunnel</h4>
                                     <div class="docs-code-block">
-                                        <pre class="docs-code">./modeltunnel key create alice --rate 60/min</pre>
+                                        <pre class="docs-code">modeltunnel up</pre>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="docs-step">
                                 <div class="docs-step-number">4</div>
                                 <div class="docs-step-content">
+                                    <h4>Create API Keys in Dashboard</h4>
+                                    <p>Open <code class="docs-inline-code">http://localhost:8080/admin</code> to create API keys. Keys are stored securely in SQLite database, <em>not</em> in your config file.</p>
+                                </div>
+                            </div>
+
+                            <div class="docs-step">
+                                <div class="docs-step-number">5</div>
+                                <div class="docs-step-content">
                                     <h4>Connect Your Client</h4>
-                                    <p>Use the dashboard to get connection details, or configure your OpenAI-compatible client with:</p>
+                                    <p>Configure your OpenAI-compatible client with:</p>
                                     <ul class="docs-list">
                                         <li>Base URL: <code class="docs-inline-code">http://localhost:8080/v1</code></li>
-                                        <li>API Key: Copy from dashboard or CLI output</li>
-                                        <li>Model: <code class="docs-inline-code">default/model-name</code></li>
+                                        <li>API Key: Copy from dashboard</li>
+                                        <li>Model: <code class="docs-inline-code">ollama/mistral:latest</code> (use <code class="docs-inline-code">/v1/models</code> to list available models)</li>
                                     </ul>
                                 </div>
                             </div>
@@ -1924,21 +1892,22 @@ brew install modeltunnel</pre>
                         </div>
                         
                         <h3 class="docs-subsection-title">Option 3: Manual Installation</h3>
-                        
-                        <h4 class="docs-subsection-title">Step 1: Install Ollama</h4>
+
+                        <h4 class="docs-subsection-title">Step 1: Install and Start Your Backend</h4>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code">brew install ollama
+                            <pre class="docs-code"># Install and start Ollama
+brew install ollama
 ollama serve</pre>
                         </div>
-                        <p class="docs-text">Download a model (e.g., mistral):</p>
+                        <p class="docs-text">Download a model:</p>
                         <div class="docs-code-block">
-                            <pre class="docs-code">ollama pull llama3</pre>
+                            <pre class="docs-code">ollama pull mistral</pre>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">Step 2: Install modeltunnel</h3>
                         <div class="docs-code-block">
                             <pre class="docs-code"># Download latest release
@@ -1948,13 +1917,22 @@ chmod +x modeltunnel
 # Or build from source
 go install github.com/modeltunnel/modeltunnel/cmd/modeltunnel@latest</pre>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">Step 3: Configure and Run</h3>
                         <div class="docs-code-block">
-                            <pre class="docs-code">./modeltunnel init
-./modeltunnel up --ollama --model mistral</pre>
+                            <pre class="docs-code"># Initialize config
+./modeltunnel init
+
+# Add your backend to ~/.config/modeltunnel/config.yaml:
+# upstreams:
+#   default:
+#     type: ollama
+#     base_url: http://127.0.0.1:11434
+
+# Start server
+./modeltunnel up</pre>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">Optional: Public Tunnel with ngrok</h3>
                         <div class="docs-code-block">
                             <pre class="docs-code">brew install ngrok
@@ -2001,14 +1979,20 @@ Invoke-WebRequest -Uri "https://github.com/modeltunnel/modeltunnel/releases/late
 # Or build from source (requires Go)
 go install github.com/modeltunnel/modeltunnel/cmd/modeltunnel@latest</pre>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">Step 3: Configure and Run</h3>
                         <div class="docs-code-block">
                             <pre class="docs-code"># Initialize config
 .\modeltunnel.exe init
 
+# Add your backend to ~/.config/modeltunnel/config.yaml:
+# upstreams:
+#   default:
+#     type: ollama
+#     base_url: http://127.0.0.1:11434
+
 # Start server
-.\modeltunnel.exe up --ollama --model mistral</pre>
+.\modeltunnel.exe up</pre>
                         </div>
                         
                         <h3 class="docs-subsection-title">Optional: Public Tunnel</h3>
@@ -2040,20 +2024,21 @@ go install github.com/modeltunnel/modeltunnel/cmd/modeltunnel@latest</pre>
                         </div>
                         
                         <h3 class="docs-subsection-title">Option 2: Manual Installation</h3>
-                        
-                        <h4 class="docs-subsection-title">Step 1: Install Ollama</h4>
+
+                        <h4 class="docs-subsection-title">Step 1: Install and Start Your Backend</h4>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>Terminal</span>
                                 <button class="docs-copy-btn" onclick="copyCode(this)">Copy</button>
                             </div>
-                            <pre class="docs-code">curl -fsSL https://ollama.com/install.sh | sh
+                            <pre class="docs-code"># Install and start Ollama
+curl -fsSL https://ollama.com/install.sh | sh
 ollama serve</pre>
                         </div>
                         <div class="docs-code-block">
-                            <pre class="docs-code">ollama pull llama3</pre>
+                            <pre class="docs-code">ollama pull mistral</pre>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">Step 2: Install modeltunnel</h3>
                         <div class="docs-code-block">
                             <pre class="docs-code"># Download binary
@@ -2064,18 +2049,31 @@ sudo mv modeltunnel /usr/local/bin/
 # Or build from source
 go install github.com/modeltunnel/modeltunnel/cmd/modeltunnel@latest</pre>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">Step 3: Configure and Run</h3>
                         <div class="docs-code-block">
-                            <pre class="docs-code">modeltunnel init
-modeltunnel up --ollama --model mistral</pre>
+                            <pre class="docs-code"># Initialize config
+modeltunnel init
+
+# Add your backend to ~/.config/modeltunnel/config.yaml:
+# upstreams:
+#   default:
+#     type: ollama
+#     base_url: http://127.0.0.1:11434
+
+# Start server
+modeltunnel up</pre>
                         </div>
                     </section>
                     
                     <section id="docs-configuration" class="docs-section">
                         <h2 class="docs-section-title">Configuration</h2>
-                        <p class="docs-text">modeltunnel uses a YAML configuration file located at <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code></p>
-                        
+                        <p class="docs-text">Modeltunnel uses a YAML configuration file located at <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code>. You must configure your backend URL(s) here.</p>
+
+                        <div class="alert alert-error" style="margin: 16px 0;">
+                            <strong>⚠️ Important:</strong> Configure your backend URL(s) in the config file. Install and run Ollama, vLLM, or any OpenAI-compatible endpoint separately before starting Modeltunnel.
+                        </div>
+
                         <h3 class="docs-subsection-title">Example Configuration</h3>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
@@ -2090,7 +2088,6 @@ upstreams:
   default:
     type: ollama
     base_url: http://127.0.0.1:11434
-    model: mistral
 
 policies:
   default:
@@ -2109,11 +2106,13 @@ policies:
       tinyllama:*:            # wildcard matching
         rate_limit: 200/min
 
+# Keys are created ONLY in the UI dashboard.
+# Never store API keys in this file - use `keys: []` (empty)!
 keys: []</pre>
                         </div>
 
-                        <h3 class="docs-subsection-title">Minimal Setup (Ollama Only)</h3>
-                        <p class="docs-text">Use this if you just want a local Ollama instance with one default policy. Keys are created in the dashboard or CLI.</p>
+                        <h3 class="docs-subsection-title">Minimal Setup</h3>
+                        <p class="docs-text">Use this for a local backend with one default policy. Create API keys in the dashboard at <code class="docs-inline-code">http://localhost:8080/admin</code>.</p>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>YAML</span>
@@ -2133,11 +2132,12 @@ policies:
     rate_limit: 60/min
     max_tokens: 4096
 
+# Keys are created ONLY in the UI dashboard
 keys: []</pre>
                         </div>
 
-                        <h3 class="docs-subsection-title">Ollama + vLLM with Basic Intents</h3>
-                        <p class="docs-text">Use this when you run a local vLLM server alongside Ollama. Intents route requests to preferred models by priority.</p>
+                        <h3 class="docs-subsection-title">Multiple Backends with Intents</h3>
+                        <p class="docs-text">Use this when running multiple backends (Ollama + vLLM). Intents route requests to preferred models by priority.</p>
                         <div class="docs-code-block">
                             <div class="docs-code-header">
                                 <span>YAML</span>
@@ -2349,14 +2349,6 @@ modeltunnel key revoke alice</pre>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><code class="docs-inline-code">--ollama</code></td>
-                                    <td>Use Ollama upstream</td>
-                                </tr>
-                                <tr>
-                                    <td><code class="docs-inline-code">--model [name]</code></td>
-                                    <td>Specify model name</td>
-                                </tr>
-                                <tr>
                                     <td><code class="docs-inline-code">--port [number]</code></td>
                                     <td>Server port</td>
                                 </tr>
@@ -2374,6 +2366,10 @@ modeltunnel key revoke alice</pre>
                                 </tr>
                             </tbody>
                         </table>
+
+                        <div class="alert alert-error" style="margin: 16px 0; font-size: 13px;">
+                            <strong>Note:</strong> The <code class="docs-inline-code">--ollama</code> flag has been deprecated. Configure your backend in <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code> instead.
+                        </div>
                         
                         <div class="docs-info-box">
                             <strong>📝 Note:</strong> When creating keys with <code class="docs-inline-code">--rate</code>, a custom policy is automatically created for that key. For more granular control (per-model limits), edit the configuration file directly.
@@ -2967,32 +2963,34 @@ X-Model-Intent: plan</pre>
 
                     <section id="docs-connect" class="docs-section">
                         <h2 class="docs-section-title">Connect External Apps</h2>
-                        <p class="docs-text">Connect OpenCode, Cursor, Continue.dev, and other OpenAI-compatible apps to your local Ollama models.</p>
-                        
+                        <p class="docs-text">Connect OpenCode, Cursor, Continue.dev, and other OpenAI-compatible apps to your local Ollama/vLLM models.</p>
+
+                        <div class="alert alert-error" style="margin: 16px 0;">
+                            <strong>Before you start:</strong> Make sure your backend (Ollama, vLLM, etc.) is installed and running. Configure it in <code class="docs-inline-code">~/.config/modeltunnel/config.yaml</code>.
+                        </div>
+
                         <h3 class="docs-subsection-title">Quick Setup (5 Minutes)</h3>
-                        
+
                         <div class="docs-steps">
                             <div class="docs-step">
                                 <div class="docs-step-number">1</div>
                                 <div class="docs-step-content">
                                     <h4>Start Modeltunnel with Public Tunnel</h4>
                                     <div class="docs-code-block">
-                                        <pre class="docs-code">./build/modeltunnel up --ollama --model mistral --tunnel</pre>
+                                        <pre class="docs-code"># Make sure your backend is running, then:
+modeltunnel up --tunnel</pre>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="docs-step">
                                 <div class="docs-step-number">2</div>
                                 <div class="docs-step-content">
                                     <h4>Create API Key for OpenCode</h4>
-                                    <div class="docs-code-block">
-                                        <pre class="docs-code">./build/modeltunnel key create opencode --models mistral --rate 100/min</pre>
-                                    </div>
-                                    <p style="margin-top: 8px; font-size: 13px; color: var(--text-tertiary);">Copy the key - you'll need it for OpenCode</p>
+                                    <p class="docs-text">Open <code class="docs-inline-code">http://localhost:8080/admin</code> → click <strong>Create Key</strong> → name it "opencode"</p>
                                 </div>
                             </div>
-                            
+
                             <div class="docs-step">
                                 <div class="docs-step-number">3</div>
                                 <div class="docs-step-content">
@@ -3040,15 +3038,15 @@ X-Model-Intent: plan</pre>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <h3 class="docs-subsection-title">Test the Connection</h3>
                         <p class="docs-text">In OpenCode, type a simple message like "Hi from OpenCode!" or "Are you working?" - you should get a response from your local Mistral model!</p>
-                        
+
                         <h3 class="docs-subsection-title">Local Only (Same Machine)</h3>
                         <p class="docs-text">If OpenCode is on the same machine, you don't need the tunnel:</p>
                         <div class="docs-code-block">
                             <pre class="docs-code"># Start without tunnel
-./build/modeltunnel up --ollama --model mistral
+modeltunnel up
 
 # Use this Base URL in OpenCode:
 http://localhost:8080/v1</pre>
@@ -3103,9 +3101,9 @@ http://localhost:8080/v1</pre>
                         <div class="docs-info-box">
                             <strong>ℹ️ Security Note:</strong>
                             <ul class="docs-list" style="margin-top: 8px; font-size: 13px;">
-                                <li>Create separate keys for each app</li>
+                                <li>Create separate keys for each app in the dashboard</li>
                                 <li>Use rate limits to protect your machine</li>
-                                <li>Revoke unused keys: <code class="docs-inline-code">./build/modeltunnel key revoke opencode</code></li>
+                                <li>Revoke unused keys in the dashboard: <code class="docs-inline-code">http://localhost:8080/admin</code></li>
                                 <li>Local access is more secure than public tunnel</li>
                             </ul>
                         </div>

@@ -1,12 +1,12 @@
 [Unit]
 Description=Modeltunnel API Server
-After=network-online.target ollama.service
-Wants=ollama.service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/local/bin/modeltunnel up --ollama --tunnel
+ExecStart=/usr/local/bin/modeltunnel up
 Restart=on-failure
 RestartSec=10s
 StandardOutput=journal

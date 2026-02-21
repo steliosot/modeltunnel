@@ -11,7 +11,7 @@ Modeltunnel uses YAML for configuration with hot-reload support.
 ```bash
 # Use custom config
 export MODELTUNNEL_CONFIG=/etc/modeltunnel/config.yaml
-modeltunnel up --ollama
+modeltunnel up
 ```
 
 ---
@@ -358,7 +358,7 @@ Configuration changes are automatically applied without restart.
 
 ```bash
 # Check logs for reload
-modeltunnel up --ollama
+modeltunnel up
 
 # Edit config and save
 # Watch for log message:
@@ -455,7 +455,7 @@ echo $MODELTUNNEL_CONFIG
 cat ~/.config/modeltunnel/config.yaml
 
 # Validate YAML
-modeltunnel up --ollama 2>&1 | head -20
+modeltunnel up 2>&1 | head -20
 ```
 
 ### Hot reload not working
@@ -468,7 +468,7 @@ ls -la ~/.config/modeltunnel/
 python3 -c "import yaml; yaml.safe_load(open('config.yaml'))"
 
 # Check logs for errors
-modeltunnel up --ollama --log-level debug
+modeltunnel up --log-level debug
 ```
 
 ### Rate limits not applying

@@ -1,6 +1,6 @@
 # Modeltunnel
 
-**ngrok for LLMs** - Expose your local Ollama models with an OpenAI-compatible API and key-based authentication.
+**ngrok for LLMs** - Connect your local or cloud models with an OpenAI-compatible API, key-based authentication, and smart routing.
 
 [![Release](https://img.shields.io/github/v/release/steliosot/modeltunnel?style=flat-square)](https://github.com/steliosot/modeltunnel/releases)
 [![License](https://img.shields.io/github/license/steliosot/modeltunnel?style=flat-square)](LICENSE)
@@ -16,58 +16,124 @@
 
 ## Features
 
-- **Zero Configuration** - Works out of the box with Ollama
+- **Bring Your Own Backend** - Works with Ollama, vLLM, LM Studio, LocalAI, or any OpenAI-compatible endpoint
 - **Key-Based Authentication** - Secure API access with granular permissions
-- **Bring Your Own Key (BYOK)** - Use OpenAI, Anthropic, and other API providers alongside local models
 - **OpenAI-Compatible API** - Drop-in replacement for OpenAI SDK
-- **Async Job API** - Submit long-running jobs and poll for results
-- **Intent-Based Routing** - Smart model selection via `X-Model-Intent` header
 - **Built-in Dashboard** - Web UI for managing keys, providers, and monitoring usage
-- **Public Tunnels** - Built-in support for LocalTunnel (zero setup)
+- **External Providers** - Use OpenAI, Anthropic, and other APIs alongside local models
+- **Intent-Based Routing** - Smart model selection via `X-Model-Intent` header
+- **Public Tunnels** - Built-in support for public access (LocalTunnel)
 - **Per-Model Rate Limiting** - Different limits for different models
-- **Persistent Keys** - SQLite database for key storage (CLI keys available immediately)
+- **Persistent Keys** - SQLite database for key storage
 - **Hot Reload** - Configuration changes apply without restart
 - **Request Logging** - Real-time monitoring via WebSocket
-- **Systemd Services** - Auto-restart on failure, survives closing VM window
+- **Systemd Services** - Auto-restart on failure (Linux)
 
-## Installation
+## Quick Start
 
-### 🚀 One-Line Installer (Recommended)
+> **Prerequisite:** Make sure your backend (Ollama/vLLM/etc.) is installed and running.
 
-Interactive wizard that installs Ollama + Modeltunnel with a guided setup:
+### 1. Install Modeltunnel
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash
 ```
 
-**Silent installation for servers/CI (no interactive prompts):**
+### 2. Start Your Backend
+
+```bash
+# Ollama
+ollama serve
+
+# vLLM
+pip install vllm
+vllm serve --port 8000
+```
+
+### 3. Configure Modeltunnel
+
+```bash
+# Initialize config
+modeltunnel init
+```
+
+Edit `~/.config/modeltunnel/config.yaml` to add your backend:
+
+```yaml
+upstreams:
+  default:
+    type: ollama              # or vllm
+    base_url: http://127.0.0.1:11434  # Your backend URL
+```
+
+### 4. Start Modeltunnel
+
+```bash
+modeltunnel up
+```
+
+### 5. Open Dashboard & Create Keys
+
+Open http://localhost:8080/admin in your browser and create an API key.
+
+### 6. Use with Any OpenAI Client
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:8080/v1",
+    api_key="mt_sk_your_key_here"
+)
+
+response = client.chat.completions.create(
+    model="ollama/mistral:latest",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+### 7. Use Intent-Based Routing
+
+```python
+# Automatically selects the best model for coding
+response = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "Write a Python function to sort a list"}],
+    extra_headers={"X-Model-Intent": "code"}
+)
+```
+
+**Available Intents:**
+- `plan` → deepseek-r1 (reasoning, strategy, architecture)
+- `code` → qwen2.5 (programming, debugging, technical tasks)
+- `chat` → phi (fast conversation, Q&A)
+
+---
+
+## Installation
+
+### One-Line Installer (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash
+```
+
+**Silent installation for servers/CI:**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash -s -- --silent
 ```
 
-This will:
-- ✓ Check your system (OS, architecture, dependencies)
-- ✓ Install Ollama (optional - you can skip if already installed)
-- ✓ Install Modeltunnel
-- ✓ Configure ports and directories
-- ✓ Install recommended AI models
-- ✓ Set up systemd service (Linux)
-
-**Supports:** Ubuntu, Debian, CentOS, macOS (Intel & Apple Silicon)
-
 **Installer options:**
-- `--silent` - Non-interactive mode (installs modeltunnel only)
-- `--with-ollama` - Also install Ollama
+- `--silent` - Non-interactive mode
 - `--install-dir` - Installation directory (default: /usr/local/bin)
 - `--help` - Show all options
 
-Example with options:
-```bash
-curl -fsSL ... | bash -s -- --with-ollama
-```
+**Supports:** Ubuntu, Debian, CentOS, macOS (Intel & Apple Silicon)
 
-### Using Homebrew (macOS/Linux)
+### Using Homebrew
 
 ```bash
 brew tap steliosot/modeltunnel
@@ -89,273 +155,37 @@ make build
 sudo make install
 ```
 
-### Pre-built Binaries
-
-Download from [Releases](https://github.com/steliosot/modeltunnel/releases)
-
 ### Updating Modeltunnel
 
-Safely update Modeltunnel while preserving your configuration, API keys, and tunnel settings:
-
 ```bash
-# One-command update (preserves all data)
 curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/update.sh | sudo bash
 ```
 
 **What gets preserved:**
-- ✓ `~/.config/modeltunnel/config.yaml` - Your server configuration
-- ✓ `~/.config/modeltunnel/keys.db` - All your API keys
-- ✓ `~/.config/modeltunnel/tunnel.url` - Your tunnel URL
-
-**What gets updated:**
-- `/usr/local/bin/modeltunnel` - The binary only
-
-For manual updates: See the [update.sh](update.sh) source code for details.
+- ✓ `~/.config/modeltunnel/config.yaml` - Your configuration
+- ✓ `~/.config/modeltunnel/keys.db` - All API keys
+- ✓ `~/.config/modeltunnel/tunnel.url` - Tunnel URL
 
 ### Docker
 
-#### Using Docker Compose (Recommended for VM Deployment)
-
-**Perfect for VM deployment** - Get Ollama + vLLM + Modeltunnel running on any VM with public IP access.
-
-**Quick Start:**
-
 ```bash
-# Clone repository
-git clone https://github.com/steliosot/modeltunnel.git
-cd modeltunnel
-
-# Start all services (Ollama + vLLM + Modeltunnel)
-docker compose up -d
-
-# Check logs
-docker compose logs -f
-
-# Access dashboard
-open http://YOUR_VM_IP:8080/admin
-```
-
-**What you get:**
-- ✅ **Ollama** on port 11434 (pull/run Ollama models)
-- ✅ **vLLM** on port 8000 (run HuggingFace models with OpenAI API)
-- ✅ **Modeltunnel** on port 8080 (unified API + dashboard)
-- ✅ **Persistent storage** (models survive restarts)
-- ✅ **Auto-restart** (services restart on failure)
-
-**Pull Models:**
-
-```bash
-# Pull Ollama models via command line
-docker exec -it modeltunnel-ollama ollama pull deepseek-r1
-docker exec -it modeltunnel-ollama ollama pull mistral
-
-# Or pull via dashboard (recommended)
-# Open http://YOUR_VM_IP:8080/admin → Local Models → Pull models
-```
-
-**Change vLLM Model:**
-
-Edit `docker-compose.yml` and update the `--model` parameter:
-
-```yaml
-vllm:
-  command: >
-    --model Qwen/Qwen2.5-7B-Instruct
-    --port 8000
-    --dtype auto
-    --host 0.0.0.0
-```
-
-Then restart:
-```bash
-docker compose down
-docker compose up -d
-```
-
-**Resource Management:**
-
-Default limits (CPU-only, no GPU):
-
-| Service | CPU Limit | Memory Limit | 
-|---------|-----------|--------------|
-| Ollama  | 4 cores   | 8 GB         |
-| vLLM    | 4 cores   | 16 GB        |
-| Modeltunnel | 1 core | 512 MB      |
-
-Adjust in `docker-compose.yml` based on your VM size.
-
-**Expose to Public Internet:**
-
-The dashboard is accessible at `http://YOUR_VM_IP:8080/admin`. To secure it:
-
-1. **Add authentication** in `config.docker.yaml`:
-   ```yaml
-   server:
-     admin:
-       enabled: true
-       username: admin
-       password: your-secure-password
-   ```
-
-2. **Or use a reverse proxy** (nginx/traefik) for HTTPS
-
-**Test the API:**
-
-```bash
-# Get an API key
-docker exec modeltunnel-app ./modeltunnel key create test
-
-# Test Ollama model
-curl http://YOUR_VM_IP:8080/v1/chat/completions \
-  -H "Authorization: Bearer mt_sk_test_xxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"model": "default/mistral", "messages": [{"role": "user", "content": "Hello!"}]}'
-
-# Test vLLM model
-curl http://YOUR_VM_IP:8080/v1/chat/completions \
-  -H "Authorization: Bearer mt_sk_test_xxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"model": "vllm/microsoft/Phi-4-mini-instruct", "messages": [{"role": "user", "content": "Hello!"}]}'
-```
-
-**Management:**
-
-```bash
-# View logs
-docker compose logs -f modeltunnel
-docker compose logs -f ollama
-docker compose logs -f vllm
-
-# Stop all services
-docker compose down
-
-# Stop and remove volumes (deletes models)
-docker compose down -v
-
-# Restart a specific service
-docker compose restart vllm
-```
-
-#### Using Pre-Built Image (GitHub Container Registry)
-
-```bash
-# Pull latest image
-docker pull ghcr.io/steliosot/modeltunnel:latest
-
-# Run with Ollama (local only)
+# Run with your config
 docker run -d -p 8080:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral
-
-# Run with public tunnel
-docker run -d -p 8080:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral --tunnel
-
-# Custom config (mount your config.yaml)
-docker run -d -p 8080:8080 \
-  -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
+  -v ~/.config/modeltunnel:/root/.config/modeltunnel \
   ghcr.io/steliosot/modeltunnel:latest up
 ```
 
-#### Building from Source
+## Advanced Features
 
-```bash
-# Build the image
-docker build -t modeltunnel:latest .
+### External Providers (BYOK)
 
-# Run
-docker run -d -p 8080:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  modeltunnel:latest up --ollama --model mistral
-```
-
-Docker image size: ~45MB
-
-**Environment Variables:**
-- `OLLAMA_BASE_URL` - Ollama server URL (default: `http://127.0.0.1:11434`)
-
-**Volumes:**
-- `/home/appuser/.config/modeltunnel/config.yaml` - Custom configuration
-- `/home/appuser/.config/modeltunnel/keys.db` - SQLite database for keys
-
-## Quick Start
-
-### 1. Start the Server
-
-```bash
-# With Ollama (local only)
-modeltunnel up --ollama --model mistral
-
-# With public tunnel (accessible from anywhere)
-modeltunnel up --ollama --model mistral --tunnel
-```
-
-### 2. Access the Dashboard
-
-Open http://localhost:8080/admin in your browser
-
-### 3. Create an API Key
-
-```bash
-modeltunnel key create alice --models mistral,phi
-```
-
-### 4. Use with Any OpenAI Client
-
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    base_url="http://localhost:8080/v1",
-    api_key="mt_sk_alice_..."
-)
-
-response = client.chat.completions.create(
-    model="ollama/mistral:latest",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-
-print(response.choices[0].message.content)
-```
-
-### 5. Use Intent-Based Routing (Smart Model Selection)
-
-Instead of manually choosing models, let Modeltunnel pick the best one for your task:
-
-```python
-# Automatically routes to the best model for coding
-response = client.chat.completions.create(
-    model="auto",
-    messages=[{"role": "user", "content": "Write a Python function to sort a list"}],
-    extra_headers={"X-Model-Intent": "code"}
-)
-
-# Routes to reasoning model for planning
-response = client.chat.completions.create(
-    model="auto",
-    messages=[{"role": "user", "content": "Design a microservices architecture"}],
-    extra_headers={"X-Model-Intent": "plan"}
-)
-```
-
-**Available Intents:**
-- `plan` → deepseek-r1 (reasoning, strategy, architecture)
-- `code` → qwen2.5 (programming, debugging, technical tasks)
-- `chat` → phi (fast conversation, Q&A)
-
----
-
-### 6. External API Providers (BYOK)
-
-Use your own OpenAI, Anthropic, or other API keys alongside local models:
+Use your own OpenAI, Anthropic, or other API keys:
 
 **Via Dashboard:**
 1. Open http://localhost:8080/admin
-2. Click **Providers** in the navigation
-3. Click **Add Provider**
-4. Select provider type (OpenAI, Anthropic)
-5. Enter your API key and configure models
+2. Click **Providers** → **Add Provider**
+3. Select provider type (OpenAI, Anthropic, ModelTunnel)
+4. Enter your API key and configure models
 
 **Via API:**
 ```bash
@@ -379,63 +209,7 @@ response = client.chat.completions.create(
 )
 ```
 
-**Features:**
-- 🔐 API keys are encrypted and stored securely
-- 💰 Cost tracking per provider
-- 🔄 Automatic failover between providers
-- 📊 Usage analytics in dashboard
-
-**Supported Providers:**
-- **OpenAI** - GPT-4, GPT-3.5, and other OpenAI models
-- **Anthropic** - Claude 3 (Opus, Sonnet, Haiku) and Claude 2
-
----
-
-### Pull Models from Dashboard
-
-Simplify model management by using the web dashboard instead of command line.
-
-1. **Access the Dashboard**
-   ```
-   http://localhost:8080/admin
-   ```
-
-2. Navigate to the **Models** section in the navigation menu
-
-3. **Pull New Models**
-   
-   **Option A: Pull from Input Field**
-   ```
-   Enter model name: llama3.2:3b, mistral, phi
-   Click the Pull button
-   Watch progress indicator: 45%, 65%, ...
-   ```
-   
-   **Option B: Pull from Recommended Models**
-   Choose from curated categories:
-   - **General Purpose:** `llama3.2:3b`, `mistral:7b`, `phi4`
-   - **Coding:** `codellama:7b`, `deepseek-coder:6.7b`
-   - **Vision:** `llava:7b`, `bakllava:7b`
-   - **Reasoning:** `deepseek-r1:8b`
-   
-   Click **Pull** on any model to download
-
-4. **View Configuration Badges**
-   Models display their role in the config:
-   - **Intent Badges (Yellow)** - Which intents use the model (plan, code, chat)
-   - **Rate Limits (Blue)** - Custom limits per model (e.g., `5/min`, `100/min`)
-   - **Max Tokens** - Token limits (e.g., `2048 tokens`, `4096`)
-
-5. **Remove Models**
-   Click **Remove** next to any installed model to delete it from Ollama
-
----
-
-## Advanced Features
-
 ### Async Jobs
-
-Submit long-running requests and poll for results:
 
 ```bash
 # Submit async job
@@ -443,85 +217,32 @@ curl -X POST http://localhost:8080/v1/async \
   -H "Authorization: Bearer YOUR_KEY" \
   -d '{"model": "ollama/phi:latest", "messages": [{"role": "user", "content": "Hello"}]}'
 
-# Response: {"job_id": "job_123...", "status": "queued"}
-
 # Check status
 curl http://localhost:8080/v1/jobs/job_123... \
   -H "Authorization: Bearer YOUR_KEY"
 ```
 
-### Intent-Based Routing
-
-Let Modeltunnel choose the best model for your task:
+### Public Tunnels
 
 ```bash
-# Planning/Reasoning → routes to deepseek-r1
-curl http://localhost:8080/v1/chat/completions \
-  -H "X-Model-Intent: plan" \
-  -d '{"model": "auto", "messages": [...]}'
-
-# Coding → routes to qwen2.5
-curl http://localhost:8080/v1/chat/completions \
-  -H "X-Model-Intent: code" \
-  -d '{"model": "auto", "messages": [...]}'
-
-# Chat → routes to phi (fast)
-curl http://localhost:8080/v1/chat/completions \
-  -H "X-Model-Intent: chat" \
-  -d '{"model": "auto", "messages": [...]}'
+# Start with public tunnel
+modeltunnel up --tunnel
 ```
 
-See [docs/ASYNC_JOBS.md](docs/ASYNC_JOBS.md) and [docs/INTENT_ROUTING.md](docs/INTENT_ROUTING.md) for details.
-
----
+Or use the dashboard: http://localhost:8080/admin → Click "Start Public URL"
 
 ### Connect to External Apps
 
-Use your local Ollama models from OpenCode, Cursor, or any OpenAI-compatible app:
+Use your local models from OpenCode, Cursor, or any OpenAI-compatible app:
 
 ```bash
-# Create public tunnel
-./build/modeltunnel up --ollama --model mistral --tunnel
+# Start with tunnel
+modeltunnel up --tunnel
 
-# Create key for OpenCode
-./build/modeltunnel key create opencode --models mistral --rate 100/min
-
-# Fill in these settings in OpenCode:
+# Fill in these settings in your app:
 # - Base URL: https://your-url.loca.lt/v1
-# - API key: mt_sk_opencode_xxxxx...
+# - API key: mt_sk_your_key
 # - Model: ollama/mistral:latest
-```
-
-See [docs/CONNECTING_APPS.md](docs/CONNECTING_APPS.md) for complete step-by-step guide.
-
----
-
-## Documentation
-
-- **[Connecting Apps](docs/CONNECTING_APPS.md)** - Connect OpenCode, Cursor, and other apps ✨
-- **[Installation Guide](docs/installation.md)** - Detailed installation instructions
-- **[Configuration](docs/configuration.md)** - YAML configuration reference
-- **[API Reference](docs/api.md)** - Complete API documentation with examples
-- **[Async Jobs](docs/ASYNC_JOBS.md)** - Asynchronous request processing with 5 complete examples
-- **[Intent Routing](docs/INTENT_ROUTING.md)** - Smart model selection with 5 complete examples
-- **[CLI Reference](docs/cli.md)** - Command-line interface documentation
-- **[Examples Index](docs/EXAMPLES.md)** - Quick reference for all code examples
-- **[Security](SECURITY.md)** - Security best practices
-- **[Contributing](CONTRIBUTING.md)** - How to contribute
-
-## Architecture
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Dashboard     │────▶│   Modeltunnel    │────▶│     Ollama      │
-│  (Web UI)       │     │   Server         │     │   (Local LLM)   │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-                                │
-                                ▼
-                       ┌──────────────────┐
-                       │   SQLite DB      │
-                       │   (API Keys)     │
-                       └──────────────────┘
 ```
 
 ## Configuration
@@ -537,20 +258,11 @@ upstreams:
   default:
     type: ollama
     base_url: http://127.0.0.1:11434
-    model: mistral
 
 policies:
   default:
     rate_limit: 60/min
     max_tokens: 4096
-  student:
-    rate_limit: 60/min
-    max_tokens: 4096
-    models:
-      mistral:
-        rate_limit: 5/min
-      phi:
-        rate_limit: 100/min
 
 # Intent Routing Configuration (Optional)
 intents:
@@ -558,25 +270,22 @@ intents:
     priority:
       - deepseek-r1:latest
       - qwen2.5:latest
-      - mistral:latest
     temperature: 0.3
     max_tokens: 4000
     description: "Planning, strategy, reasoning"
-  
+
   code:
     priority:
       - qwen2.5:latest
       - mistral:latest
-      - phi:latest
     temperature: 0.2
     max_tokens: 2000
     description: "Programming, debugging, technical"
-  
+
   chat:
     priority:
       - phi:latest
       - tinyllama:latest
-      - mistral:latest
     temperature: 0.7
     max_tokens: 1000
     description: "General chat, Q&A, support"
@@ -584,65 +293,37 @@ intents:
 async:
   enabled: true
   workers: 3
-  queue_size: 1000
-  timeout: 120s
 ```
 
-**Key Features:**
-- 🔧 Hot-reload enabled - changes apply without restart
-- 📊 Per-model rate limiting
-- 🎯 Intent-based routing via YAML
-- ⚡ Async job system
-- 💾 SQLite persistence for API keys
+**Important:** Set `keys: []` in your config. Create keys ONLY in the dashboard UI.
 
-## Testing
+## Documentation
 
-```bash
-# Run all tests
-make test-all
+- **[Connecting Apps](docs/CONNECTING_APPS.md)** - Connect OpenCode, Cursor, and other apps
+- **[Installation Guide](docs/installation.md)** - Detailed installation instructions
+- **[Configuration](docs/configuration.md)** - YAML configuration reference
+- **[API Reference](docs/api.md)** - Complete API documentation with examples
+- **[Async Jobs](docs/ASYNC_JOBS.md)** - Asynchronous request processing
+- **[Intent Routing](docs/INTENT_ROUTING.md)** - Smart model selection
+- **[CLI Reference](docs/cli.md)** - Command-line interface
+- **[Examples Index](docs/EXAMPLES.md)** - Quick reference for code examples
+- **[Security](SECURITY.md)** - Security best practices
+- **[Contributing](CONTRIBUTING.md)** - How to contribute
 
-# Run unit tests only
-make test
+## Architecture
 
-# Run integration tests
-make test-integration
 ```
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-Quick start for contributors:
-
-```bash
-# Fork and clone
-git clone https://github.com/YOUR_USERNAME/modeltunnel.git
-cd modeltunnel
-
-# Install dependencies
-make deps
-
-# Make changes
-# ...
-
-# Test
-make test
-
-# Submit PR
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   Dashboard     │────▶│   Modeltunnel    │────▶│  Your Backend  │
+│  (Web UI)       │     │   Server         │     │ (Ollama/vLLM)  │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+                                 │
+                                 ▼
+                        ┌──────────────────┐
+                        │   SQLite DB      │
+                        │   (API Keys)     │
+                        └──────────────────┘
 ```
-
-## Comparison
-
-| Feature | Modeltunnel | ngrok | Cloudflare Tunnel |
-|---------|-------------|-------|-------------------|
-| Local LLM Support | Yes | No | No |
-| Built-in Auth | Yes | No | No |
-| Dashboard | Yes | No | No |
-| Async Jobs API | Yes | No | No |
-| Intent-Based Routing | Yes | No | No |
-| Per-Model Rate Limits | Yes | No | No |
-| OpenAI API Compatible | Yes | No | No |
-| Free Public URLs | Yes | Limited | Yes |
 
 ## Security
 
@@ -654,9 +335,17 @@ make test
 
 See [SECURITY.md](SECURITY.md) for details.
 
-## Changelog
+## Comparison
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+| Feature | Modeltunnel | ngrok | Cloudflare Tunnel |
+|---------|-------------|-------|-------------------|
+| Local LLM Support | Yes (BYO) | No | No |
+| Built-in Auth | Yes | No | No |
+| Dashboard | Yes | No | No |
+| Async Jobs API | Yes | No | No |
+| Intent-Based Routing | Yes | No | No |
+| Per-Model Rate Limits | Yes | No | No |
+| OpenAI API Compatible | Yes | No | No |
 
 ## License
 
@@ -664,9 +353,9 @@ MIT License - see [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- [Ollama](https://ollama.ai/) - For making local LLMs accessible
-- [LocalTunnel](https://localtunnel.me/) - For free public tunnels
-- [Gorilla WebSocket](https://github.com/gorilla/websocket) - For real-time dashboard
+- [Ollama](https://ollama.ai/) - Local LLM inference
+- [LocalTunnel](https://localtunnel.me/) - Free public tunnels
+- [Gorilla WebSocket](https://github.com/gorilla/websocket) - Real-time dashboard
 
 ## Community
 

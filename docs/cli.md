@@ -67,7 +67,7 @@ modeltunnel up [options]
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--ollama` | false | Use Ollama as upstream |
+| `--ollama` | false | (Optional) Use Ollama upstream |
 | `--model` | mistral | Default model to use |
 | `--host` | 127.0.0.1 | Server host address |
 | `--port` | 8080 | Server port |
@@ -78,16 +78,16 @@ modeltunnel up [options]
 
 ```bash
 # Start with Ollama (local only)
-modeltunnel up --ollama --model mistral
+modeltunnel up
 
 # Start with public tunnel
-modeltunnel up --ollama --model mistral --tunnel
+modeltunnel up --tunnel
 
 # Custom port
-modeltunnel up --ollama --port 3000
+modeltunnel up --port 3000
 
 # Production mode (all interfaces)
-modeltunnel up --ollama --host 0.0.0.0 --port 8080
+modeltunnel up --host 0.0.0.0 --port 8080
 ```
 
 #### Output
@@ -380,7 +380,7 @@ Configuration changes are automatically applied without restart:
 modeltunnel init
 
 # Start server
-modeltunnel up --ollama --model mistral
+modeltunnel up
 
 # Create dev key
 modeltunnel key create dev --rate 1000/min
@@ -393,7 +393,7 @@ modeltunnel key create dev --rate 1000/min
 modeltunnel key create prod-api --models mistral --rate 10000/hour
 
 # Start with public tunnel
-modeltunnel up --ollama --model mistral --tunnel
+modeltunnel up --tunnel
 
 # Save the public URL from output
 ```
@@ -435,7 +435,7 @@ modeltunnel key revoke prod-api
 lsof -i :8080
 
 # Use different port
-modeltunnel up --ollama --port 3000
+modeltunnel up --port 3000
 ```
 
 ### Key not recognized

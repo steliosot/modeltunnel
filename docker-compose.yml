@@ -1,47 +1,9 @@
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: modeltunnel-ollama
-    volumes:
-      - ollama_data:/root/.ollama
-    ports:
-      - "11434:11434"
-    environment:
-      - OLLAMA_HOST=0.0.0.0
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '4'
-          memory: 8G
-
-  vllm:
-    image: vllm/vllm-openai:latest
-    container_name: modeltunnel-vllm
-    ports:
-      - "8000:8000"
-    volumes:
-      - vllm_data:/root/.cache/huggingface
-    command: >
-      --model microsoft/Phi-4-mini-instruct
-      --port 8000
-      --dtype auto
-      --host 0.0.0.0
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '4'
-          memory: 16G
-
   modeltunnel:
     build: .
     container_name: modeltunnel-app
     ports:
       - "8080:8080"
-    depends_on:
-      - ollama
-      - vllm
     volumes:
       - config_data:/home/appuser/.config/modeltunnel
       - ./config.docker.yaml:/home/appuser/.config/modeltunnel/config.yaml:ro
@@ -49,6 +11,4 @@ services:
     command: ["up"]
 
 volumes:
-  ollama_data:
-  vllm_data:
   config_data:

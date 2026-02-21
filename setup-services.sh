@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Setup systemd services for Ollama and Modeltunnel
-# Creates persistent services that survive closing VM window
+# Setup systemd service for Modeltunnel
+# Creates persistent service that survives closing VM window
 #
 
 set -euo pipefail
@@ -27,39 +27,18 @@ if ! command -v systemctl &> /dev/null; then
     exit 1
 fi
 
-print_info "Setting up systemd services..."
-
-# Create Ollama service
-sudo tee /etc/systemd/system/ollama.service > /dev/null <<'EOF'
-[Unit]
-Description=Ollama Local LLM Server
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/ollama serve
-Restart=on-failure
-RestartSec=10s
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-print_success "Created ollama.service"
+print_info "Setting up systemd service..."
 
 # Create Modeltunnel service
 sudo tee /etc/systemd/system/modeltunnel.service > /dev/null <<'EOF'
 [Unit]
 Description=Modeltunnel API Server
-After=network-online.target ollama.service
-Wants=ollama.service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/modeltunnel up --ollama --tunnel
+ExecStart=/usr/local/bin/modeltunnel up --tunnel
 Restart=on-failure
 RestartSec=10s
 StandardOutput=journal
@@ -75,23 +54,19 @@ print_success "Created modeltunnel.service"
 print_info "Reloading systemd..."
 sudo systemctl daemon-reload
 
-# Enable services (start on boot)
-print_info "Enabling services..."
-sudo systemctl enable ollama > /dev/null 2>&1 || print_error "Failed to enable ollama"
+# Enable service (start on boot)
+print_info "Enabling service..."
 sudo systemctl enable modeltunnel > /dev/null 2>&1 || print_error "Failed to enable modeltunnel"
 
-# Start the services in order
-print_info "Starting services..."
-sudo systemctl restart ollama
-sleep 3
+# Start the service
+print_info "Starting service..."
 sudo systemctl start modeltunnel
 
 # Check status
-if systemctl is-active ollama > /dev/null && systemctl is-active modeltunnel > /dev/null; then
-    print_success "All services running!"
+if systemctl is-active modeltunnel > /dev/null; then
+    print_success "Service running!"
 else
-    print_error "Services failed to start. Check logs:"
-    print_info "  sudo journalctl -u ollama -n 20"
+    print_error "Service failed to start. Check logs:"
     print_info "  sudo journalctl -u modeltunnel -n 20"
     exit 1
 fi
@@ -103,8 +78,8 @@ if [ -f "$HOME/.config/modeltunnel/tunnel.url" ]; then
 fi
 
 print_info "Management commands:"
-print_info "  sudo systemctl status ollama modeltunnel   # Check status"
-print_info "  sudo systemctl restart modeltunnel            # Restart Modeltunnel"
-print_info "  sudo journalctl -u modeltunnel -f              # View logs"
-print_info "  sudo systemctl stop modeltunnel               # Stop service"
-print_info "  sudo systemctl start modeltunnel              # Start service"
+print_info "  sudo systemctl status modeltunnel   # Check status"
+print_info "  sudo systemctl restart modeltunnel  # Restart Modeltunnel"
+print_info "  sudo journalctl -u modeltunnel -f   # View logs"
+print_info "  sudo systemctl stop modeltunnel     # Stop service"
+print_info "  sudo systemctl start modeltunnel    # Start service"

@@ -106,7 +106,7 @@ modeltunnel version
 
 ### Problem: Closing VM Window Kills the Process
 
-Running `modeltunnel up --ollama --tunnel &` and closing the VM window kills the process because the terminal sends a SIGHUP signal.
+Running `modeltunnel up --tunnel &` and closing the VM window kills the process because the terminal sends a SIGHUP signal.
 
 ### Solution: Systemd Services
 
@@ -116,8 +116,7 @@ Services survive closing windows, session termination, and restart on failure:
 # Install with systemd service enabled
 curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash -
 
-# Services created automatically
-sudo systemctl status ollama      # Check Ollama service
+# Service created automatically
 sudo systemctl status modeltunnel  # Check Modeltunnel service
 ```
 
@@ -132,7 +131,7 @@ sudo systemctl status modeltunnel  # Check Modeltunnel service
 
 ```bash
 # Check status
-sudo systemctl status ollama modeltunnel
+sudo systemctl status modeltunnel
 
 # Restart services
 sudo systemctl restart modeltunnel
@@ -151,11 +150,8 @@ sudo systemctl disable modeltunnel # Disable
 
 ### Service Files
 
-Both services are created by the installer at:
-- `/etc/systemd/system/ollama.service` - Ollama LLM server
+The installer creates:
 - `/etc/systemd/system/modeltunnel.service` - Modeltunnel API + tunnel
-
-Modeltunnel service depends on Ollama and both auto-restart on failure.
 
 ---
 
@@ -167,17 +163,7 @@ Modeltunnel service depends on Ollama and both auto-restart on failure.
 # Pull latest image from GitHub Container Registry
 docker pull ghcr.io/steliosot/modeltunnel:latest
 
-# Run with Ollama (local only)
-docker run -d -p 8080:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral
-
-# Run with public tunnel
-docker run -d -p 8080:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  ghcr.io/steliosot/modeltunnel:latest up --ollama --model mistral --tunnel
-
-# Custom config (mount your config.yaml)
+# Run with a custom config (mount your config.yaml)
 docker run -d -p 8080:8080 \
   -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
   ghcr.io/steliosot/modeltunnel:latest up
@@ -193,14 +179,11 @@ docker build -t modeltunnel:latest .
 
 # Run
 docker run -d -p 8080:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  modeltunnel:latest up --ollama --model mistral
+  -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
+  modeltunnel:latest up
 ```
 
 Docker image size: ~45MB
-
-**Environment Variables:**
-- `OLLAMA_BASE_URL` - Ollama server URL (default: `http://127.0.0.1:11434`)
 
 **Volumes:**
 - `/home/appuser/.config/modeltunnel/config.yaml` - Custom configuration
@@ -208,7 +191,7 @@ Docker image size: ~45MB
 
 ### Using Docker Compose (Recommended)
 
-Docker Compose provides Modeltunnel with an integrated Ollama backend and persistent model storage.
+Docker Compose provides a minimal Modeltunnel setup. Connect your own backends via `config.docker.yaml`.
 
 **Quick Start:**
 
@@ -225,46 +208,14 @@ This starts:
 - **Ollama** on port 11434 (for model storage and execution)
 - **Modeltunnel** on port 8080 (API and dashboard)
 
-**Access Dashboard and Pull Models:**
+**Access Dashboard:**
 
 ```bash
 # Open dashboard
 open http://localhost:8080/admin
-
-# Pull models via web UI or API
-# Dashboard shows:
-# - Pull input field for custom models
-# - Recommended models by category
-# - Real-time pull progress
-# - Model badges (intents, rate limits, tokens)
-
-# Example: Pull deepseek-r1 from dashboard
-# Then test API:
-curl http://localhost:8080/v1/chat/completions \
-  -H "Authorization: Bearer $(docker exec modeltunnel-app ./modeltunnel key list --format json | jq -r '.[0].key')" \
-  -H "Content-Type: application/json" \
-  -d '{"model": "ollama/deepseek-r1:latest", "messages": [{"role": "user", "content": "Hello!"}]}'
 ```
 
-**Pull Models from Command Line:**
-
-```bash
-# Pull models via Ollama container
-docker exec -it modeltunnel-ollama ollama pull deepseek-r1
-docker exec -it modeltunnel-ollama ollama pull deepseek-coder:6.7b
-docker exec -it modeltunnel-ollama ollama pull phi
-```
-
-**Volumes and Persistence:**
-
-```yaml
-# docker-compose.yml includes:
-volumes:
-  ollama_data:    # Model storage (persists models)
-  config_data:    # Config and keys database
-```
-
-Models persist across container restarts - no re-download needed.
+If your backend supports it (e.g., Ollama), you can pull models from the dashboard once the backend is reachable.
 
 **Stop and Clean Up:**
 
@@ -277,7 +228,6 @@ docker-compose down -v
 
 # View logs
 docker-compose logs -f modeltunnel
-docker-compose logs -f ollama
 ```
 
 **Custom Configuration:**
@@ -301,51 +251,38 @@ modeltunnel version
 # Initialize config
 modeltunnel init
 
-# Test server (requires Ollama running)
-modeltunnel up --ollama --model mistral
+# Test server (requires a backend running)
+modeltunnel up
 ```
 
 ---
 
-## Ollama Setup
+## Backend Setup (Bring Your Own)
 
-Modeltunnel requires Ollama to be running locally.
+Modeltunnel does not install model runtimes. Run your own backends (local or remote) and point Modeltunnel at them.
 
-### Install Ollama
+### Examples
 
-**macOS:**
+**Ollama (if you already run it):**
 ```bash
-brew install ollama
+curl http://127.0.0.1:11434/api/tags
 ```
 
-**Linux:**
+**vLLM OpenAI server (if you already run it):**
 ```bash
-curl -fsSL https://ollama.com/install.sh | sh
+curl http://127.0.0.1:8000/v1/models
 ```
 
-**Windows:**
-Download from [ollama.com](https://ollama.com)
+Then set upstream URLs in your config file:
 
-### Start Ollama
-
-```bash
-# Start service
-ollama serve
-
-# Pull a model
-ollama pull mistral
-ollama pull phi
-ollama pull deepseek-r1
-
-# Test
-ollama run mistral
-```
-
-### Verify Ollama
-
-```bash
-# Check if Ollama is running
-curl http://localhost:11434/api/tags
+```yaml
+upstreams:
+  default:
+    type: ollama
+    base_url: http://127.0.0.1:11434
+  vllm:
+    type: vllm
+    base_url: http://127.0.0.1:8000
 ```
 
 ---
@@ -366,10 +303,10 @@ Creates:
 
 ```bash
 # Basic
-modeltunnel up --ollama --model mistral
+modeltunnel up
 
 # With public tunnel
-modeltunnel up --ollama --model mistral --tunnel
+modeltunnel up --tunnel
 ```
 
 ### 3. Create API Key
@@ -479,7 +416,7 @@ sudo make install
 lsof -i :8080
 
 # Use different port
-modeltunnel up --ollama --port 3000
+modeltunnel up --port 3000
 ```
 
 ### Build errors
@@ -556,7 +493,7 @@ docker pull ghcr.io/steliosot/modeltunnel:latest
 # Restart with your previous volumes
 docker-compose up -d
 
-# Data persists in named volumes (ollama_data)
+# Data persists in named volumes (config_data)
 ```
 
 ---

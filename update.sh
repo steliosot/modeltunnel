@@ -29,23 +29,22 @@ create_systemd_services() {
         return
     fi
 
-    # Skip if services already exist
+    # Skip if service already exists
     if [ -f "/etc/systemd/system/modeltunnel.service" ]; then
         return
     fi
 
-    print_info "Setting up systemd services..."
+    print_info "Setting up systemd service..."
 
-    # Create Ollama service
-    sudo tee /etc/systemd/system/ollama.service > /dev/null <<EOF
+    sudo tee /etc/systemd/system/modeltunnel.service > /dev/null <<EOF
 [Unit]
-Description=Ollama Local LLM Server
+Description=Modeltunnel API Server
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/ollama serve
+ExecStart=/usr/local/bin/modeltunnel up --tunnel
 Restart=on-failure
 RestartSec=10s
 StandardOutput=journal
@@ -55,33 +54,13 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
-    # Create Modeltunnel service
-    sudo tee /etc/systemd/system/modeltunnel.service > /dev/null <<EOF
-[Unit]
-Description=Modeltunnel API Server
-After=network-online.target ollama.service
-Wants=ollama.service
-
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/modeltunnel up --ollama --tunnel
-Restart=on-failure
-RestartSec=10s
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    # Reload systemd and enable services
+    # Reload systemd and enable service
     sudo systemctl daemon-reload
-    sudo systemctl enable ollama modeltunnel > /dev/null 2>&1 || true
-    sudo systemctl restart ollama
+    sudo systemctl enable modeltunnel > /dev/null 2>&1 || true
     sudo systemctl start modeltunnel
 
-    print_success "Systemd services created and started"
-    print_info "Services: sudo systemctl status ollama modeltunnel"
+    print_success "Systemd service created and started"
+    print_info "Service: sudo systemctl status modeltunnel"
 }
 
 # Backup existing data
@@ -118,7 +97,7 @@ if [ -f "/usr/local/bin/modeltunnel" ]; then
     # Restart with existing config
     print_info "Restarting..."
     cd /tmp
-    sudo nohup /usr/local/bin/modeltunnel up --ollama --tunnel > /dev/null 2>&1 &
+    sudo nohup /usr/local/bin/modeltunnel up --tunnel > /dev/null 2>&1 &
 
     sleep 3
     if pgrep modeltunnel > /dev/null; then
@@ -137,4 +116,4 @@ echo "  - $CONFIG_DIR/config.yaml"
 echo "  - $CONFIG_DIR/keys.db"
 echo "  - $CONFIG_DIR/tunnel.url"
 echo ""
-echo "Services running? Use: sudo systemctl status ollama modeltunnel"
+echo "Services running? Use: sudo systemctl status modeltunnel"

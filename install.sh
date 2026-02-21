@@ -225,21 +225,12 @@ check_dependencies() {
 }
 
 check_prerequisites() {
-    # Check for Ollama
-    print_step "Checking for Ollama installation..."
-
-    if ! command -v ollama &> /dev/null; then
-        print_error "Ollama not found. Modeltunnel requires Ollama to function."
-        echo ""
-        print_info "Please install Ollama first:"
-        print_info "  curl -fsSL https://ollama.com/install.sh | bash"
-        echo ""
-        print_info "Then run this installer again."
-        exit 1
+    print_step "Checking local backends (optional)..."
+    if command -v ollama &> /dev/null; then
+        print_success "Ollama detected (optional)"
+    else
+        print_info "Ollama not detected (optional). You can run it later."
     fi
-
-    local ollama_version=$(ollama --version 2>&1 | head -1 | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
-    print_success "Ollama found: v$ollama_version"
 }
 
 # ============================================
@@ -315,18 +306,35 @@ upstreams:
   default:
     type: ollama
     base_url: "http://127.0.0.1:11434"
+  vllm:
+    type: vllm
+    base_url: "http://127.0.0.1:8000"
 
 policies:
   default:
     rate_limit: "60/min"
     max_tokens: 4096
 
-keys:
-  - name: demo
-    key: mt_sk_demo_$(head -c 16 < /dev/urandom | od -A -t x1 | tr -d ' \n')
-    allowed_upstreams:
-      - default
-    policy: default
+intents:
+  chat:
+    priority:
+      - phi
+      - tinyllama:latest
+      - mistral:latest
+    description: General conversation
+    temperature: 0.7
+    max_tokens: 1000
+  code:
+    priority:
+      - deepseek-coder:6.7b
+      - mistral:latest
+      - phi3:latest
+    description: Programming
+    temperature: 0.2
+    max_tokens: 4096
+
+keys: []
+providers: []
 EOF
     else
         print_info "Configuration file already exists"
@@ -430,7 +438,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=$INSTALL_DIR/modeltunnel up --ollama --host 0.0.0.0
+ExecStart=$INSTALL_DIR/modeltunnel up --host 0.0.0.0
 Restart=on-failure
 RestartSec=10s
 StandardOutput=journal
@@ -461,10 +469,10 @@ show_summary() {
     echo -e "${BOLD}📖 Quick Start${NC}"
     echo "─────────────────"
     echo "  Start Modeltunnel:"
-    echo "    $INSTALL_DIR/modeltunnel up --ollama"
+    echo "    $INSTALL_DIR/modeltunnel up"
     echo ""
     echo "  With tunnel:"
-    echo "    $INSTALL_DIR/modeltunnel up --ollama --tunnel"
+    echo "    $INSTALL_DIR/modeltunnel up --tunnel"
     echo ""
     echo "  Dashboard:"
     echo "    http://127.0.0.1:$MODELTUNNEL_PORT/admin"
@@ -484,23 +492,6 @@ main() {
     # Parse args first (allow --help to work without terminal)
     parse_args "$@"
 
-    # Check Ollama first
-    if ! command -v ollama &> /dev/null; then
-        print_error "Ollama not found"
-        echo ""
-        print_info "Modeltunnel requires Ollama to function."
-        echo ""
-        print_info "Please install Ollama first:"
-        if [ "$OS" = "linux" ]; then
-            print_info "  curl -fsSL https://ollama.com/install.sh | bash"
-        elif [ "$OS" = "darwin" ]; then
-            print_info "  brew install ollama"
-        fi
-        echo ""
-        print_info "Then run this installer again."
-        exit 1
-    fi
- 
     # Check if running in non-interactive mode (unless --silent is set)
     if [ "$SILENT_MODE" = false ] && [ ! -t 0 ]; then
         print_error "This installer requires an interactive terminal"
