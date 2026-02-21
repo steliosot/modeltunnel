@@ -268,10 +268,8 @@ configure_modeltunnel() {
     echo ""
     echo -e "${BOLD}Modeltunnel Configuration${NC}"
     echo "───────────────────────────────────────────────────────────"
-    echo -e "${CYAN}Please answer the prompts below.${NC}"
-    echo -e "${CYAN}Press Enter to accept the default value shown.${NC}"
-
     echo ""
+
     MODELTUNNEL_PORT=$(ask_input "Modeltunnel port" "$DEFAULT_MODELTUNNEL_PORT")
 
     # Service
@@ -282,9 +280,9 @@ configure_modeltunnel() {
     fi
 
     echo ""
-    print_info "Configuration summary:"
+    echo "Configuration:"
     echo "  Port: $MODELTUNNEL_PORT"
-    echo "  Service: $([[ "$RUN_AS_SERVICE" = true ]] && echo "Enabled" || echo "Disabled")"
+    echo "  Service: $([[ "$RUN_AS_SERVICE" = true ]] && echo "Enabled as service" || echo "Disabled")"
 
     echo ""
     if ask_yes_no "Is this correct?" "Y"; then
