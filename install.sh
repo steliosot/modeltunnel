@@ -90,9 +90,8 @@ ask_yes_no() {
     fi
 
     while true; do
-        echo -en "${BLUE}❓${NC} $prompt"
-        echo ""
-        echo -n "   (${default}) "
+        echo -e "${BLUE}❓${NC} $prompt" >&2
+        echo -n "   (${default}) " >&2
         read -r response
 
         if [ -z "$response" ]; then
@@ -102,7 +101,7 @@ ask_yes_no() {
         case $response in
             [Yy]*) return 0 ;;
             [Nn]*) return 1 ;;
-            *) echo -e "${RED}Invalid input. Please enter Y or N.${NC}" ;;
+            *) echo -e "${RED}Invalid input. Please enter Y or N.${NC}" >&2 ;;
         esac
     done
 }
@@ -117,9 +116,9 @@ ask_input() {
     fi
 
     while true; do
-        echo -e "${BLUE}❓${NC} $prompt"
-        echo -e "   ${CYAN}Type a value and press Enter${NC} (default: ${default})"
-        echo -n "   > "
+        echo -e "${BLUE}❓${NC} $prompt" >&2
+        echo -e "   ${CYAN}Enter a value or press Enter to use ${default}.${NC}" >&2
+        echo -n "   > " >&2
         read -r response
 
         if [ -z "$response" ]; then
@@ -377,7 +376,6 @@ install_modeltunnel_from_source() {
     }
 
     run_with_sudo mv modeltunnel "$INSTALL_DIR/"
-    cd - > /dev/null
     rm -rf "$temp_dir"
 
     print_success "Modeltunnel built and installed!"
@@ -411,8 +409,6 @@ install_modeltunnel_binary() {
     print_step "Installing Modeltunnel..."
     run_with_sudo chmod +x "$temp_file"
     run_with_sudo mv "$temp_file" "$INSTALL_DIR/modeltunnel"
-
-    cd - > /dev/null
     rm -f "$temp_file"
 }
 
@@ -470,14 +466,19 @@ show_summary() {
     echo ""
     echo -e "${BOLD}📖 Quick Start${NC}"
     echo "─────────────────"
-    echo "  Start Modeltunnel:"
-    echo "    $INSTALL_DIR/modeltunnel up"
+    echo "  1) Start server:"
+    echo "     $INSTALL_DIR/modeltunnel up"
     echo ""
-    echo "  With tunnel:"
-    echo "    $INSTALL_DIR/modeltunnel up --tunnel"
+    echo "  2) Open dashboard:"
+    echo "     http://127.0.0.1:$MODELTUNNEL_PORT/admin"
     echo ""
-    echo "  Dashboard:"
-    echo "    http://127.0.0.1:$MODELTUNNEL_PORT/admin"
+    echo "  3) Create API keys in the dashboard"
+    echo ""
+    echo "  4) Configure backend URL:"
+    echo "     ~/.config/modeltunnel/config.yaml"
+    echo ""
+    echo "  Optional tunnel:"
+    echo "     $INSTALL_DIR/modeltunnel up --tunnel"
     echo ""
     echo -e "${BOLD}📚 Documentation${NC}"
     echo "────────────────"
@@ -536,15 +537,7 @@ main() {
             setup_modeltunnel_service
         fi
 
-        print_success "Installation complete!"
-        print_info "Run 'modeltunnel --help' to get started"
-        print_info "Dashboard: http://localhost:$MODELTUNNEL_PORT"
-        print_info "Start with: $INSTALL_DIR/modeltunnel up"
-        print_info "Next steps:"
-        echo "  1) Start server: $INSTALL_DIR/modeltunnel up"
-        echo "  2) Open dashboard: http://localhost:$MODELTUNNEL_PORT/admin"
-        echo "  3) Create API keys in the dashboard"
-        echo "  4) Configure your backend URL in ~/.config/modeltunnel/config.yaml"
+        show_summary
     else
         # Interactive mode
         configure_modeltunnel
@@ -556,12 +549,6 @@ main() {
 
         # Show final summary
         show_summary
-        echo ""
-        print_info "Next steps:"
-        echo "  1) Start server: $INSTALL_DIR/modeltunnel up"
-        echo "  2) Open dashboard: http://localhost:$MODELTUNNEL_PORT/admin"
-        echo "  3) Create API keys in the dashboard"
-        echo "  4) Configure your backend URL in ~/.config/modeltunnel/config.yaml"
     fi
 }
 
