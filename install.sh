@@ -438,15 +438,17 @@ install_modeltunnel_from_source() {
 
             print_info "Installing Go (may take 2-3 minutes)..."
             print_info "Installer path: $go_installer"
-            if ! powershell.exe -Command "Start-Process 'msiexec.exe' -ArgumentList '/i','$go_installer','/quiet','/norestart' -Wait" 2>/dev/null; then
+            if powershell.exe -Command "Start-Process 'msiexec.exe' -ArgumentList '/i','$go_installer','/quiet','/norestart' -Wait" 2>/dev/null; then
                 print_success "Go installed successfully"
 
                 local check_count=0
                 local max_checks=30
+                local go_binary="/c/Program\ Files/Go/bin/go.exe"
+
                 while [ $check_count -lt $max_checks ]; do
                     check_count=$((check_count + 1))
-                    if command -v go &> /dev/null; then
-                        print_success "Go is now available in PATH"
+                    if command -v go &> /dev/null || [ -f "$go_binary" ]; then
+                        print_success "Go is now available"
                         break
                     fi
                     if [ $check_count -eq 1 ]; then
@@ -455,12 +457,47 @@ install_modeltunnel_from_source() {
                     sleep 2
                 done
 
-                if ! command -v go &> /dev/null; then
-                    print_warning "Go installed but not in current session PATH"
-                    print_info "You may need to restart your terminal or run: /c/Program\ Files/Go/bin/go"
+                # Set direct path if not in PATH
+                if ! command -v go &> /dev/null && [ -f "$go_binary" ]; then
+                    export PATH="/c/Program Files/Go/bin:$PATH"
+                    print_info "Added Go to current session PATH"
+                fi
+
+                if ! command -v go &> /dev/null && [ ! -f "$go_binary" ]; then
+                    print_warning "Go installation completed but binary not found"
+                    print_info "Path checked: $go_binary"
+                    print_info "Trying alternative paths..."
+                    
+                    # Try common Go installation paths
+                    local alt_paths=(
+                        "/c/Go/bin/go.exe"
+                        "/c/Program\ Files/Go/bin/go.exe"
+                        "/mnt/c/Program\ Files/Go/bin/go.exe"
+                        "$(powershell.exe -Command "Join-Path $env:LOCALAPPDATA 'Programs\\go\\bin\\go.exe'" 2>/dev/null | tr -d '\r')"
+                    )
+                    
+                    local found=""
+                    for path in "${alt_paths[@]}"; do
+                        if [ -f "$path" ]; then
+                            found="$path"
+                            print_success "Found Go at: $path"
+                            break
+                        fi
+                    done
+                    
+                    if [ -n "$found" ]; then
+                        local go_dir=$(dirname "$found")
+                        export PATH="$go_dir:$PATH"
+                        print_info "Added Go to session PATH"
+                    else
+                        print_error "Could not locate Go binary in standard locations"
+                        print_info "Please restart your terminal session and try again"
+                        exit 1
+                    fi
                 fi
             else
                 print_error "Failed to install Go automatically"
+                print_info "Exit code: $?"
                 print_info "Please install Go manually from: https://go.dev/dl/"
                 exit 1
             fi
@@ -498,8 +535,39 @@ install_modeltunnel_from_source() {
         BINARY_EXT=""
     fi
 
+    # Verify Go is available before building
+    if ! command -v go &> /dev/null; then
+        print_error "Go command not found in PATH"
+        print_info "Searching for Go installation..."
+        
+        local go_paths=(
+            "/c/Program\ Files/Go/bin/go.exe"
+            "/c/Go/bin/go.exe"
+            "/mnt/c/Program\ Files/Go/bin/go.exe"
+            "$(powershell.exe -Command "Join-Path $env:LOCALAPPDATA 'Programs\\go\\bin\\go.exe'" 2>/dev/null | tr -d '\r')"
+        )
+        
+        local go_path=""
+        for path in "${go_paths[@]}"; do
+            if [ -f "$path" ]; then
+                go_path="$path"
+                break
+            fi
+        done
+        
+        if [ -z "$go_path" ]; then
+            print_error "Go not found after installation. Please:"
+            print_info "1. Restart your terminal and run the installer again"
+            print_info "2. Or install Go manually from: https://go.dev/dl/"
+            exit 1
+        fi
+        
+        export PATH="$(dirname "$go_path"):$PATH"
+        print_success "Found Go at: $go_path"
+    fi
+
     # Check go version
-    local go_version=$(go version 2>&1 | awk '{print $3}')
+    local go_version=$(go version 2>&1 | awk '{print $3}') || echo "unknown"
     print_info "Using Go version: $go_version"
 
     CGO_ENABLED=1 GOOS="$GOOS" GOARCH="$ARCH" \
