@@ -208,8 +208,25 @@ detect_os() {
         INSTALL_DIR="/usr/local/bin"
         REQUIRES_SUDO=false
     else
-        print_error "Unsupported operating system: $OSTYPE"
-        exit 1
+        # Fallback: try to detect Windows via uname
+        local uname_s=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')
+        if [[ "$uname_s" =~ (msys|mingw|windows) ]]; then
+            OS="windows"
+            OS_NAME="Windows (via uname)"
+            # Windows-specific setup
+            LOCALAPPDATA=$(powershell -Command "[Environment]::GetFolderPath([System.Environment+SpecialFolder]::LocalApplicationData)" 2>/dev/null)
+            if [ -n "$LOCALAPPDATA" ]; then
+                INSTALL_DIR="$LOCALAPPDATA\\modeltunnel"
+            else
+                INSTALL_DIR="$HOME\\AppData\\Roaming\\Modeltunnel"
+            fi
+            mkdir -p "$INSTALL_DIR" 2>/dev/null || true
+            REQUIRES_SUDO=false
+        else
+            print_error "Unsupported operating system: $OSTYPE (uname: $uname_s)"
+            print_info "Please run the installer in a supported shell (bash, etc.)"
+            exit 1
+        fi
     fi
 
     print_success "Detected: $OS_NAME ${OS_VERSION:-}"
@@ -384,7 +401,7 @@ install_modeltunnel_from_source() {
     print_step "Building Modeltunnel from source..."
 
     if ! command -v go &> /dev/null; then
-        print_info "Go not found, installing..."
+        print_info "Go not found, OS=$OS, attempting to install..."
         if [ "$OS" = "windows" ]; then
             print_step "Installing Go for Windows..."
             print_info "This may take a few minutes..."
@@ -393,7 +410,7 @@ install_modeltunnel_from_source() {
                 go_arch="arm64"
             fi
             local go_version="1.23.0"
-            local temp_dir=$(powershell -Command "[System.IO.Path]::GetTempPath()" | tr -d '\r')
+            local temp_dir=$(powershell.exe -Command "[System.IO.Path]::GetTempPath()" | tr -d '\r' || echo "/tmp")
             local go_installer="${temp_dir}go${go_version}.windows-${go_arch}.msi"
             local go_url="https://go.dev/dl/go${go_version}.windows-${go_arch}.msi"
 
@@ -402,15 +419,26 @@ install_modeltunnel_from_source() {
             else
                 print_info "Downloading Go for Windows..."
                 print_info "Download size: ~130MB"
-                powershell -Command "Invoke-WebRequest -Uri '$go_url' -OutFile '$go_installer'" || {
+                print_info "Temp directory: $temp_dir"
+                if ! powershell.exe -Command "Invoke-WebRequest -Uri '$go_url' -OutFile '$go_installer'" 2>/dev/null; then
                     print_error "Failed to download Go installer"
-                    rm -f "$go_installer"
-                    exit 1
-                }
+                    print_info "Trying alternative download method..."
+                    if command -v curl &> /dev/null; then
+                        curl -sL "$go_url" -o "$go_installer" || {
+                            print_error "Failed to download Go installer with curl too"
+                            rm -f "$go_installer"
+                            exit 1
+                        }
+                    else
+                        rm -f "$go_installer"
+                        exit 1
+                    fi
+                fi
             fi
 
             print_info "Installing Go (may take 2-3 minutes)..."
-            if powershell -Command "Start-Process 'msiexec.exe' -ArgumentList '/i','$go_installer','/quiet','/norestart' -Wait" 2>/dev/null; then
+            print_info "Installer path: $go_installer"
+            if ! powershell.exe -Command "Start-Process 'msiexec.exe' -ArgumentList '/i','$go_installer','/quiet','/norestart' -Wait" 2>/dev/null; then
                 print_success "Go installed successfully"
 
                 local check_count=0
@@ -422,7 +450,7 @@ install_modeltunnel_from_source() {
                         break
                     fi
                     if [ $check_count -eq 1 ]; then
-                        print_info "Waiting for Go to be available in PATH..."
+                        print_info "Waiting for Go to be available in PATH (checking $ARCH architecture)..."
                     fi
                     sleep 2
                 done
@@ -432,7 +460,7 @@ install_modeltunnel_from_source() {
                     print_info "You may need to restart your terminal or run: /c/Program\ Files/Go/bin/go"
                 fi
             else
-                print_error "Failed to install Go"
+                print_error "Failed to install Go automatically"
                 print_info "Please install Go manually from: https://go.dev/dl/"
                 exit 1
             fi
@@ -441,6 +469,10 @@ install_modeltunnel_from_source() {
             run_with_sudo apt-get install -y golang
         elif [ "$OS" = "darwin" ]; then
             print_info "Please install Go: brew install go"
+        else
+            print_error "Unsupported OS for automatic Go installation: $OS"
+            print_info "Please install Go manually from: https://go.dev/dl/"
+            exit 1
         fi
     fi
 
