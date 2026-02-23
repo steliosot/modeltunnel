@@ -1350,13 +1350,12 @@ func (s *Server) handleJobStatus(w http.ResponseWriter, r *http.Request) {
 
 // handleAdminProviders handles GET/POST /admin/api/providers
 func (s *Server) handleAdminProviders(w http.ResponseWriter, r *http.Request) {
-	if s.providerStore == nil {
-		s.writeError(w, http.StatusServiceUnavailable, "provider store not initialized")
-		return
-	}
-
 	switch r.Method {
 	case http.MethodGet:
+		if s.providerStore == nil {
+			s.writeJSON(w, http.StatusOK, []interface{}{})
+			return
+		}
 		providers, err := s.providerStore.List()
 		if err != nil {
 			s.writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to list providers: %v", err))

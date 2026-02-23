@@ -285,7 +285,11 @@ var upCmd = &cobra.Command{
 		// Print usage info
 		fmt.Println("\n📖 Usage:")
 		if tunnelURL != "" {
-			fmt.Printf("   Public: https://%s/v1\n", tunnelURL)
+			tunnelDisplay := tunnelURL
+			if strings.HasPrefix(tunnelURL, "http://") || strings.HasPrefix(tunnelURL, "https://") {
+				tunnelDisplay = tunnelURL
+			}
+			fmt.Printf("   Public: %s/v1\n", tunnelDisplay)
 			fmt.Printf("   Local:  http://%s/v1\n", srv.Addr())
 
 			// Check if using localtunnel
