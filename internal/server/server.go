@@ -1460,11 +1460,6 @@ func (s *Server) handleAdminProviders(w http.ResponseWriter, r *http.Request) {
 
 // handleAdminProviderDetail handles GET/PUT/DELETE /admin/api/providers/{id}
 func (s *Server) handleAdminProviderDetail(w http.ResponseWriter, r *http.Request) {
-	if s.providerStore == nil {
-		s.writeError(w, http.StatusServiceUnavailable, "provider store not initialized")
-		return
-	}
-
 	// Extract provider ID
 	id := strings.TrimPrefix(r.URL.Path, "/admin/api/providers/")
 	if id == "" || strings.Contains(id, "/") {
@@ -1472,8 +1467,18 @@ func (s *Server) handleAdminProviderDetail(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// For modifications (PUT/POST/DELETE), require providerStore
+	if r.Method != http.MethodGet && s.providerStore == nil {
+		s.writeError(w, http.StatusServiceUnavailable, "provider store not initialized")
+		return
+	}
+
 	switch r.Method {
 	case http.MethodGet:
+		if s.providerStore == nil {
+			s.writeError(w, http.StatusNotFound, "provider not found")
+			return
+		}
 		provider, err := s.providerStore.Get(id)
 		if err != nil {
 			s.writeError(w, http.StatusNotFound, "provider not found")
