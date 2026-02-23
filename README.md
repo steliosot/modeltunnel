@@ -133,20 +133,7 @@ curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.
 
 **Supports:** Ubuntu, Debian, CentOS, macOS (Intel & Apple Silicon)
 
-### Using Homebrew
-
-```bash
-brew tap steliosot/modeltunnel
-brew install modeltunnel
-```
-
-### Using Go
-
-```bash
-go install github.com/steliosot/modeltunnel/cmd/modeltunnel@latest
-```
-
-### From Source
+### Build from Source
 
 ```bash
 git clone https://github.com/steliosot/modeltunnel.git

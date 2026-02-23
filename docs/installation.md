@@ -1,42 +1,37 @@
 # Installation Guide
 
-This guide covers all installation methods for Modeltunnel.
-
-## Requirements
-
-- **Go 1.21+** (for building from source)
-- **Ollama** (for local LLM support)
-- **macOS**, **Linux**, or **Windows** (WSL recommended)
-
----
-
 ## Quick Install
 
-### macOS/Linux (Homebrew)
+### One-Line Installer (Recommended)
 
 ```bash
-# Add tap
-brew tap steliosot/modeltunnel
-
-# Install
-brew install modeltunnel
-
-# Verify
-modeltunnel version
+curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash
 ```
 
-### Using Go
+**Silent installation for servers/CI:**
 
 ```bash
-go install github.com/steliosot/modeltunnel/cmd/modeltunnel@latest
+curl -fsSL https://raw.githubusercontent.com/steliosot/modeltunnel/main/install.sh | bash -s -- --silent
+```
 
-# Ensure $GOPATH/bin is in your PATH
-modeltunnel version
+**Installer options:**
+- `--silent` - Non-interactive mode
+- `--help` - Show all options
+
+**Supports:** Ubuntu, Debian, CentOS, macOS (Intel & Apple Silicon)
+
+### Build from Source
+
+```bash
+git clone https://github.com/steliosot/modeltunnel.git
+cd modeltunnel
+go build -o modeltunnel ./cmd/modeltunnel
+sudo mv modeltunnel /usr/local/bin/
 ```
 
 ---
 
-## From Source
+## Updating Modeltunnel
 
 ### Prerequisites
 
@@ -157,88 +152,13 @@ The installer creates:
 
 ## Docker
 
-### Using Pre-Built Image
-
 ```bash
-# Pull latest image from GitHub Container Registry
-docker pull ghcr.io/steliosot/modeltunnel:latest
-
-# Run with a custom config (mount your config.yaml)
 docker run -d -p 8080:8080 \
-  -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
+  -v ~/.config/modeltunnel:/root/.config/modeltunnel \
   ghcr.io/steliosot/modeltunnel:latest up
 ```
 
-### Building from Source
-
-```bash
-# Clone and build
-git clone https://github.com/steliosot/modeltunnel.git
-cd modeltunnel
-docker build -t modeltunnel:latest .
-
-# Run
-docker run -d -p 8080:8080 \
-  -v /path/to/config.yaml:/home/appuser/.config/modeltunnel/config.yaml \
-  modeltunnel:latest up
-```
-
-Docker image size: ~45MB
-
-**Volumes:**
-- `/home/appuser/.config/modeltunnel/config.yaml` - Custom configuration
-- `/home/appuser/.config/modeltunnel/keys.db` - SQLite database for keys
-
-### Using Docker Compose (Recommended)
-
-Docker Compose provides a minimal Modeltunnel setup. Connect your own backends via `config.docker.yaml`.
-
-**Quick Start:**
-
-```bash
-# Clone repository
-git clone https://github.com/steliosot/modeltunnel.git
-cd modeltunnel
-
-# Start both services
-docker-compose up -d
-```
-
-This starts:
-- **Ollama** on port 11434 (for model storage and execution)
-- **Modeltunnel** on port 8080 (API and dashboard)
-
-**Access Dashboard:**
-
-```bash
-# Open dashboard
-open http://localhost:8080/admin
-```
-
-If your backend supports it (e.g., Ollama), you can pull models from the dashboard once the backend is reachable.
-
-**Stop and Clean Up:**
-
-```bash
-# Stop containers
-docker-compose down
-
-# Stop and remove volumes (deletes models)
-docker-compose down -v
-
-# View logs
-docker-compose logs -f modeltunnel
-```
-
-**Custom Configuration:**
-
-```bash
-# Mount custom config
-docker-compose -f docker-compose.yml \
-  -f custom-compose.override.yml up -d
-
-# Or edit docker-compose.yml directly
-```
+Access dashboard: http://localhost:8080/admin
 
 ---
 
