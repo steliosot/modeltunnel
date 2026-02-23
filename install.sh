@@ -386,9 +386,55 @@ install_modeltunnel_from_source() {
     if ! command -v go &> /dev/null; then
         print_info "Go not found, installing..."
         if [ "$OS" = "windows" ]; then
-            print_error "Go must be installed manually via https://golang.org/dl/"
-            print_info "Visit: https://golang.org/dl/ and install for your platform"
-            exit 1
+            print_step "Installing Go for Windows..."
+            print_info "This may take a few minutes..."
+            local go_arch="amd64"
+            if [ "$ARCH" = "arm64" ]; then
+                go_arch="arm64"
+            fi
+            local go_version="1.23.0"
+            local go_installer="/tmp/go${go_version}.windows-${go_arch}.msi"
+            local go_url="https://go.dev/dl/go${go_version}.windows-${go_arch}.msi"
+
+            if [ -f "$go_installer" ]; then
+                print_info "Using cached installer: $go_installer"
+            else
+                print_info "Downloading Go for Windows..."
+                print_info "Download size: ~130MB"
+                powershell -Command "Invoke-WebRequest -Uri '$go_url' -OutFile '$go_installer'" || {
+                    print_error "Failed to download Go installer"
+                    rm -f "$go_installer"
+                    exit 1
+                }
+            fi
+
+            print_info "Installing Go (may take 2-3 minutes)..."
+            if powershell -Command "Start-Process msiexec.exe -ArgumentList '/i','$go_installer','/quiet','/norestart' -Wait" 2>/dev/null; then
+                print_success "Go installed successfully"
+
+                local check_count=0
+                local max_checks=30
+                while [ $check_count -lt $max_checks ]; do
+                    check_count=$((check_count + 1))
+                    if command -v go &> /dev/null; then
+                        print_success "Go is now available in PATH"
+                        break
+                    fi
+                    if [ $check_count -eq 1 ]; then
+                        print_info "Waiting for Go to be available in PATH..."
+                    fi
+                    sleep 2
+                done
+
+                if ! command -v go &> /dev/null; then
+                    print_warning "Go installed but not in current session PATH"
+                    print_info "You may need to restart your terminal or run: /c/Program\ Files/Go/bin/go"
+                fi
+            else
+                print_error "Failed to install Go"
+                print_info "Please install Go manually from: https://go.dev/dl/"
+                exit 1
+            fi
         elif [ "$OS" = "linux" ] && [ "$REQUIRES_SUDO" = true ]; then
             run_with_sudo apt-get update -qq
             run_with_sudo apt-get install -y golang
