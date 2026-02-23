@@ -1,6 +1,6 @@
 # Modeltunnel
 
-**ngrok for LLMs** - Connect your local or cloud models with an OpenAI-compatible API, key-based authentication, and smart routing.
+**Tunnel for LLMs** - Connect your local or cloud models with an OpenAI-compatible API, key-based authentication, and smart routing.
 
 [![Release](https://img.shields.io/github/v/release/steliosot/modeltunnel?style=flat-square)](https://github.com/steliosot/modeltunnel/releases)
 [![License](https://img.shields.io/github/license/steliosot/modeltunnel?style=flat-square)](LICENSE)
@@ -326,7 +326,7 @@ See [SECURITY.md](SECURITY.md) for details.
 
 | Feature | Modeltunnel | ngrok | Cloudflare Tunnel |
 |---------|-------------|-------|-------------------|
-| Local LLM Support | Yes (BYO) | No | No |
+| Local LLM Support | Yes (BYO) | Yes | No |
 | Built-in Auth | Yes | No | No |
 | Dashboard | Yes | No | No |
 | Async Jobs API | Yes | No | No |
