@@ -151,46 +151,20 @@ run_with_sudo() {
 
 setup_install_dir() {
     local target_dir="$INSTALL_DIR"
-    
+
     # Check if target directory is writable
     if [ ! -w "$target_dir" ] 2>/dev/null; then
-        # Try to create it (might require sudo)
+        print_warning "Cannot write to $target_dir"
+        print_info "Attempting to create directory..."
+        # Create it (might fail gracefully)
         mkdir -p "$target_dir" 2>/dev/null || true
-        
-        # If still not writable and sudo available, try with sudo
-        if [ ! -w "$target_dir" ] 2>/dev/null && [ "$REQUIRES_SUDO" = true ]; then
-            sudo mkdir -p "$target_dir" 2>/dev/null || {
-                print_warning "Cannot write to $target_dir"
-                print_info "Falling back to $HOME/.local/bin"
-                INSTALL_DIR="$HOME/.local/bin"
-                USE_HOME_INSTALL=true
-                mkdir -p "$HOME/.local/bin" 2>/dev/null || {
-                    print_error "Cannot create $HOME/.local/bin"
-                    exit 1
-                }
-            }
-        elif [ ! -w "$target_dir" ] 2>/dev/null; then
-            # No sudo available, use home directory
-            print_warning "Cannot write to $target_dir"
-            print_info "Falling back to $HOME/.local/bin"
-            INSTALL_DIR="$HOME/.local/bin"
-            USE_HOME_INSTALL=true
-            mkdir -p "$HOME/.local/bin" 2>/dev/null || {
-                print_error "Cannot create $HOME/.local/bin"
-                exit 1
-            }
+        # For Windows, use PowerShell to create if needed
+        if [ "$OS" = "windows" ]; then
+            powershell -Command "New-Item -Path \"$target_dir\" -Type Directory -Force" 2>/dev/null || true
         fi
     fi
-    
-    # Add $HOME/.local/bin to PATH if needed
-    if [ "$USE_HOME_INSTALL" = true ]; then
-        if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
-            export PATH="$HOME/.local/bin:$PATH"
-            print_info "Added $HOME/.local/bin to PATH for this session"
-            print_info "To make permanent, add to your shell profile:"
-            echo '  export PATH="$HOME/.local/bin:$PATH"'
-        fi
-    fi
+
+    # Don't add to PATH for simplicity (users can set it themselves)
 }
 
 # ============================================
@@ -207,10 +181,32 @@ detect_os() {
             OS_NAME="$NAME"
             OS_VERSION="$VERSION_ID"
         fi
+        REQUIRES_SUDO=true
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         OS="darwin"
         OS_NAME="macOS"
         OS_VERSION=$(sw_vers -productVersion)
+        REQUIRES_SUDO=false
+    elif [[ "$OSTYPE" == "msys"* ]] || [[ "$OSTYPE" == "mingw"* ]]; then
+        OS="windows"
+        OS_NAME="Windows"
+        # Windows version detection using PowerShell
+        OS_VERSION=$(powershell -Command "[System.Environment]::OSVersion.Version" 2>/dev/null | awk -F'\"\\.{\\\"' '{print $1}')
+        # Set default install directory for Windows using PowerShell
+        LOCALAPPDATA=$(powershell -Command "[Environment]::GetFolderPath([System.Environment+SpecialFolder]::LocalApplicationData)" 2>/dev/null)
+        if [ -n "$LOCALAPPDATA" ]; then
+            INSTALL_DIR="$LOCALAPPDATA\\modeltunnel"
+        else
+            INSTALL_DIR="$HOME\\AppData\\Roaming\\Modeltunnel"
+        fi
+        # Create install directory if it doesn't exist
+        mkdir -p "$INSTALL_DIR" 2>/dev/null || true
+        REQUIRES_SUDO=false
+    elif [[ "$OSTYPE" == "cygwin"* ]]; then
+        OS="windows"
+        OS_NAME="Windows (Cygwin)"
+        INSTALL_DIR="/usr/local/bin"
+        REQUIRES_SUDO=false
     else
         print_error "Unsupported operating system: $OSTYPE"
         exit 1
@@ -387,17 +383,17 @@ EOF
 install_modeltunnel_from_source() {
     print_step "Building Modeltunnel from source..."
 
-    if ! command -v git &> /dev/null || ! command -v go &> /dev/null; then
-        print_info "Git and/or Go not found, installing..."
-        if [ "$OS" = "linux" ] && [ "$REQUIRES_SUDO" = true ]; then
-            run_with_sudo apt-get update -qq
-            run_with_sudo apt-get install -y git golang
-        elif [ "$OS" = "darwin" ]; then
-            print_info "Please install Git and Go: brew install git go"
+    if ! command -v go &> /dev/null; then
+        print_info "Go not found, installing..."
+        if [ "$OS" = "windows" ]; then
+            print_error "Go must be installed manually via https://golang.org/dl/"
+            print_info "Visit: https://golang.org/dl/ and install for your platform"
             exit 1
-        else
-            apt-get update -qq
-            apt-get install -y git golang
+        elif [ "$OS" = "linux" ] && [ "$REQUIRES_SUDO" = true ]; then
+            run_with_sudo apt-get update -qq
+            run_with_sudo apt-get install -y golang
+        elif [ "$OS" = "darwin" ]; then
+            print_info "Please install Go: brew install go"
         fi
     fi
 
@@ -414,30 +410,53 @@ install_modeltunnel_from_source() {
     cd "$temp_dir"
     print_info "Building..."
 
-    CGO_ENABLED=1 GOOS="$OS" GOARCH="$ARCH" \
-        go build -ldflags="-s -w" -o modeltunnel ./cmd/modeltunnel/main.go || {
+    # Set GOOS for Windows
+    if [ "$OS" = "windows" ]; then
+        GOOS="windows"
+        BINARY_EXT=".exe"
+    else
+        GOOS="linux"
+        BINARY_EXT=""
+    fi
+
+    # Check go version
+    local go_version=$(go version 2>&1 | awk '{print $3}')
+    print_info "Using Go version: $go_version"
+
+    CGO_ENABLED=1 GOOS="$GOOS" GOARCH="$ARCH" \
+        go build -ldflags="-s -w" -o "modeltunnel${BINARY_EXT}" ./cmd/modeltunnel/main.go || {
         print_error "Build failed"
         exit 1
     }
 
     setup_install_dir
-    
+
     if [ "$REQUIRES_SUDO" = true ]; then
-        run_with_sudo mv modeltunnel "$INSTALL_DIR/"
+        run_with_sudo mv "modeltunnel${BINARY_EXT}" "$INSTALL_DIR/modeltunnel${BINARY_EXT}"
     else
-        mv modeltunnel "$INSTALL_DIR/"
+        mv "modeltunnel${BINARY_EXT}" "$INSTALL_DIR/modeltunnel${BINARY_EXT}"
     fi
     rm -rf "$temp_dir"
 
-    print_success "Modeltunnel built and installed to $INSTALL_DIR"
+    print_success "Modeltunnel installed to $INSTALL_DIR/modeltunnel${BINARY_EXT}"
 }
 
 install_modeltunnel_binary() {
     local download_url="https://github.com/$MODELTUNNEL_REPO/releases/latest/download/modeltunnel-${OS}-${ARCH}"
     local temp_file="/tmp/modeltunnel-${OS}-${ARCH}"
 
+    # Add .exe extension for Windows
+    if [ "$OS" = "windows" ]; then
+        download_url="${download_url}.exe"
+        temp_file="${temp_file}.exe"
+    fi
+
     print_step "Downloading Modeltunnel..."
-    print_info "Download size: ~15MB"
+    if [ "$OS" = "windows" ]; then
+        print_info "Download size: ~15MB (.exe)"
+    else
+        print_info "Download size: ~15MB"
+    fi
 
     if command -v curl &> /dev/null; then
         curl -fsSL --progress-bar "$download_url" -o "$temp_file" || {
@@ -449,7 +468,7 @@ install_modeltunnel_binary() {
     else
         wget -q --show-progress "$download_url" -O "$temp_file" || {
             print_error "Failed to download Modeltunnel"
-            print_info "Falling back to building from source..."
+            print_info "Fuilding from source..."
             install_modeltunnel_from_source
             return
         }
@@ -459,17 +478,17 @@ install_modeltunnel_binary() {
 
     print_step "Installing Modeltunnel..."
     setup_install_dir
-    
+
     chmod +x "$temp_file"
-    
+
     if [ "$REQUIRES_SUDO" = true ]; then
-        run_with_sudo mv "$temp_file" "$INSTALL_DIR/modeltunnel"
+        run_with_sudo mv "$temp_file" "$INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
     else
-        mv "$temp_file" "$INSTALL_DIR/modeltunnel"
+        mv "$temp_file" "$INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
     fi
     rm -f "$temp_file"
-    
-    print_success "Modeltunnel installed to $INSTALL_DIR"
+
+    print_success "Modeltunnel installed to $INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
 }
 
 # ============================================
@@ -527,7 +546,7 @@ show_summary() {
     echo -e "${BOLD}📖 Quick Start${NC}"
     echo "─────────────────"
     echo "  1) Start server:"
-    echo "     $INSTALL_DIR/modeltunnel up"
+    echo "     $INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe") up"
     echo ""
     echo "  2) Open dashboard:"
     echo "     http://127.0.0.1:$MODELTUNNEL_PORT/admin"
@@ -535,16 +554,29 @@ show_summary() {
     echo "  3) Create API keys in the dashboard"
     echo ""
     echo "  4) Configure backend URL:"
-    echo "     ~/.config/modeltunnel/config.yaml"
+    if [ "$OS" = "windows" ]; then
+        echo "     %APPDATA%\\modeltunnel\\config.yaml"
+    else
+        echo "     ~/.config/modeltunnel/config.yaml"
+    fi
     echo ""
     echo "  Optional tunnel:"
-    echo "     $INSTALL_DIR/modeltunnel up --tunnel"
+    echo "     $INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe") up --tunnel"
     echo ""
     echo -e "${BOLD}📚 Documentation${NC}"
     echo "────────────────"
     echo "  API Reference: https://github.com/$MODELTUNNEL_REPO/tree/main/docs/api.md"
     echo "  Examples: https://github.com/$MODELTUNNEL_REPO/tree/main/docs/EXAMPLES.md"
     echo ""
+
+    # Windows-specific notes
+    if [ "$OS" = "windows" ]; then
+        echo -e "${BOLD}🪟 Windows Installation Notes${NC}"
+        echo "───────────────────────"
+        echo "  - Modeltunnel installed to: $INSTALL_DIR"
+        echo "  - Add $INSTALL_DIR to your PATH to run from anywhere"
+        echo "  - Start cmd/shell as Administrator for admin features"
+    fi
 }
 
 # ============================================
@@ -582,7 +614,7 @@ main() {
     if [ "$SILENT_MODE" = true ]; then
         # Silent mode - just install modeltunnel binary
         print_info "Installing Modeltunnel in silent mode..."
-        print_info "Detected: $OS_NAME ${OS_VERSION:-} ($ARCH)"
+        print_info "Detected: $OS_NAME ${OS_VERSION:-}"
 
         # Enable systemd services for persistent installation
         if [ "$OS" = "linux" ]; then
@@ -631,7 +663,7 @@ parse_args() {
                 echo "  Ollama must be installed first"
                 echo ""
                 echo "Options:"
-                echo "  --silent         Non-interactive mode (installs Modeltunnel only)"
+                echo "  --silent         Non-interactive mode installs Modeltunnel only"
                 echo "  --help           Show this help message"
                 exit 0
                 ;;
