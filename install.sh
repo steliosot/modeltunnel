@@ -296,20 +296,7 @@ handle_modeltunnel_installation() {
     echo -e "${BOLD}📦 Modeltunnel Installation${NC}"
     echo "═══════════════════════════════════════════════════════════"
 
-    # Check if we should build from source or download binary
-    local use_source=false
-
-    if command -v go &> /dev/null; then
-            if ask_yes_no "Go is installed. Build from source instead of downloading binary?" "N"; then
-                use_source=true
-            fi
-    fi
-
-    if [ "$use_source" = true ]; then
-        install_modeltunnel_from_source
-    else
-        install_modeltunnel_binary
-    fi
+    install_modeltunnel_binary
 
     # Setup config file after installation
     setup_modeltunnel_config
@@ -395,109 +382,97 @@ EOF
 }
 
 install_modeltunnel_binary() {
-    local download_url="https://github.com/$MODELTUNNEL_REPO/releases/latest/download/modeltunnel-${OS}-${ARCH}"
-    local temp_file="/tmp/modeltunnel-${OS}-${ARCH}"
-    local binary_ext=""
+    local platform_tag="${OS}-${ARCH}"
+    local latest_release_url="https://api.github.com/repos/$MODELTUNNEL_REPO/releases/latest"
+    local archive_name=""
+    local archive_ext=""
 
-    if [ "$OS" = "windows" ]; then
-        download_url="${download_url}.exe"
-        temp_file="${temp_file}.exe"
-        binary_ext=".exe"
+    print_step "Determining latest release..."
+    local release_tag=$(curl -sSf "$latest_release_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1')
+
+    if [ -z "$release_tag" ]; then
+        print_error "Failed to determine latest release from GitHub"
+        exit 1
     fi
+
+    print_success "Latest release: $release_tag"
+
+    # Determine archive format based on OS
+    if [ "$OS" = "windows" ]; then
+        archive_name="modeltunnel-${release_tag}-${platform_tag}.zip"
+        archive_ext=".zip"
+    else
+        archive_name="modeltunnel-${release_tag}-${platform_tag}.tar.gz"
+        archive_ext=".tar.gz"
+    fi
+
+    local download_url="https://github.com/$MODELTUNNEL_REPO/releases/download/${release_tag}/${archive_name}"
+    local temp_dir="/tmp/modeltunnel-install"
+    local temp_archive="${temp_dir}/${archive_name}"
+
+    mkdir -p "$temp_dir"
 
     print_step "Downloading Modeltunnel..."
-    if [ "$OS" = "windows" ]; then
-        print_info "Download size: ~15MB (.exe)"
-    else
-        print_info "Download size: ~15MB"
-    fi
+    print_info "Download URL: $download_url"
+    print_info "Archive size: ~15MB"
 
     if command -v curl &> /dev/null; then
-        curl -fsSL --progress-bar "$download_url" -o "$temp_file" || {
-            print_error "Failed to download Modeltunnel"
-            print_info "Falling back to building from source..."
-            install_modeltunnel_from_source
-            return
+        curl -fsSL --progress-bar "$download_url" -o "$temp_archive" || {
+            print_error "Failed to download Modeltunnel archive"
+            print_info "Please check your internet connection and try again"
+            rm -rf "$temp_dir"
+            exit 1
         }
     else
-        wget -q --show-progress "$download_url" -O "$temp_file" || {
-            print_error "Failed to download Modeltunnel"
-            print_info "Falling back to building from source..."
-            install_modeltunnel_from_source
-            return
+        wget -q --show-progress "$download_url" -O "$temp_archive" || {
+            print_error "Failed to download Modeltunnel archive"
+            print_info "Please check your internet connection and try again"
+            rm -rf "$temp_dir"
+            exit 1
         }
     fi
 
     print_success "Download complete"
 
+    print_step "Extracting archive..."
+    
+    if [ "$archive_ext" = ".zip" ]; then
+        unzip -q "$temp_archive" -d "$temp_dir" || {
+            print_error "Failed to extract archive"
+            rm -rf "$temp_dir"
+            exit 1
+        }
+    else
+        tar -xzf "$temp_archive" -C "$temp_dir" || {
+            print_error "Failed to extract archive"
+            rm -rf "$temp_dir"
+            exit 1
+        }
+    fi
+
+    # Find the binary in the extracted files
+    local extracted_binary=$(find "$temp_dir" -type f -name "${BINARY_NAME}*" -o -name "${BINARY_NAME}.exe" | head -1)
+
+    if [ -z "$extracted_binary" ]; then
+        print_error "Could not find binary in extracted archive"
+        rm -rf "$temp_dir"
+        exit 1
+    fi
+
+print_step "Installing Modeltunnel..."
     print_step "Installing Modeltunnel..."
     setup_install_dir
 
-    chmod +x "$temp_file"
+    chmod +x "$extracted_binary"
 
     if [ "$REQUIRES_SUDO" = true ]; then
-        run_with_sudo mv "$temp_file" "$INSTALL_DIR/modeltunnel${binary_ext}"
+        run_with_sudo mv "$extracted_binary" "$INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
     else
-        mv "$temp_file" "$INSTALL_DIR/modeltunnel${binary_ext}"
-    fi
-    rm -f "$temp_file"
-
-    print_success "Modeltunnel installed to $INSTALL_DIR/modeltunnel${binary_ext}"
-}
-
-# Add back build from source function
-install_modeltunnel_from_source() {
-    print_step "Building Modeltunnel from source..."
-
-    if ! command -v go &> /dev/null; then
-        print_warning "Go is not installed. You must install Go first:"
-        print_info "  Windows: Visit https://go.dev/dl/ and download Go installer"
-        print_info "  macOS:   brew install go"
-        print_info "  Linux:   sudo apt-get install golang"
-        exit 1
-    fi
-
-    local temp_dir="/tmp/modeltunnel-build"
-    rm -rf "$temp_dir"
-    mkdir -p "$temp_dir"
-
-    print_info "Cloning repository..."
-    git clone --depth 1 "https://github.com/$MODELTUNNEL_REPO.git" "$temp_dir" || {
-        print_error "Failed to clone repository"
-        exit 1
-    }
-
-    cd "$temp_dir"
-    print_info "Building..."
-
-    if command -v go &> /dev/null; then
-        go version 2>&1 | head -1
-    fi
-
-    # Cross-compile for target OS
-    local GOOS="linux"
-    if [ "$OS" = "windows" ]; then
-        GOOS="windows"
-    elif [ "$OS" = "darwin" ]; then
-        GOOS="darwin"
-    fi
-
-    CGO_ENABLED=1 GOOS="$GOOS" GOARCH="$ARCH" \
-        go build -ldflags="-s -w" -o "modeltunnel${binary_ext}" ./cmd/modeltunnel/main.go || {
-        print_error "Build failed"
-        exit 1
-    }
-
-    setup_install_dir
-
-    if [ "$REQUIRES_SUDO" = true ]; then
-        run_with_sudo mv "modeltunnel${binary_ext}" "$INSTALL_DIR/modeltunnel${binary_ext}"
-    else
-        mv "modeltunnel${binary_ext}" "$INSTALL_DIR/modeltunnel${binary_ext}"
+        mv "$extracted_binary" "$INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
     fi
     rm -rf "$temp_dir"
 
-    print_success "Modeltunnel installed to $INSTALL_DIR/modeltunnel${binary_ext}"
+    print_success "Modeltunnel installed to $INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
 }
 
 # ============================================
@@ -524,7 +499,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=${INSTALL_DIR}/modeltunnel up --host 0.0.0.0
+ExecStart=$INSTALL_DIR/modeltunnel up --host 0.0.0.0
 Restart=on-failure
 RestartSec=10s
 StandardOutput=journal
@@ -546,11 +521,6 @@ EOF
 # ============================================
 
 show_summary() {
-    local binary_ext=""
-    if [ "$OS" = "windows" ]; then
-        binary_ext=".exe"
-    fi
-
     echo ""
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}                 ${BOLD}Installation Complete${NC}                   ${CYAN}║${NC}"
@@ -560,7 +530,7 @@ show_summary() {
     echo -e "${BOLD}📖 Quick Start${NC}"
     echo "─────────────────"
     echo "  1) Start server:"
-    echo "     $INSTALL_DIR/modeltunnel${binary_ext} up"
+    echo "     $INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe") up"
     echo ""
     echo "  2) Open dashboard:"
     echo "     http://127.0.0.1:$MODELTUNNEL_PORT/admin"
@@ -575,7 +545,7 @@ show_summary() {
     fi
     echo ""
     echo "  Optional tunnel:"
-    echo "     $INSTALL_DIR/modeltunnel${binary_ext} up --tunnel"
+    echo "     $INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe") up --tunnel"
     echo ""
     echo -e "${BOLD}📚 Documentation${NC}"
     echo "────────────────"

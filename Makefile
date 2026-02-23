@@ -186,8 +186,8 @@ release: clean build-all
 	
 	# Generate checksums
 	@cd $(BUILD_DIR)/release && \
-	$(shell command -v sha256sum 2>/dev/null || echo shasum -a 256) * > SHA256SUMS && \
-	$(shell command -v sha256sum 2>/dev/null || echo shasum -a 256) -c SHA256SUMS 2>/dev/null || true && \
+	sha256sum * > SHA256SUMS && \
+	sha256sum -c SHA256SUMS && \
 	rm -f SHA256SUMSUMSUMSUMS  # Remove duplicate names if any
 	
 	@echo "✅ Release archives created in $(BUILD_DIR)/release/"
