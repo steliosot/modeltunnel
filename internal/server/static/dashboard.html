@@ -1161,6 +1161,9 @@
                 <div class="card-header">
                     <div class="card-title">Configuration Editor</div>
                     <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary btn-sm" onclick="openGenerateConfigModal()">
+                            <i class="icon">⚡</i> Generate Configuration
+                        </button>
                         <button class="btn btn-secondary btn-sm" onclick="reloadConfig()">Reload</button>
                         <button class="btn btn-primary btn-sm" onclick="saveConfig()">Save Changes</button>
                     </div>
@@ -3142,6 +3145,68 @@ http://localhost:8080/v1</pre>
         </div>
     </div>
 
+    <!-- Generate Configuration Modal -->
+    <div class="modal-overlay" id="generate-config-modal" style="display: none;">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <div class="modal-title">⚡ Generate Configuration</div>
+                <button class="modal-close" onclick="closeGenerateConfigModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="generate-config-loading" style="display: none; text-align: center; padding: 40px;">
+                    <div style="font-size: 32px; margin-bottom: 16px;">⏳</div>
+                    <div class="text-secondary">Analyzing models and generating configuration...</div>
+                </div>
+                <div id="generate-config-content" style="display: none;">
+                    <div class="alert alert-warning" style="margin-bottom: 16px;">
+                        <strong>⚠️ Warning:</strong> This will replace your existing intents configuration. Existing custom intents will be lost.
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <h4 style="margin-bottom: 12px;">Generated Configuration Preview</h4>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <span style="display: inline-flex; gap: 8px;">
+                                <button class="btn btn-sm btn-secondary" onclick="showConfigView('structured')">
+                                    Structured View
+                                </button>
+                                <button class="btn btn-sm btn-secondary" onclick="showConfigView('yaml')">
+                                    YAML View
+                                </button>
+                            </span>
+                        </div>
+
+                        <div id="config-structured-view">
+                            <div style="margin-bottom: 16px;">
+                                <strong>Chat Intent</strong>
+                                <p class="text-secondary" style="font-size: 13px;">General conversation, Q&A, support</p>
+                                <div id="chat-priority-list"></div>
+                            </div>
+                            <div style="margin-bottom: 16px;">
+                                <strong>Code Intent</strong>
+                                <p class="text-secondary" style="font-size: 13px;">Programming, debugging, technical assistance</p>
+                                <div id="code-priority-list"></div>
+                            </div>
+                        </div>
+
+                        <div id="config-yaml-view" style="display: none;">
+                            <textarea id="generated-config-yaml" class="yaml-editor" style="height: 300px; width: 100%; font-family: monospace; font-size: 12px;" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div id="generate-config-error" style="display: none;">
+                    <div class="alert alert-danger"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeGenerateConfigModal()" id="generate-config-cancel">Cancel</button>
+                <button class="btn btn-primary" onclick="applyGeneratedConfig()" id="generate-config-apply" disabled>
+                    Apply Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Authentication
         let authCredentials = null;
@@ -3764,6 +3829,113 @@ model: ${model}`;
             } else if (type === 'modeltunnel') {
                 modelsInput.placeholder = '(optional) leave empty to auto-discover';
                 baseUrlInput.placeholder = 'http://host:8080/v1';
+            }
+        }
+
+        // Generate Configuration Modal Functions
+        let generatedConfig = null;
+        let generatedIntents = null;
+
+        async function openGenerateConfigModal() {
+            document.getElementById('generate-config-modal').classList.add('active');
+            document.getElementById('generate-config-loading').style.display = 'block';
+            document.getElementById('generate-config-content').style.display = 'none';
+            document.getElementById('generate-config-error').style.display = 'none';
+            document.getElementById('generate-config-apply').disabled = true;
+
+            try {
+                const response = await authFetch('/admin/api/config/generate');
+                if (!response.ok) {
+                    throw new Error('Failed to generate configuration');
+                }
+
+                const data = await response.json();
+                generatedConfig = data.config;
+                generatedIntents = data.intents;
+
+                // Display structured view
+                displayGeneratedConfig();
+                showConfigView('structured');
+                
+                document.getElementById('generate-config-loading').style.display = 'none';
+                document.getElementById('generate-config-content').style.display = 'block';
+                document.getElementById('generate-config-apply').disabled = false;
+            } catch (error) {
+                document.getElementById('generate-config-loading').style.display = 'none';
+                document.getElementById('generate-config-error').style.display = 'block';
+                document.getElementById('generate-config-error').querySelector('.alert').textContent =
+                    'Failed to generate configuration: ' + error.message;
+                document.getElementById('generate-config-apply').disabled = true;
+            }
+        }
+
+        function closeGenerateConfigModal() {
+            document.getElementById('generate-config-modal').classList.remove('active');
+            generatedConfig = null;
+            generatedIntents = null;
+        }
+
+        function displayGeneratedConfig() {
+            if (!generatedIntents) return;
+
+            const chatContainer = document.getElementById('chat-priority-list');
+            const codeContainer = document.getElementById('code-priority-list');
+            const yamlEditor = document.getElementById('generated-config-yaml');
+
+            // Display chat priority list
+            if (generatedIntents.chat && generatedIntents.chat.priority) {
+                chatContainer.innerHTML = generatedIntents.chat.priority.map((model, index) => 
+                    `<div style="padding: 8px; background: #f5f5f5; border-radius: 4px; margin-bottom: 4px;">
+                        <span style="color: #007bff; font-weight: bold;">${index + 1}.</span> ${model}
+                    </div>`
+                ).join('');
+            }
+
+            // Display code priority list
+            if (generatedIntents.code && generatedIntents.code.priority) {
+                codeContainer.innerHTML = generatedIntents.code.priority.map((model, index) => 
+                    `<div style="padding: 8px; background: #f5f5f5; border-radius: 4px; margin-bottom: 4px;">
+                        <span style="color: #28a745; font-weight: bold;">${index + 1}.</span> ${model}
+                    </div>`
+                ).join('');
+            }
+
+            // Set YAML content
+            if (generatedConfig) {
+                yamlEditor.value = generatedConfig;
+            }
+        }
+
+        function showConfigView(view) {
+            const structuredView = document.getElementById('config-structured-view');
+            const yamlView = document.getElementById('config-yaml-view');
+
+            if (view === 'structured') {
+                structuredView.style.display = 'block';
+                yamlView.style.display = 'none';
+            } else {
+                structuredView.style.display = 'none';
+                yamlView.style.display = 'block';
+            }
+        }
+
+        async function applyGeneratedConfig() {
+            if (!generatedConfig) return;
+
+            const response = await authFetch('/admin/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ config: generatedConfig })
+            });
+
+            if (response.ok) {
+                showAlert('Configuration applied successfully!', 'success');
+                closeGenerateConfigModal();
+                reloadConfig();
+                loadData();
+            } else {
+                const data = await response.json();
+                showAlert(data.error || 'Failed to apply configuration', 'error');
             }
         }
 

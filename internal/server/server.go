@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -255,6 +256,9 @@ func NewServer(cfg *config.Config, upstreams *upstream.Manager, keystore *keys.S
 	s.mux.HandleFunc("/admin/api/providers/", s.adminAuth(s.handleAdminProviderDetail))
 	s.mux.HandleFunc("/admin/api/providers/types", s.adminAuth(s.handleAdminProviderTypes))
 	s.mux.HandleFunc("/admin/api/providers/test", s.adminAuth(s.handleAdminProviderTest))
+
+	// Config generation route
+	s.mux.HandleFunc("/admin/api/config/generate", s.adminAuth(s.handleGenerateConfig))
 
 	// Network endpoints
 	s.mux.HandleFunc("/admin/api/network", s.adminAuth(s.handleNetwork))
@@ -971,6 +975,161 @@ func (s *Server) handleAdminConfig(w http.ResponseWriter, r *http.Request) {
 	default:
 		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
+}
+
+// handleGenerateConfig generates a new configuration based on available models and providers
+func (s *Server) handleGenerateConfig(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		s.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	type modelInfo struct {
+		id     string
+		name   string
+		size   int64
+		source string
+	}
+
+	var allModels []modelInfo
+
+	// Get models from local upstreams (Ollama, VLLM)
+	if s.upstreams != nil {
+		models, err := s.upstreams.AllModels(ctx)
+		if err == nil {
+			for _, m := range models {
+				allModels = append(allModels, modelInfo{
+					id:     m.ID,
+					name:   m.ID,
+					size:   m.Size,
+					source: "local",
+				})
+			}
+		}
+	}
+
+	// Get models from external providers if available
+	if s.providerStore != nil {
+		providerConfigs, err := s.providerStore.List()
+		if err == nil {
+			for _, p := range providerConfigs {
+				if !p.IsActive {
+					continue
+				}
+				provider, err := providers.ProviderFromConfig(p)
+				if err != nil {
+					continue
+				}
+				providerModels, err := provider.ListModels(ctx)
+				if err != nil {
+					continue
+				}
+				for _, m := range providerModels {
+					if m.ID == "" {
+						continue
+					}
+					sizes, _ := m.Size, 0
+					allModels = append(allModels, modelInfo{
+						id:     p.ID + "/" + m.ID,
+						name:   m.ID,
+						size:   sizes,
+						source: "provider",
+					})
+				}
+			}
+		}
+	}
+
+	// Sort all models by size (largest first)
+	sort.Slice(allModels, func(i, j int) bool {
+		return allModels[i].size > allModels[j].size
+	})
+
+	// Separate local and provider models for priority ordering
+	var localModels []modelInfo
+	var providerModels []modelInfo
+	for _, m := range allModels {
+		if m.source == "local" {
+			localModels = append(localModels, m)
+		} else {
+			providerModels = append(providerModels, m)
+		}
+	}
+
+	// Generate intent priorities - take top 3 largest overall
+	// Local models first, then providers, but keep size ordering within groups
+	topModels := make([]string, 0)
+	for i := 0; i < len(localModels) && i < 3; i++ {
+		topModels = append(topModels, localModels[i].id)
+	}
+	for i := 0; i < len(providerModels) && len(topModels) < 3; i++ {
+		topModels = append(topModels, providerModels[i].id)
+	}
+
+	// Code intent - top 3, prioritize different ones if possible
+	topCodeModels := make([]string, 0)
+	for i := 0; i < len(localModels) && len(topCodeModels) < 3; i++ {
+		// Skip if already in chat list (distribute models)
+		if i > 0 && i < len(topModels) && i < len(localModels)-1 {
+			topCodeModels = append(topCodeModels, localModels[i].id)
+		} else {
+			topCodeModels = append(topCodeModels, localModels[i].id)
+		}
+	}
+	for i := 0; i < len(providerModels) && len(topCodeModels) < 3; i++ {
+		topCodeModels = append(topCodeModels, providerModels[i].id)
+	}
+
+	// Load existing config to get server settings
+	currentCfg, err := config.Load(s.configPath)
+	if err != nil {
+		currentCfg = config.DefaultConfig()
+	}
+
+	// Generate new config with updated intents
+	generated := struct {
+		Server    config.ServerConfig        `yaml:"server"`
+		Upstreams map[string]config.Upstream `yaml:"upstreams,omitempty"`
+		Policies  map[string]config.Policy   `yaml:"policies,omitempty"`
+		Intents   map[string]config.Intent   `yaml:"intents"`
+		Keys      []config.KeyConfig         `yaml:"keys"`
+		Providers []config.ProviderConfig    `yaml:"providers,omitempty"`
+	}{
+		Server:    currentCfg.Server,
+		Upstreams: currentCfg.Upstreams,
+		Policies:  currentCfg.Policies,
+		Intents: map[string]config.Intent{
+			"chat": {
+				Priority:    topModels,
+				Description: "General conversation, Q&A, support",
+				Temperature: 0.7,
+				MaxTokens:   2048,
+			},
+			"code": {
+				Priority:    topCodeModels,
+				Description: "Programming, debugging, technical assistance",
+				Temperature: 0.2,
+				MaxTokens:   4096,
+			},
+		},
+		Keys:      currentCfg.Keys,
+		Providers: currentCfg.Providers,
+	}
+
+	yamlData, err := yaml.Marshal(generated)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to generate config: %v", err))
+		return
+	}
+
+	s.writeJSON(w, http.StatusOK, map[string]interface{}{
+		"config":      string(yamlData),
+		"intents":     generated.Intents,
+		"model_count": len(allModels),
+	})
 }
 
 func (s *Server) handleAdminModels(w http.ResponseWriter, r *http.Request) {
