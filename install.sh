@@ -586,6 +586,10 @@ parse_args() {
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
+            --silent)
+                SILENT_MODE=true
+                shift
+                ;;
             --help)
                 echo "Modeltunnel Installer"
                 echo ""
@@ -600,10 +604,6 @@ parse_args() {
                 echo "  --silent         Non-interactive mode (installs Modeltunnel only)"
                 echo "  --help           Show this help message"
                 exit 0
-                ;;
-            --silent)
-                SILENT_MODE=true
-                shift
                 ;;
             *)
                 shift
