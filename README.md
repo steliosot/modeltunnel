@@ -324,15 +324,15 @@ See [SECURITY.md](SECURITY.md) for details.
 
 ## Comparison
 
-| Feature | Modeltunnel | ngrok | Cloudflare Tunnel |
-|---------|-------------|-------|-------------------|
-| Local LLM Support | Yes (BYO) | Yes | No |
-| Built-in Auth | Yes | No | No |
-| Dashboard | Yes | No | No |
-| Async Jobs API | Yes | No | No |
-| Intent-Based Routing | Yes | No | No |
-| Per-Model Rate Limits | Yes | No | No |
-| OpenAI API Compatible | Yes | No | No |
+| Feature | Modeltunnel | Cloudflare Tunnel |
+|---------|-------------|-------------------|
+| Local LLM Support | Yes (BYO) | No |
+| Built-in Auth | Yes | No |
+| Dashboard | Yes | No |
+| Async Jobs API | Yes | No |
+| Intent-Based Routing | Yes | No |
+| Per-Model Rate Limits | Yes | No |
+| OpenAI API Compatible | Yes | No |
 
 ## License
 

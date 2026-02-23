@@ -74,7 +74,7 @@ modeltunnel/
 │   ├── gateway/          # Rate limiting
 │   ├── keys/             # API key management
 │   ├── server/           # HTTP server and dashboard
-│   ├── tunnel/           # Tunnel clients (localtunnel, ngrok)
+│   ├── tunnel/           # Tunnel clients (localtunnel)
 │   └── upstream/         # LLM provider adapters (Ollama, etc.)
 ├── pkg/openai/           # OpenAI-compatible types
 └── tests/                # Integration tests

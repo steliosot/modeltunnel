@@ -25,7 +25,7 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "modeltunnel",
 		Short: "Expose local models with OpenAI-compatible API",
-		Long:  `Modeltunnel - ngrok for models. Expose your local Ollama models with auth + keys.`,
+		Long:  `Modeltunnel - Tunnel for models. Expose your local Ollama models with auth + keys.`,
 	}
 )
 
