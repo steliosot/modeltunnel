@@ -296,23 +296,7 @@ handle_modeltunnel_installation() {
     echo -e "${BOLD}📦 Modeltunnel Installation${NC}"
     echo "═══════════════════════════════════════════════════════════"
 
-    # Check if we should build from source or download binary
-    local use_source=false
-
-    if command -v go &> /dev/null; then
-            if ask_yes_no "Go is installed. Build from source instead of downloading binary?" "N"; then
-                use_source=true
-            fi
-    else
-            print_warning "Go not found, will build from source"
-            use_source=true
-    fi
-
-    if [ "$use_source" = true ]; then
-        install_modeltunnel_from_source
-    else
-        install_modeltunnel_binary
-    fi
+    install_modeltunnel_binary
 
     # Setup config file after installation
     setup_modeltunnel_config
@@ -397,243 +381,96 @@ EOF
     fi
 }
 
-install_modeltunnel_from_source() {
-    print_step "Building Modeltunnel from source..."
+install_modeltunnel_binary() {
+    local platform_tag="${OS}-${ARCH}"
+    local latest_release_url="https://api.github.com/repos/$MODELTUNNEL_REPO/releases/latest"
+    local archive_name=""
+    local archive_ext=""
 
-    if ! command -v go &> /dev/null; then
-        print_info "Go not found, OS=$OS, attempting to install..."
-        if [ "$OS" = "windows" ]; then
-            print_step "Installing Go for Windows..."
-            print_info "This may take a few minutes..."
-            local go_arch="amd64"
-            if [ "$ARCH" = "arm64" ]; then
-                go_arch="arm64"
-            fi
-            local go_version="1.23.0"
-            local temp_dir=$(powershell.exe -Command "[System.IO.Path]::GetTempPath()" | tr -d '\r' || echo "/tmp")
-            local go_installer="${temp_dir}go${go_version}.windows-${go_arch}.msi"
-            local go_url="https://go.dev/dl/go${go_version}.windows-${go_arch}.msi"
+    print_step "Determining latest release..."
+    local release_tag=$(curl -sSf "$latest_release_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1')
 
-            if [ -f "$go_installer" ]; then
-                print_info "Using cached installer: $go_installer"
-            else
-                print_info "Downloading Go for Windows..."
-                print_info "Download size: ~130MB"
-                print_info "Temp directory: $temp_dir"
-                if ! powershell.exe -Command "Invoke-WebRequest -Uri '$go_url' -OutFile '$go_installer'" 2>/dev/null; then
-                    print_error "Failed to download Go installer"
-                    print_info "Trying alternative download method..."
-                    if command -v curl &> /dev/null; then
-                        curl -sL "$go_url" -o "$go_installer" || {
-                            print_error "Failed to download Go installer with curl too"
-                            rm -f "$go_installer"
-                            exit 1
-                        }
-                    else
-                        rm -f "$go_installer"
-                        exit 1
-                    fi
-                fi
-            fi
-
-            print_info "Installing Go (may take 2-3 minutes)..."
-            print_info "Installer path: $go_installer"
-            if powershell.exe -Command "Start-Process 'msiexec.exe' -ArgumentList '/i','$go_installer','/quiet','/norestart' -Wait" 2>/dev/null; then
-                print_success "Go installed successfully"
-
-                local check_count=0
-                local max_checks=30
-                local go_binary="/c/Program\ Files/Go/bin/go.exe"
-
-                while [ $check_count -lt $max_checks ]; do
-                    check_count=$((check_count + 1))
-                    if command -v go &> /dev/null || [ -f "$go_binary" ]; then
-                        print_success "Go is now available"
-                        break
-                    fi
-                    if [ $check_count -eq 1 ]; then
-                        print_info "Waiting for Go to be available in PATH (checking $ARCH architecture)..."
-                    fi
-                    sleep 2
-                done
-
-                # Set direct path if not in PATH
-                if ! command -v go &> /dev/null && [ -f "$go_binary" ]; then
-                    export PATH="/c/Program Files/Go/bin:$PATH"
-                    print_info "Added Go to current session PATH"
-                fi
-
-                if ! command -v go &> /dev/null && [ ! -f "$go_binary" ]; then
-                    print_warning "Go installation completed but binary not found"
-                    print_info "Path checked: $go_binary"
-                    print_info "Trying alternative paths..."
-                    
-                    # Try common Go installation paths
-                    local alt_paths=(
-                        "/c/Go/bin/go.exe"
-                        "/c/Program\ Files/Go/bin/go.exe"
-                        "/mnt/c/Program\ Files/Go/bin/go.exe"
-                        "$(powershell.exe -Command "Join-Path $env:LOCALAPPDATA 'Programs\\go\\bin\\go.exe'" 2>/dev/null | tr -d '\r')"
-                    )
-                    
-                    local found=""
-                    for path in "${alt_paths[@]}"; do
-                        if [ -f "$path" ]; then
-                            found="$path"
-                            print_success "Found Go at: $path"
-                            break
-                        fi
-                    done
-                    
-                    if [ -n "$found" ]; then
-                        local go_dir=$(dirname "$found")
-                        export PATH="$go_dir:$PATH"
-                        print_info "Added Go to session PATH"
-                    else
-                        print_error "Could not locate Go binary in standard locations"
-                        print_info "Please restart your terminal session and try again"
-                        exit 1
-                    fi
-                fi
-            else
-                print_error "Failed to install Go automatically"
-                print_info "Exit code: $?"
-                print_info "Please install Go manually from: https://go.dev/dl/"
-                exit 1
-            fi
-        elif [ "$OS" = "linux" ] && [ "$REQUIRES_SUDO" = true ]; then
-            run_with_sudo apt-get update -qq
-            run_with_sudo apt-get install -y golang
-        elif [ "$OS" = "darwin" ]; then
-            print_info "Please install Go: brew install go"
-        else
-            print_error "Unsupported OS for automatic Go installation: $OS"
-            print_info "Please install Go manually from: https://go.dev/dl/"
-            exit 1
-        fi
+    if [ -z "$release_tag" ]; then
+        print_error "Failed to determine latest release from GitHub"
+        exit 1
     fi
 
-    local temp_dir="/tmp/modeltunnel-build"
-    rm -rf "$temp_dir"
+    print_success "Latest release: $release_tag"
+
+    # Determine archive format based on OS
+    if [ "$OS" = "windows" ]; then
+        archive_name="modeltunnel-${release_tag}-${platform_tag}.zip"
+        archive_ext=".zip"
+    else
+        archive_name="modeltunnel-${release_tag}-${platform_tag}.tar.gz"
+        archive_ext=".tar.gz"
+    fi
+
+    local download_url="https://github.com/$MODELTUNNEL_REPO/releases/download/${release_tag}/${archive_name}"
+    local temp_dir="/tmp/modeltunnel-install"
+    local temp_archive="${temp_dir}/${archive_name}"
+
     mkdir -p "$temp_dir"
 
-    print_info "Cloning repository..."
-    git clone --depth 1 "https://github.com/$MODELTUNNEL_REPO.git" "$temp_dir" || {
-        print_error "Failed to clone repository"
-        exit 1
-    }
-
-    cd "$temp_dir"
-    print_info "Building..."
-
-    # Set GOOS for Windows
-    if [ "$OS" = "windows" ]; then
-        GOOS="windows"
-        BINARY_EXT=".exe"
-    else
-        GOOS="linux"
-        BINARY_EXT=""
-    fi
-
-    # Verify Go is available before building
-    if ! command -v go &> /dev/null; then
-        print_error "Go command not found in PATH"
-        print_info "Searching for Go installation..."
-        
-        local go_paths=(
-            "/c/Program\ Files/Go/bin/go.exe"
-            "/c/Go/bin/go.exe"
-            "/mnt/c/Program\ Files/Go/bin/go.exe"
-            "$(powershell.exe -Command "Join-Path $env:LOCALAPPDATA 'Programs\\go\\bin\\go.exe'" 2>/dev/null | tr -d '\r')"
-        )
-        
-        local go_path=""
-        for path in "${go_paths[@]}"; do
-            if [ -f "$path" ]; then
-                go_path="$path"
-                break
-            fi
-        done
-        
-        if [ -z "$go_path" ]; then
-            print_error "Go not found after installation. Please:"
-            print_info "1. Restart your terminal and run the installer again"
-            print_info "2. Or install Go manually from: https://go.dev/dl/"
-            exit 1
-        fi
-        
-        export PATH="$(dirname "$go_path"):$PATH"
-        print_success "Found Go at: $go_path"
-    fi
-
-    # Check go version
-    local go_version=$(go version 2>&1 | awk '{print $3}') || echo "unknown"
-    print_info "Using Go version: $go_version"
-
-    CGO_ENABLED=1 GOOS="$GOOS" GOARCH="$ARCH" \
-        go build -ldflags="-s -w" -o "modeltunnel${BINARY_EXT}" ./cmd/modeltunnel/main.go || {
-        print_error "Build failed"
-        exit 1
-    }
-
-    setup_install_dir
-
-    if [ "$REQUIRES_SUDO" = true ]; then
-        run_with_sudo mv "modeltunnel${BINARY_EXT}" "$INSTALL_DIR/modeltunnel${BINARY_EXT}"
-    else
-        mv "modeltunnel${BINARY_EXT}" "$INSTALL_DIR/modeltunnel${BINARY_EXT}"
-    fi
-    rm -rf "$temp_dir"
-
-    print_success "Modeltunnel installed to $INSTALL_DIR/modeltunnel${BINARY_EXT}"
-}
-
-install_modeltunnel_binary() {
-    local download_url="https://github.com/$MODELTUNNEL_REPO/releases/latest/download/modeltunnel-${OS}-${ARCH}"
-    local temp_file="/tmp/modeltunnel-${OS}-${ARCH}"
-
-    # Add .exe extension for Windows
-    if [ "$OS" = "windows" ]; then
-        download_url="${download_url}.exe"
-        temp_file="${temp_file}.exe"
-    fi
-
     print_step "Downloading Modeltunnel..."
-    if [ "$OS" = "windows" ]; then
-        print_info "Download size: ~15MB (.exe)"
-    else
-        print_info "Download size: ~15MB"
-    fi
+    print_info "Download URL: $download_url"
+    print_info "Archive size: ~15MB"
 
     if command -v curl &> /dev/null; then
-        curl -fsSL --progress-bar "$download_url" -o "$temp_file" || {
-            print_error "Failed to download Modeltunnel"
-            print_info "Falling back to building from source..."
-            install_modeltunnel_from_source
-            return
+        curl -fsSL --progress-bar "$download_url" -o "$temp_archive" || {
+            print_error "Failed to download Modeltunnel archive"
+            print_info "Please check your internet connection and try again"
+            rm -rf "$temp_dir"
+            exit 1
         }
     else
-        wget -q --show-progress "$download_url" -O "$temp_file" || {
-            print_error "Failed to download Modeltunnel"
-            print_info "Fuilding from source..."
-            install_modeltunnel_from_source
-            return
+        wget -q --show-progress "$download_url" -O "$temp_archive" || {
+            print_error "Failed to download Modeltunnel archive"
+            print_info "Please check your internet connection and try again"
+            rm -rf "$temp_dir"
+            exit 1
         }
     fi
 
     print_success "Download complete"
 
+    print_step "Extracting archive..."
+    
+    if [ "$archive_ext" = ".zip" ]; then
+        unzip -q "$temp_archive" -d "$temp_dir" || {
+            print_error "Failed to extract archive"
+            rm -rf "$temp_dir"
+            exit 1
+        }
+    else
+        tar -xzf "$temp_archive" -C "$temp_dir" || {
+            print_error "Failed to extract archive"
+            rm -rf "$temp_dir"
+            exit 1
+        }
+    fi
+
+    # Find the binary in the extracted files
+    local extracted_binary=$(find "$temp_dir" -type f -name "${BINARY_NAME}*" -o -name "${BINARY_NAME}.exe" | head -1)
+
+    if [ -z "$extracted_binary" ]; then
+        print_error "Could not find binary in extracted archive"
+        rm -rf "$temp_dir"
+        exit 1
+    fi
+
+print_step "Installing Modeltunnel..."
     print_step "Installing Modeltunnel..."
     setup_install_dir
 
-    chmod +x "$temp_file"
+    chmod +x "$extracted_binary"
 
     if [ "$REQUIRES_SUDO" = true ]; then
-        run_with_sudo mv "$temp_file" "$INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
+        run_with_sudo mv "$extracted_binary" "$INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
     else
-        mv "$temp_file" "$INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
+        mv "$extracted_binary" "$INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
     fi
-    rm -f "$temp_file"
+    rm -rf "$temp_dir"
 
     print_success "Modeltunnel installed to $INSTALL_DIR/modeltunnel$(test "$OS" = "windows" && echo ".exe")"
 }

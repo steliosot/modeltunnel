@@ -172,12 +172,23 @@ release: clean build-all
 	@echo "Creating release $(VERSION)..."
 	@mkdir -p $(BUILD_DIR)/release
 	
-	# Create archives
+	# Copy LICENSE and README to build directory
+	@cp LICENSE README.md $(BUILD_DIR)/
+	
+	# Create archives for Linux/macOS
 	@tar -czf $(BUILD_DIR)/release/$(BINARY_NAME)-$(VERSION)-linux-amd64.tar.gz -C $(BUILD_DIR) $(BINARY_NAME)-linux-amd64 LICENSE README.md
 	@tar -czf $(BUILD_DIR)/release/$(BINARY_NAME)-$(VERSION)-linux-arm64.tar.gz -C $(BUILD_DIR) $(BINARY_NAME)-linux-arm64 LICENSE README.md
 	@tar -czf $(BUILD_DIR)/release/$(BINARY_NAME)-$(VERSION)-darwin-amd64.tar.gz -C $(BUILD_DIR) $(BINARY_NAME)-darwin-amd64 LICENSE README.md
 	@tar -czf $(BUILD_DIR)/release/$(BINARY_NAME)-$(VERSION)-darwin-arm64.tar.gz -C $(BUILD_DIR) $(BINARY_NAME)-darwin-arm64 LICENSE README.md
-	@zip -j $(BUILD_DIR)/release/$(BINARY_NAME)-$(VERSION)-windows-amd64.zip $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe LICENSE README.md
+	
+	# Create Windows archive
+	@cd $(BUILD_DIR) && zip -j release/$(BINARY_NAME)-$(VERSION)-windows-amd64.zip $(BINARY_NAME)-windows-amd64.exe LICENSE README.md
+	
+	# Generate checksums
+	@cd $(BUILD_DIR)/release && \
+	sha256sum * > SHA256SUMS && \
+	sha256sum -c SHA256SUMS && \
+	rm -f SHA256SUMSUMSUMSUMS  # Remove duplicate names if any
 	
 	@echo "✅ Release archives created in $(BUILD_DIR)/release/"
 	@ls -lh $(BUILD_DIR)/release/
