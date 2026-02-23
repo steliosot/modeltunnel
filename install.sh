@@ -393,7 +393,8 @@ install_modeltunnel_from_source() {
                 go_arch="arm64"
             fi
             local go_version="1.23.0"
-            local go_installer="/tmp/go${go_version}.windows-${go_arch}.msi"
+            local temp_dir=$(powershell -Command "[System.IO.Path]::GetTempPath()" | tr -d '\r')
+            local go_installer="${temp_dir}go${go_version}.windows-${go_arch}.msi"
             local go_url="https://go.dev/dl/go${go_version}.windows-${go_arch}.msi"
 
             if [ -f "$go_installer" ]; then
@@ -409,7 +410,7 @@ install_modeltunnel_from_source() {
             fi
 
             print_info "Installing Go (may take 2-3 minutes)..."
-            if powershell -Command "Start-Process msiexec.exe -ArgumentList '/i','$go_installer','/quiet','/norestart' -Wait" 2>/dev/null; then
+            if powershell -Command "Start-Process 'msiexec.exe' -ArgumentList '/i','$go_installer','/quiet','/norestart' -Wait" 2>/dev/null; then
                 print_success "Go installed successfully"
 
                 local check_count=0
