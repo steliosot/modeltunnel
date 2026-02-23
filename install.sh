@@ -39,6 +39,7 @@ INSTALL_DIR="$DEFAULT_INSTALL_DIR"
 MODELTUNNEL_PORT="$DEFAULT_MODELTUNNEL_PORT"
 RUN_AS_SERVICE=true
 REQUIRES_SUDO=false
+USE_HOME_INSTALL=false
 SILENT_MODE=false
 
 # ============================================
@@ -136,11 +137,8 @@ check_sudo() {
         REQUIRES_SUDO=false
     elif sudo -n true 2>/dev/null; then
         REQUIRES_SUDO=true
-    else
-        print_error "This installer requires sudo privileges"
-        print_info "Please run with sudo or use a sudo-enabled user"
-        exit 1
     fi
+    # If sudo is not available, we'll try to install to $HOME/.local/bin instead
 }
 
 run_with_sudo() {
@@ -148,6 +146,50 @@ run_with_sudo() {
         sudo "$@"
     else
         "$@"
+    fi
+}
+
+setup_install_dir() {
+    local target_dir="$INSTALL_DIR"
+    
+    # Check if target directory is writable
+    if [ ! -w "$target_dir" ] 2>/dev/null; then
+        # Try to create it (might require sudo)
+        mkdir -p "$target_dir" 2>/dev/null || true
+        
+        # If still not writable and sudo available, try with sudo
+        if [ ! -w "$target_dir" ] 2>/dev/null && [ "$REQUIRES_SUDO" = true ]; then
+            sudo mkdir -p "$target_dir" 2>/dev/null || {
+                print_warning "Cannot write to $target_dir"
+                print_info "Falling back to $HOME/.local/bin"
+                INSTALL_DIR="$HOME/.local/bin"
+                USE_HOME_INSTALL=true
+                mkdir -p "$HOME/.local/bin" 2>/dev/null || {
+                    print_error "Cannot create $HOME/.local/bin"
+                    exit 1
+                }
+            }
+        elif [ ! -w "$target_dir" ] 2>/dev/null; then
+            # No sudo available, use home directory
+            print_warning "Cannot write to $target_dir"
+            print_info "Falling back to $HOME/.local/bin"
+            INSTALL_DIR="$HOME/.local/bin"
+            USE_HOME_INSTALL=true
+            mkdir -p "$HOME/.local/bin" 2>/dev/null || {
+                print_error "Cannot create $HOME/.local/bin"
+                exit 1
+            }
+        fi
+    fi
+    
+    # Add $HOME/.local/bin to PATH if needed
+    if [ "$USE_HOME_INSTALL" = true ]; then
+        if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
+            export PATH="$HOME/.local/bin:$PATH"
+            print_info "Added $HOME/.local/bin to PATH for this session"
+            print_info "To make permanent, add to your shell profile:"
+            echo '  export PATH="$HOME/.local/bin:$PATH"'
+        fi
     fi
 }
 
@@ -347,12 +389,15 @@ install_modeltunnel_from_source() {
 
     if ! command -v git &> /dev/null || ! command -v go &> /dev/null; then
         print_info "Git and/or Go not found, installing..."
-        if [ "$OS" = "linux" ]; then
+        if [ "$OS" = "linux" ] && [ "$REQUIRES_SUDO" = true ]; then
             run_with_sudo apt-get update -qq
             run_with_sudo apt-get install -y git golang
         elif [ "$OS" = "darwin" ]; then
             print_info "Please install Git and Go: brew install git go"
             exit 1
+        else
+            apt-get update -qq
+            apt-get install -y git golang
         fi
     fi
 
@@ -375,10 +420,16 @@ install_modeltunnel_from_source() {
         exit 1
     }
 
-    run_with_sudo mv modeltunnel "$INSTALL_DIR/"
+    setup_install_dir
+    
+    if [ "$REQUIRES_SUDO" = true ]; then
+        run_with_sudo mv modeltunnel "$INSTALL_DIR/"
+    else
+        mv modeltunnel "$INSTALL_DIR/"
+    fi
     rm -rf "$temp_dir"
 
-    print_success "Modeltunnel built and installed!"
+    print_success "Modeltunnel built and installed to $INSTALL_DIR"
 }
 
 install_modeltunnel_binary() {
@@ -407,9 +458,18 @@ install_modeltunnel_binary() {
     print_success "Download complete"
 
     print_step "Installing Modeltunnel..."
-    run_with_sudo chmod +x "$temp_file"
-    run_with_sudo mv "$temp_file" "$INSTALL_DIR/modeltunnel"
+    setup_install_dir
+    
+    chmod +x "$temp_file"
+    
+    if [ "$REQUIRES_SUDO" = true ]; then
+        run_with_sudo mv "$temp_file" "$INSTALL_DIR/modeltunnel"
+    else
+        mv "$temp_file" "$INSTALL_DIR/modeltunnel"
+    fi
     rm -f "$temp_file"
+    
+    print_success "Modeltunnel installed to $INSTALL_DIR"
 }
 
 # ============================================
@@ -569,36 +629,6 @@ parse_args() {
                 echo ""
                 echo "Prerequisites:"
                 echo "  Ollama must be installed first"
-                echo ""
-                echo "Options:"
-                echo "  --silent         Non-interactive mode (installs Modeltunnel only)"
-                echo "  --help           Show this help message"
-                exit 0
-                ;;
-            *)
-                shift
-                ;;
-        esac
-    done
-}
-
-# Parse command line arguments
-parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --silent)
-                SILENT_MODE=true
-                shift
-                ;;
-            --help)
-                echo "Modeltunnel Installer"
-                echo ""
-                echo "Usage:"
-                echo "  curl -fsSL ... | bash"
-                echo "  curl -fsSL ... | bash -s -- [options]"
-                echo ""
-                echo "Prerequisites:"
-                echo "  Ollama must be installed first: curl -fsSL https://ollama.com/install.sh | bash"
                 echo ""
                 echo "Options:"
                 echo "  --silent         Non-interactive mode (installs Modeltunnel only)"

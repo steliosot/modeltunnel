@@ -1573,7 +1573,7 @@ go build -o modeltunnel ./cmd/modeltunnel</pre>
                         <ul class="docs-list">
                             <li><strong>A running backend:</strong> Any OpenAI-compatible endpoint</li>
                             <li>Go 1.21+ (if building from source)</li>
-                            <li>Optional: ngrok or localtunnel for public URLs</li>
+                            <li>Optional: localtunnel for public URLs</li>
                         </ul>
 
                         <h3 class="docs-subsection-title">Quick Setup After Installation</h3>
@@ -1913,12 +1913,7 @@ go install github.com/modeltunnel/modeltunnel/cmd/modeltunnel@latest</pre>
 ./modeltunnel up</pre>
                         </div>
 
-                        <h3 class="docs-subsection-title">Optional: Public Tunnel with ngrok</h3>
-                        <div class="docs-code-block">
-                            <pre class="docs-code">brew install ngrok
-ngrok http 8080</pre>
-                        </div>
-                    </section>
+                        </section>
                     
                     <section id="docs-windows" class="docs-section">
                         <h2 class="docs-section-title">Windows Installation</h2>
@@ -1975,12 +1970,7 @@ go install github.com/modeltunnel/modeltunnel/cmd/modeltunnel@latest</pre>
 .\modeltunnel.exe up</pre>
                         </div>
                         
-                        <h3 class="docs-subsection-title">Optional: Public Tunnel</h3>
-                        <p class="docs-text">Download ngrok from <a href="https://ngrok.com/download" target="_blank" class="docs-link">ngrok.com</a> and run:</p>
-                        <div class="docs-code-block">
-                            <pre class="docs-code">ngrok.exe http 8080</pre>
-                        </div>
-                    </section>
+                        </section>
                     
                     <section id="docs-linux" class="docs-section">
                         <h2 class="docs-section-title">Linux Installation</h2>
@@ -2483,18 +2473,7 @@ for chunk in client.chat.completions.create(
                     
                     <section id="docs-tunnel" class="docs-section">
                         <h2 class="docs-section-title">Public Tunnel</h2>
-                        <p class="docs-text">To expose your modeltunnel instance publicly, you need a tunnel service like ngrok or localtunnel.</p>
-                        
-                        <h3 class="docs-subsection-title">Using ngrok</h3>
-                        <div class="docs-code-block">
-                            <pre class="docs-code"># Install ngrok
-brew install ngrok  # macOS
-# or download from ngrok.com for Windows
-
-# Run tunnel
-ngrok http 8080</pre>
-                        </div>
-                        <p class="docs-text">ngrok will provide a public URL (e.g., <code class="docs-inline-code">https://abc123.ngrok.io</code>). Use this as your base URL in client configurations.</p>
+                        <p class="docs-text">To expose your modeltunnel instance publicly, you can use localtunnel.</p>
                         
                         <h3 class="docs-subsection-title">Using localtunnel</h3>
                         <div class="docs-code-block">
@@ -3240,13 +3219,15 @@ http://localhost:8080/v1</pre>
             target.classList.add('active');
         }
 
-        // Navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                setActiveSection(item.dataset.section);
-                history.replaceState(null, '', `#${item.dataset.section}`);
+        // Navigation setup
+        function setupNavigation() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    setActiveSection(item.dataset.section);
+                    history.replaceState(null, '', `#${item.dataset.section}`);
+                });
             });
-        });
+        }
 
         // Load data
         async function loadData() {
@@ -4705,6 +4686,8 @@ main();`;
 
 // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            setupNavigation();
+            setupEventListeners();
             loadData();
             loadTunnelStatus();
             loadConfig();
@@ -4736,13 +4719,6 @@ main();`;
             }
         });
 
-        // Close modal on overlay click
-        document.getElementById('create-modal').addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-overlay')) {
-                closeModal();
-            }
-        });
-
         // Documentation copy function
         function copyCode(button) {
             const codeBlock = button.closest('.docs-code-block').querySelector('.docs-code');
@@ -4750,48 +4726,76 @@ main();`;
             copyToClipboardWithFallback(text, button);
         }
 
-        // Documentation smooth scrolling and active link highlighting
-        document.querySelectorAll('.docs-nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetId = link.getAttribute('href').substring(1);
-                const targetSection = document.getElementById(targetId);
-                
-                if (targetSection) {
-                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    
-                    // Update active link
-                    document.querySelectorAll('.docs-nav-link').forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
-                }
-            });
-        });
+        // Setup event listeners
+        function setupEventListeners() {
+            // Close modal on overlay click
+            const modalElement = document.getElementById('create-modal');
+            if (modalElement) {
+                modalElement.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('modal-overlay')) {
+                        closeModal();
+                    }
+                });
+            }
 
-        // Intersection Observer for docs sections
-        const observerOptions = {
-            root: null,
-            rootMargin: '-20% 0px -80% 0px',
-            threshold: 0
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const id = entry.target.id;
-                    document.querySelectorAll('.docs-nav-link').forEach(link => {
-                        link.classList.remove('active');
-                        if (link.getAttribute('href') === `#${id}`) {
-                            link.classList.add('active');
+            // API tester key select
+            const apiTesterKeySelect = document.getElementById('api-tester-key-select');
+            if (apiTesterKeySelect) {
+                apiTesterKeySelect.addEventListener('change', function() {
+                    if (this.value) {
+                        showKeyDisplay(this.value);
+                    } else {
+                        const keyDisplay = document.getElementById('api-tester-key-display');
+                        if (keyDisplay) {
+                            keyDisplay.style.display = 'none';
                         }
-                    });
-                }
-            });
-        }, observerOptions);
+                    }
+                });
+            }
 
-        // Observe all documentation sections
-        document.querySelectorAll('.docs-section').forEach(section => {
-            observer.observe(section);
-        });
+            // Documentation smooth scrolling and active link highlighting
+            document.querySelectorAll('.docs-nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        
+                        // Update active link
+                        document.querySelectorAll('.docs-nav-link').forEach(l => l.classList.remove('active'));
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            // Intersection Observer for docs sections
+            const observerOptions = {
+                root: null,
+                rootMargin: '-20% 0px -80% 0px',
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.id;
+                        document.querySelectorAll('.docs-nav-link').forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all documentation sections
+            document.querySelectorAll('.docs-section').forEach(section => {
+                observer.observe(section);
+            });
+        }
 
         // Mobile responsive styles for docs
         const mobileStyles = `
@@ -4846,14 +4850,6 @@ main();`;
             display.style.display = 'block';
             updateCurlCommand();
         }
-
-        document.getElementById('api-tester-key-select').addEventListener('change', function() {
-            if (this.value) {
-                showKeyDisplay(this.value);
-            } else {
-                document.getElementById('api-tester-key-display').style.display = 'none';
-            }
-        });
 
         function updateEndpointParams() {
             const endpoint = document.getElementById('api-tester-endpoint').value;
@@ -5060,11 +5056,11 @@ main();`;
             document.getElementById('api-tester-method').addEventListener('change', updateCurlCommand);
             document.getElementById('api-tester-endpoint').addEventListener('change', updateCurlCommand);
             document.getElementById('api-tester-body').addEventListener('input', updateCurlCommand);
-        });
 
-        const styleSheet = document.createElement('style');
-        styleSheet.textContent = mobileStyles;
-        document.head.appendChild(styleSheet);
+            const styleSheet = document.createElement('style');
+            styleSheet.textContent = mobileStyles;
+            document.head.appendChild(styleSheet);
+        });
     </script>
 </body>
 </html>
